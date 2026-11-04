@@ -117,6 +117,8 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  private reportErr(err: unknown) { console.error(err); if (!this.hudErr) { this.hudErr = true; this.hud.toast('เกิดข้อผิดพลาด (ดู console) — เกมยังเล่นต่อได้', 'warn'); } }
+
   update(_t: number, dtMs: number) {
     // use real elapsed time: Phaser smooths delta, which slows the sim down on low-FPS devices
     if (this.leaving) return;
@@ -125,8 +127,9 @@ export class GameScene extends Phaser.Scene {
     if (this.net) this.drainNet();
     else while (this.acc >= TICK_MS) {
       this.world.tick(); this.acc -= TICK_MS;
-      for (const ev of this.world.events) { this.onEvent(ev); if (this.leaving) return; }
-      this.world.events.length = 0;
+      // events are always cleared, and one bad event can't stop the loop (it froze the game on dungeon entry)
+      const evs = this.world.events.splice(0);
+      for (const ev of evs) { try { this.onEvent(ev); } catch (err) { this.reportErr(err); } if (this.leaving) return; }
     }
     if (this.leaving) return;
     const alpha = Math.min(1, this.acc / TICK_MS), now = this.time.now / 1000;
@@ -147,7 +150,7 @@ export class GameScene extends Phaser.Scene {
     const tgt = this.player.target != null ? this.world.entities.get(this.player.target) ?? null : null;
     // a HUD error must never freeze the game loop
     try { this.hud.update(this.world.xpNeeded(this.player), tgt); }
-    catch (err) { if (!this.hudErr) { this.hudErr = true; console.error(err); this.hud.toast('UI error — ดู console', 'warn'); } }
+    catch (err) { this.reportErr(err); }
   }
 
   private drainNet() {
@@ -161,7 +164,7 @@ export class GameScene extends Phaser.Scene {
         this.cameras.main.fadeOut(200, 27, 31, 42); wait();
       } else if (m.t === 'tick') {
         this.world.applySnapshot(m.now, m.ents); this.world.stash = m.stash; this.world.dungeon = m.dungeon; this.world.unlocks = m.unlocks; this.acc = 0;
-        for (const ev of m.ev) this.onEvent(ev);
+        for (const ev of m.ev) { try { this.onEvent(ev); } catch (err) { this.reportErr(err); } }
       } else if (m.t === 'error') this.hud.toast(m.text, 'warn');
     }
   }
@@ -387,10 +390,10 @@ export class GameScene extends Phaser.Scene {
       this.floatText(sx, sy - v.height - 6, txt + (ev.crit ? '!' : ''), color, ev.crit ? 20 : 15);
       if (!ev.miss) { v.body.setTintFill(0xffffff); this.time.delayedCall(70, () => v.body.setTint(0xff8080)); this.time.delayedCall(170, () => { v.body.clearTint(); if (v.tint) v.body.setTint(v.tint); v.stKey = undefined; }); }
     } else if (ev.t === 'die') {
-      const v = this.views.get(ev.id)!;
+      const v = this.views.get(ev.id); if (!v) return;   // died the tick it spawned (no sprite yet)
       this.tweens.add({ targets: v.body, alpha: 0, duration: 450 });
     } else if (ev.t === 'respawn') {
-      const v = this.views.get(ev.id)!;
+      const v = this.views.get(ev.id); if (!v) return;
       v.body.setAlpha(0); this.tweens.add({ targets: v.body, alpha: 1, duration: 400 });
     } else if (ev.t === 'xp' && ev.id === this.player.id) {
       const { sx, sy } = toScreen(this.player.x, this.player.y);
