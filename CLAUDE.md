@@ -1,6 +1,7 @@
 # Nostaru — working rules for Claude
 
 Web MMORPG for 3-5 friends (NosTale-inspired systems, own names/art). Owner writes in Thai; reply in Thai.
+Mobile target: iPhone 16 and up (393x852, Pro Max 440x956) — test phone layouts at these sizes.
 
 ## Workflow (owner's standing requests)
 - **Save quota**: small focused patches, test only what changed (one playtest script per change), no repeated runs of passing checks.

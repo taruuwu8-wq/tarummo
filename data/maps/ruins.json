@@ -545,7 +545,7 @@
             6
           ]
         ],
-        "cardChance": 0.5
+        "cardChance": 0.08
       },
       "A": {
         "gold": [
@@ -562,7 +562,7 @@
             4
           ]
         ],
-        "cardChance": 0.25
+        "cardChance": 0.04
       },
       "B": {
         "gold": [
@@ -579,7 +579,7 @@
             2
           ]
         ],
-        "cardChance": 0.1
+        "cardChance": 0.02
       }
     }
   }

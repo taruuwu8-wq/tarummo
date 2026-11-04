@@ -232,5 +232,6 @@
     0.5,
     0.6
   ],
-  "protectItem": "upgrade_scroll"
+  "protectItem": "upgrade_scroll",
+  "_cardNote": "Card sources: the first card (the class's first card in cards.json) is given at giftCardAtLevel; more cards only from the dungeon clear reward (cardChance by rank), preferring cards you don't own yet."
 }

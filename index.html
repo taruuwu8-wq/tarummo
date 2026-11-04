@@ -157,6 +157,18 @@
       #bag, #npc, .panel, #autocfg { left: 6px; right: 6px; transform: none; width: auto; top: auto; bottom: calc(134px + env(safe-area-inset-bottom, 0px)); max-height: 52%; }
       .equip { grid-template-columns: repeat(7, 1fr); gap: 4px; } .slot small { font-size: 8px; }
     }
+    #bag.selling > :not(.bag-head):not(#sellbox) { display: none; }
+    .pill { margin-right: 8px; padding: 4px 10px !important; font-size: 12px !important; background: #0f1320 !important; border: 1px solid var(--gold) !important; border-radius: 999px; }
+    #sellbox { display: flex; flex-direction: column; gap: 6px; }
+    .sellf { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; }
+    .chip { display: inline-flex; gap: 4px; align-items: center; padding: 3px 8px; background: #0f1320; border: 1px solid var(--line); border-radius: 999px; }
+    .sellf select { font: inherit; color: var(--fg); background: #0f1320; border: 1px solid var(--line); border-radius: 4px; }
+    .selll { display: flex; flex-direction: column; gap: 3px; max-height: 40vh; overflow-y: auto; }
+    .sellrow { display: flex; gap: 8px; align-items: center; padding: 4px 6px; background: #0f1320; border-radius: 6px; font-size: 12px; }
+    .sellrow span { flex: 1; min-width: 0; } .sellrow b { color: var(--gold); font-variant-numeric: tabular-nums; }
+    #sell-go { padding: 10px; border: 1px solid var(--gold); border-radius: 8px; background: #0f1320; }
+    #sell-go:disabled { opacity: .4; }
+    #sell-go.armed { border-color: #ff5d5d; background: #3a1416; color: #ffd0d0; }
     #pick { position: fixed; inset: 0; z-index: 10; display: grid; place-content: center; gap: 16px; padding: 16px; text-align: center; background: radial-gradient(circle at 50% 40%, #2a3350, var(--bg)); }
     #pick h1 { margin: 0; font-size: 28px; letter-spacing: .04em; }
     #pick p { margin: 0; color: var(--muted); }

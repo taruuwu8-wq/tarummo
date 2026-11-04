@@ -155,6 +155,7 @@ export type Intent =
   | { kind: 'switchCard'; id: number; index: number }
   | { kind: 'autoCfg'; id: number; cfg: AutoCfg }
   | { kind: 'rarify'; id: number; ref: number | Slot; protect: boolean }
+  | { kind: 'sellMany'; id: number; indices: number[] }
   | { kind: 'applyShell'; id: number; shell: number; ref: number | Slot }
   | { kind: 'reroll'; id: number; ref: number | Slot };
 
@@ -622,7 +623,7 @@ export class World {
       p.xp = 0;
     } else if (what === 'gold') { p.gold += 10000; this.events.push({ t: 'gold', id: p.id, amount: 10000 }); }
     else if (what === 'mats') for (const m of ['slime_jelly', 'pumpkin_seed', 'golem_shard', 'spirit_crystal']) this.grantItem(p, m, 30, { filter: false });
-    else if (what === 'card') this.grantItem(p, this.randomCardFor(p.type));
+    else if (what === 'card') this.grantItem(p, this.randomCardFor(p.type, p));
     else if (what === 'gear') for (let i = 0; i < 3; i++) { const l = this.defs.rarity.classGear[p.type]; this.grantItem(p, l[i % l.length], 1, { src: 'boss', filter: false }); }
     else if (what === 'shells') for (const sh of ['shell_weapon', 'shell_armor', 'shell_offhand']) this.grantItem(p, sh, 1, { src: 'gm' });
     else if (what === 'scrolls') { this.grantItem(p, this.defs.rarity.rerollItem, 5); this.grantItem(p, this.defs.rarity.rarify.protectItem, 5); this.grantItem(p, this.defs.upgrade.protectItem, 5); }
@@ -633,10 +634,16 @@ export class World {
     }
   }
 
-  private randomCardFor(cls: string) {
+  /** A card for this class, preferring ones the player doesn't own yet (bag, equipped, shared stash). */
+  private randomCardFor(cls: string, p?: Entity) {
     const ids = Object.entries(this.defs.cards).filter(([, c]) => c.class === cls).map(([id]) => id);
-    return ids[Math.floor(this.rng() * ids.length)];
+    const owned = new Set([...(p?.inv ?? []), ...(p?.equip.card ? [p.equip.card] : []), ...this.stash].map(s => s.item));
+    const fresh = ids.filter(id => !owned.has(id));
+    const pool = fresh.length ? fresh : ids;
+    return pool[Math.floor(this.rng() * pool.length)];
   }
+  /** The first card: always the class's first card in cards.json */
+  private firstCardFor(cls: string) { return Object.entries(this.defs.cards).find(([, c]) => c.class === cls)![0]; }
 
   /** Single entry point for items (catch-up / shared loot can hook in later). Returns false if bag full. */
   grantItem(p: Entity, item: string, qty = 1, opts: { filter?: boolean; src?: 'normal' | 'boss' | 'gm' } = {}): boolean {
@@ -722,6 +729,15 @@ export class World {
     if (--st.qty <= 0) p.inv.splice(index, 1);
   }
 
+  /** Sell several bag slots at once (indices into the bag; duplicates and bad indices ignored). */
+  private sellMany(p: Entity, indices: number[]) {
+    if (!Array.isArray(indices)) return;
+    const idx = [...new Set(indices.filter(i => Number.isInteger(i) && i >= 0 && i < p.inv.length))].sort((a, b) => b - a);
+    let g = 0;
+    for (const i of idx) { const st = p.inv[i]; g += this.priceOf(st) * st.qty; p.inv.splice(i, 1); }
+    if (g) { p.gold += g; this.events.push({ t: 'gold', id: p.id, amount: g }); this.events.push({ t: 'msg', id: p.id, text: `ขาย ${idx.length} ชิ้น ได้ ${g.toLocaleString()} G` }); }
+  }
+
   private sell(p: Entity, index: number) {
     const st = p.inv[index]; if (!st) return;
     const g = this.priceOf(st) * st.qty;
@@ -748,6 +764,7 @@ export class World {
     else if (intent.kind === 'switchCard') this.switchCard(e, intent.index);
     else if (intent.kind === 'rarify') { if (this.nearNpc(e, 'rarer')) this.rarify(e, intent.ref, intent.protect); else this.events.push({ t: 'msg', id: e.id, text: 'สุ่ม Rare ได้ที่ Rina ในเมือง' }); }
     else if (intent.kind === 'applyShell') this.applyShell(e, intent.shell, intent.ref);
+    else if (intent.kind === 'sellMany') this.sellMany(e, intent.indices);
     else if (intent.kind === 'reroll') this.reroll(e, intent.ref);
     else if (intent.kind === 'mount') {
       if (!e.equip.mount) { this.events.push({ t: 'msg', id: e.id, text: 'ยังไม่ได้ใส่พาหนะ (ซื้อที่ร้าน Mira)' }); return; }
@@ -891,7 +908,7 @@ export class World {
         const g = rw.gold[0] + Math.floor(this.rng() * (rw.gold[1] - rw.gold[0] + 1));
         p.gold += g; this.events.push({ t: 'gold', id: p.id, amount: g });
         for (const [item, q] of rw.items) this.grantItem(p, item, q);
-        if (this.rng() < rw.cardChance) this.grantItem(p, this.randomCardFor(p.type));
+        if (this.rng() < rw.cardChance) this.grantItem(p, this.randomCardFor(p.type, p));
       }
       this.events.push({ t: 'dungeon', state: 'clear', rank: st.rank, timeMs: st.timeMs });
     }
@@ -1062,7 +1079,7 @@ export class World {
         if (p.auto) { p.autoStats.gold += g; p.autoStats.kills++; }
         for (const [item, chance, qty] of m.drops) if (this.rng() < chance) this.grantItem(p, item, qty ?? 1, { src: 'normal' });
         if (m.loot) this.bossLoot(p, this.defs.rarity[m.loot as 'bossLoot'], m.loot === 'bossLoot' && this.map.dungeon ? 'boss' : 'normal');
-        if (m.cardChance && this.rng() < m.cardChance) this.grantItem(p, this.randomCardFor(p.type));
+        if (m.cardChance && this.rng() < m.cardChance) this.grantItem(p, this.randomCardFor(p.type, p));
       }
     }
   }
@@ -1084,7 +1101,7 @@ export class World {
       this.ensureBar(p);
       if (p.level === this.defs.upgrade.giftCardAtLevel) {
         this.events.push({ t: 'msg', id: p.id, text: `ครบ Lv ${p.level}! ได้รับ Spirit Card` });
-        this.grantItem(p, this.randomCardFor(p.type));
+        this.grantItem(p, this.firstCardFor(p.type), 1, { filter: false });
       }
     }
     // card levels while transformed

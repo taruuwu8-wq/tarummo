@@ -123,7 +123,7 @@
         0.02
       ]
     ],
-    "cardChance": 0.005,
+    "cardChance": 0,
     "race": "plant"
   },
   "golem": {
@@ -185,7 +185,7 @@
         0.15
       ]
     ],
-    "cardChance": 0.25,
+    "cardChance": 0,
     "race": "robot",
     "loot": "miniBossLoot"
   },
@@ -568,7 +568,7 @@
       ]
     ],
     "loot": "miniBossLoot",
-    "cardChance": 0.1,
+    "cardChance": 0,
     "blast": {
       "mult": 2.0,
       "radius": 2.4,

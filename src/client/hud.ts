@@ -3,6 +3,7 @@ import type { Entity, World, Intent, SkillDef, InvSlot } from '../sim/world';
 import { SLOTS } from '../sim/world';
 import { Hotbar } from './hotbar';
 import { AutoPanel } from './autopanel';
+import { SellPanel } from './sellpanel';
 import { itemName, optLines, RARE_COLOR } from './itemtext';
 import type { ItemDef, Slot } from '../core/stats';
 
@@ -13,6 +14,7 @@ const RARITY_TH: Record<string, string> = { common: 'ธรรมดา', uncomm
 export class Hud {
   private el = document.getElementById('hud')!;
   autoPanel!: AutoPanel;
+  private sellPanel!: SellPanel;
   private autoShown: boolean | null = null;
   private tab: Tab = 'gear';
   private invSig = '';
@@ -46,7 +48,8 @@ export class Hud {
         <button type="button" class="sb wide" id="auto">AUTO<br>OFF</button>
       </div>
       <div id="bag" hidden>
-        <div class="bag-head"><b>กระเป๋า</b><button type="button" id="bagx" aria-label="ปิด">✕</button></div>
+        <div class="bag-head"><b>กระเป๋า</b><span><button type="button" id="sellmode" class="pill">ขายหลายชิ้น</button><button type="button" id="bagx" aria-label="ปิด">✕</button></span></div>
+        <div id="sellbox" hidden></div>
         <div class="equip" id="equip"></div>
         <div class="stats" id="stats"></div>
         <div class="tabs">${(['gear', 'card', 'use', 'mat'] as Tab[]).map(t => `<button type="button" data-tab="${t}">${{ gear: 'อุปกรณ์', card: 'การ์ด', use: 'ของใช้', mat: 'วัตถุดิบ' }[t]}</button>`).join('')}</div>
@@ -67,6 +70,11 @@ export class Hud {
     this.$('mountbtn').addEventListener('click', () => send({ kind: 'mount', id: p.id }));
     this.$('bagbtn').addEventListener('click', () => this.toggleBag());
     this.$('bagx').addEventListener('click', () => this.toggleBag(false));
+    this.sellPanel = new SellPanel(this.$('sellbox'), world, p, items, send);
+    this.$('sellmode').addEventListener('click', () => {
+      const on = this.$('bag').classList.toggle('selling');
+      this.$('sellbox').hidden = !on; this.$('sellmode').textContent = on ? 'กลับไปกระเป๋า' : 'ขายหลายชิ้น'; this.invSig = '';
+    });
     this.$('auto').addEventListener('click', () => this.toggleAuto());
     this.autoPanel = new AutoPanel(this.el, world, p, items, send);
     this.$('autocfgbtn').addEventListener('click', () => this.autoPanel.toggle());
@@ -261,7 +269,7 @@ export class Hud {
       dgEl.textContent = st.cleared ? `เคลียร์แล้ว · อันดับ ${st.rank} · ${time} · ไปที่พอร์ทัลท้ายห้องเพื่อออก`
         : `ห้อง ${Math.min(st.room + 1, d.rooms.length)}/${d.rooms.length}${st.room === d.rooms.length - 1 ? ' (บอส)' : ''} · ⏱ ${time} · ${next}`;
     }
-    if (!this.$('bag').hidden) this.renderBag();
+    if (!this.$('bag').hidden) { if (this.$('bag').classList.contains('selling')) this.sellPanel.render(); else this.renderBag(); }
     if (this.npc) this.renderNpc();
   }
 
