@@ -15,9 +15,10 @@ import ruins from '../data/maps/ruins.json';
 import frostwood from '../data/maps/frostwood.json';
 import statuses from '../data/statuses.json';
 import quests from '../data/quests.json';
+import recipes from '../data/recipes.json';
 import type { Defs, MapData } from './sim/world';
 
-export const loadDefs = () => structuredClone({ balance, classes, monsters, items, skills, cards, upgrade, npcs, options, rarity, statuses, quests, mapGraph: graph() }) as unknown as Defs;
+export const loadDefs = () => structuredClone({ balance, classes, monsters, items, skills, cards, upgrade, npcs, options, rarity, statuses, quests, recipes, mapGraph: graph() }) as unknown as Defs;
 export const MAPS = { meadow, town, ruins, frostwood } as unknown as Record<string, MapData>;
 export const START_MAP = 'town';
 

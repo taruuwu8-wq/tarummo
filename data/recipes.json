@@ -1,0 +1,233 @@
+{
+  "_note": "Crafting at Tova (town). inputs = [item, qty]; crafted weapon/offhand/armor roll a rare like a normal drop (R0-5); shells roll like normal shells.",
+  "recipes": [
+    {
+      "id": "big_hp",
+      "out": "hp_potion_big",
+      "qty": 1,
+      "inputs": [
+        [
+          "hp_potion",
+          3
+        ],
+        [
+          "slime_jelly",
+          4
+        ]
+      ],
+      "gold": 15,
+      "cat": "ยา",
+      "level": 1
+    },
+    {
+      "id": "big_mp",
+      "out": "mp_potion_big",
+      "qty": 1,
+      "inputs": [
+        [
+          "mp_potion",
+          3
+        ],
+        [
+          "pumpkin_seed",
+          3
+        ]
+      ],
+      "gold": 15,
+      "cat": "ยา",
+      "level": 1
+    },
+    {
+      "id": "reroll",
+      "out": "reroll_scroll",
+      "qty": 1,
+      "inputs": [
+        [
+          "frost_shard",
+          10
+        ],
+        [
+          "golem_shard",
+          5
+        ]
+      ],
+      "gold": 500,
+      "cat": "ใบ/ม้วน",
+      "level": 8
+    },
+    {
+      "id": "up_prot",
+      "out": "upgrade_scroll",
+      "qty": 1,
+      "inputs": [
+        [
+          "spirit_crystal",
+          1
+        ],
+        [
+          "golem_shard",
+          8
+        ]
+      ],
+      "gold": 1000,
+      "cat": "ใบ/ม้วน",
+      "level": 5
+    },
+    {
+      "id": "rare_prot",
+      "out": "protect_scroll",
+      "qty": 1,
+      "inputs": [
+        [
+          "spirit_crystal",
+          2
+        ],
+        [
+          "frost_shard",
+          8
+        ]
+      ],
+      "gold": 1500,
+      "cat": "ใบ/ม้วน",
+      "level": 8
+    },
+    {
+      "id": "shell_w",
+      "out": "shell_weapon",
+      "qty": 1,
+      "inputs": [
+        [
+          "treant_bark",
+          10
+        ],
+        [
+          "frost_shard",
+          6
+        ]
+      ],
+      "gold": 600,
+      "cat": "Shell",
+      "level": 8
+    },
+    {
+      "id": "shell_a",
+      "out": "shell_armor",
+      "qty": 1,
+      "inputs": [
+        [
+          "treant_bark",
+          10
+        ],
+        [
+          "golem_shard",
+          6
+        ]
+      ],
+      "gold": 600,
+      "cat": "Shell",
+      "level": 8
+    },
+    {
+      "id": "shell_o",
+      "out": "shell_offhand",
+      "qty": 1,
+      "inputs": [
+        [
+          "frost_shard",
+          8
+        ],
+        [
+          "pumpkin_seed",
+          10
+        ]
+      ],
+      "gold": 600,
+      "cat": "Shell",
+      "level": 8
+    },
+    {
+      "id": "fb_sword",
+      "out": "frostbite_sword",
+      "qty": 1,
+      "inputs": [
+        [
+          "treant_bark",
+          12
+        ],
+        [
+          "frost_shard",
+          8
+        ],
+        [
+          "golem_shard",
+          4
+        ]
+      ],
+      "gold": 1200,
+      "cat": "อุปกรณ์",
+      "level": 10
+    },
+    {
+      "id": "fb_bow",
+      "out": "frostbite_bow",
+      "qty": 1,
+      "inputs": [
+        [
+          "treant_bark",
+          12
+        ],
+        [
+          "frost_shard",
+          8
+        ],
+        [
+          "golem_shard",
+          4
+        ]
+      ],
+      "gold": 1200,
+      "cat": "อุปกรณ์",
+      "level": 10
+    },
+    {
+      "id": "fb_staff",
+      "out": "frostbite_staff",
+      "qty": 1,
+      "inputs": [
+        [
+          "treant_bark",
+          12
+        ],
+        [
+          "frost_shard",
+          8
+        ],
+        [
+          "golem_shard",
+          4
+        ]
+      ],
+      "gold": 1200,
+      "cat": "อุปกรณ์",
+      "level": 10
+    },
+    {
+      "id": "bark_armor",
+      "out": "bark_armor",
+      "qty": 1,
+      "inputs": [
+        [
+          "treant_bark",
+          15
+        ],
+        [
+          "slime_jelly",
+          10
+        ]
+      ],
+      "gold": 900,
+      "cat": "อุปกรณ์",
+      "level": 9
+    }
+  ]
+}

@@ -22,7 +22,7 @@ export interface MapData {
   portals: Portal[]; npcs: { id: string; x: number; y: number }[]; dungeon?: DungeonDef;
 }
 export interface NpcDef {
-  name: string; title: string; sprite: string; height: number; role: 'shop' | 'smith' | 'healer' | 'stash' | 'debug' | 'rarer'; greet: string;
+  name: string; title: string; sprite: string; height: number; role: 'shop' | 'smith' | 'healer' | 'stash' | 'debug' | 'rarer' | 'craft'; greet: string;
   sells?: { item: string; price: number }[];
 }
 export interface SkillDef {
@@ -64,8 +64,10 @@ export interface Defs {
   cards: Record<string, CardDef>; upgrade: UpgradeCfg; npcs: Record<string, NpcDef>;
   options: { options: OptDef[] }; rarity: RarityCfg; statuses: Record<StatusType, StatusDef>;
   quests: { main: QuestDef[]; daily: QuestDef & { reward: { goldPerLevel: number; xpPctOfLevel: number; items: [string, number][] } } };
+  recipes: { recipes: RecipeDef[] };
   mapGraph: Record<string, { to: string; x: number; y: number; minLevel?: number; when?: string }[]>;
 }
+export interface RecipeDef { id: string; out: string; qty: number; inputs: [string, number][]; gold: number; cat: string; level: number }
 export interface QuestDef {
   id: string; name: string; map?: string;
   goal: { type: 'kill' | 'level' | 'clear' | 'visit'; monster?: string; count?: number; level?: number };
@@ -169,6 +171,7 @@ export type Intent =
   | { kind: 'rarify'; id: number; ref: number | Slot; protect: boolean }
   | { kind: 'sellMany'; id: number; indices: number[] }
   | { kind: 'autoQuest'; id: number; on: boolean }
+  | { kind: 'craft'; id: number; recipe: string; times: number }
   | { kind: 'applyShell'; id: number; shell: number; ref: number | Slot }
   | { kind: 'reroll'; id: number; ref: number | Slot };
 
@@ -640,7 +643,7 @@ export class World {
       this.ensureBar(p);
       p.xp = 0;
     } else if (what === 'gold') { p.gold += 10000; this.events.push({ t: 'gold', id: p.id, amount: 10000 }); }
-    else if (what === 'mats') for (const m of ['slime_jelly', 'pumpkin_seed', 'golem_shard', 'spirit_crystal']) this.grantItem(p, m, 30, { filter: false });
+    else if (what === 'mats') for (const m of ['slime_jelly', 'pumpkin_seed', 'golem_shard', 'spirit_crystal', 'treant_bark', 'frost_shard']) this.grantItem(p, m, 30, { filter: false });
     else if (what === 'card') this.grantItem(p, this.randomCardFor(p.type, p));
     else if (what === 'gear') for (let i = 0; i < 3; i++) { const l = this.defs.rarity.classGear[p.type]; this.grantItem(p, l[i % l.length], 1, { src: 'boss', filter: false }); }
     else if (what === 'shells') for (const sh of ['shell_weapon', 'shell_armor', 'shell_offhand']) this.grantItem(p, sh, 1, { src: 'gm' });
@@ -809,6 +812,36 @@ export class World {
     const s = prev.get(n)!; return [s.x, s.y] as Tile;
   }
 
+  /** How many times this recipe can be made right now (materials and gold). */
+  craftable(p: Entity, r: RecipeDef) {
+    let n = r.gold ? Math.floor(p.gold / r.gold) : 99;
+    for (const [it, q] of r.inputs) n = Math.min(n, Math.floor(p.inv.filter(s => s.item === it).reduce((a, s) => a + s.qty, 0) / q));
+    return p.level < r.level ? 0 : Math.max(0, n);
+  }
+
+  private take(p: Entity, item: string, qty: number) {
+    for (let i = p.inv.length - 1; i >= 0 && qty > 0; i--) {
+      const st = p.inv[i]; if (st.item !== item) continue;
+      const k = Math.min(qty, st.qty); st.qty -= k; qty -= k;
+      if (st.qty <= 0) p.inv.splice(i, 1);
+    }
+  }
+
+  private craft(p: Entity, id: string, times: number) {
+    const r = this.defs.recipes.recipes.find(x => x.id === id); if (!r) return;
+    const n = Math.min(Math.max(1, Math.floor(times) || 1), 20, this.craftable(p, r));
+    if (!n) { this.events.push({ t: 'msg', id: p.id, text: p.level < r.level ? `ต้อง Lv ${r.level}` : 'วัตถุดิบหรือทองไม่พอ' }); return; }
+    const d = this.defs.items[r.out], gear = this.defs.rarity.gearSlots.includes(d.slot) || d.slot === 'shell';
+    let made = 0;
+    for (let i = 0; i < n; i++) {
+      if (gear && p.inv.length >= INV_SIZE) break;
+      p.gold -= r.gold; for (const [it, q] of r.inputs) this.take(p, it, q);
+      for (let k = 0; k < (gear ? r.qty : 1); k++) this.grantItem(p, r.out, gear ? 1 : r.qty, { filter: false, src: gear ? 'normal' : undefined });
+      made++;
+    }
+    if (made) this.events.push({ t: 'msg', id: p.id, text: `คราฟต์ ${d.name} ×${made * r.qty} สำเร็จ` });
+  }
+
   /** Sell several bag slots at once (indices into the bag; duplicates and bad indices ignored). */
   private sellMany(p: Entity, indices: number[]) {
     if (!Array.isArray(indices)) return;
@@ -845,6 +878,7 @@ export class World {
     else if (intent.kind === 'rarify') { if (this.nearNpc(e, 'rarer')) this.rarify(e, intent.ref, intent.protect); else this.events.push({ t: 'msg', id: e.id, text: 'สุ่ม Rare ได้ที่ Rina ในเมือง' }); }
     else if (intent.kind === 'applyShell') this.applyShell(e, intent.shell, intent.ref);
     else if (intent.kind === 'sellMany') this.sellMany(e, intent.indices);
+    else if (intent.kind === 'craft') { if (this.nearNpc(e, 'craft')) this.craft(e, intent.recipe, intent.times); }
     else if (intent.kind === 'autoQuest') {
       e.autoQuest = intent.on && !!this.questOf(e);
       if (e.autoQuest && !e.auto) this.apply({ kind: 'auto', id: e.id, on: true });

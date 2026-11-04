@@ -148,6 +148,7 @@ export class Hud {
     else if (a === 'heal') this.send({ kind: 'heal', id: p.id });
     else if (a === 'put') this.send({ kind: 'stashPut', id: p.id, index: Number(b.dataset.i) });
     else if (a === 'take') this.send({ kind: 'stashTake', id: p.id, index: Number(b.dataset.i) });
+    else if (a === 'craft') this.send({ kind: 'craft', id: p.id, recipe: b.dataset.r!, times: Number(b.dataset.n) });
     else if (a === 'dbg') this.send({ kind: 'debug', id: p.id, what: b.dataset.w as 'level' });
     this.npcSig = '';
   }
@@ -200,6 +201,17 @@ export class Hud {
         + (refs.map(({ ref, st, where }) => `<div class="row"><span class="ic">${this.items[st.item].icon}</span><span class="nm">${itemName(w, st)}<small class="muted"> · ${where}</small></span>
           <span class="pr">${w.rarifyCost(st)} G</span>${(() => { const hi = (st.rare ?? 0) >= 6, noProt = !(this.useProt && prot), armed = this.confirmKey === 'rare:' + ref;
             return `<button type="button" data-act="rare" data-ref="${ref}"${hi || noProt ? ' data-risk="1"' : ''} class="${armed ? 'armed' : ''}"${p.gold < w.rarifyCost(st) ? ' disabled' : ''}>${armed ? (hi ? `ยืนยัน! สุ่มทับ R${st.rare}` : 'ยืนยัน! เสี่ยงแตก') : 'สุ่ม Rare'}</button>`; })()}</div>`).join('') || '<p class="muted">ไม่มีอาวุธ อาวุธรอง หรือเกราะ</p>');
+    } else if (d.role === 'craft') {
+      const w = this.world, recs = w.defs.recipes.recipes.filter(r => { const c = this.items[r.out]?.class; return !c || c === p.type; });
+      const cats = [...new Set(recs.map(r => r.cat))];
+      body = cats.map(cat => `<b>${cat}</b>` + recs.filter(r => r.cat === cat).map(r => {
+        const out = this.items[r.out], n = w.craftable(p, r), lock = p.level < r.level;
+        const need = r.inputs.map(([it, q]) => { const have = p.inv.filter(s => s.item === it).reduce((a, s) => a + s.qty, 0);
+          return `<span class="${have >= q ? '' : 'warn-t'}">${this.items[it].icon}${have}/${q}</span>`; }).join(' ');
+        const stack = out.slot === 'use' || out.slot === 'mat';
+        return `<div class="row"><span class="ic">${out.icon}</span><span class="nm">${out.name}${r.qty > 1 ? ' ×' + r.qty : ''}${lock ? ` <small class="warn-t">ต้อง Lv ${r.level}</small>` : ''}<small class="muted"><br>${need} · ${r.gold} G</small></span>
+          <button type="button" data-act="craft" data-r="${r.id}" data-n="1"${n ? '' : ' disabled'}>ทำ</button>${stack ? `<button type="button" data-act="craft" data-r="${r.id}" data-n="5"${n >= 5 ? '' : ' disabled'}>×5</button>` : ''}</div>`;
+      }).join('')).join('') + '<p class="muted small">อาวุธ/เกราะที่คราฟต์จะสุ่ม Rare 0-5 เหมือนของดรอป · Shell สุ่มออฟเหมือน Shell ทั่วไป</p>';
     } else if (d.role === 'debug') {
       body = [['level', '+1 เลเวล'], ['level5', '+5 เลเวล'], ['gold', '+10,000 G'], ['mats', 'วัตถุดิบตีบวกทุกขั้น ×30 (รวม Spirit Crystal +10~15)'], ['card', 'การ์ดสุ่มของอาชีพ'], ['job', 'การ์ดที่ใส่ Job +3'], ['gear', 'ของอาชีพ Rare สูง ×3'], ['shells', 'Shell ×3 (ทุกแบบ)'], ['scrolls', 'Reroll ×5 + กันแตก ×3']]
         .map(([w, t]) => `<button type="button" class="big" data-act="dbg" data-w="${w}">${t}</button>`).join('');

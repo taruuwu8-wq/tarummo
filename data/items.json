@@ -433,5 +433,88 @@
     "rarity": "epic",
     "icon": "🔰",
     "price": 200
+  },
+  "hp_potion_big": {
+    "name": "Big HP Potion",
+    "slot": "use",
+    "rarity": "uncommon",
+    "icon": "🧪",
+    "price": 12,
+    "heal": {
+      "hp": 0.7
+    }
+  },
+  "mp_potion_big": {
+    "name": "Big MP Potion",
+    "slot": "use",
+    "rarity": "uncommon",
+    "icon": "🔷",
+    "price": 12,
+    "heal": {
+      "mp": 0.7
+    }
+  },
+  "frostbite_sword": {
+    "name": "Frostbite Sword",
+    "slot": "weapon",
+    "rarity": "rare",
+    "icon": "⚔️",
+    "level": 10,
+    "class": "swordsman",
+    "price": 220,
+    "weapon": {
+      "min": 36,
+      "max": 48,
+      "critDmg": 0.8
+    },
+    "bonus": {
+      "elemRate": 0.05
+    }
+  },
+  "frostbite_bow": {
+    "name": "Frostbite Bow",
+    "slot": "weapon",
+    "rarity": "rare",
+    "icon": "🏹",
+    "level": 10,
+    "class": "archer",
+    "price": 220,
+    "weapon": {
+      "min": 27,
+      "max": 46,
+      "critDmg": 1.0
+    },
+    "bonus": {
+      "elemRate": 0.05
+    }
+  },
+  "frostbite_staff": {
+    "name": "Frostbite Staff",
+    "slot": "weapon",
+    "rarity": "rare",
+    "icon": "🪄",
+    "level": 10,
+    "class": "mage",
+    "price": 220,
+    "weapon": {
+      "min": 34,
+      "max": 46,
+      "critDmg": 0.6
+    },
+    "bonus": {
+      "elemRate": 0.12
+    }
+  },
+  "bark_armor": {
+    "name": "Bark Armor",
+    "slot": "armor",
+    "rarity": "rare",
+    "icon": "🛡️",
+    "level": 9,
+    "price": 200,
+    "bonus": {
+      "armor": 18,
+      "hp": 110
+    }
   }
 }
