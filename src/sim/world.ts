@@ -48,7 +48,7 @@ export interface AutoCfg {
   returnTown: boolean; buyHp: number; buyMp: number;
 }
 export const defaultAutoCfg = (): AutoCfg => ({
-  range: 8, skip: [], bosses: false, levelAbove: 1, hp: 35, mp: 15,
+  range: 12, skip: [], bosses: false, levelAbove: 1, hp: 35, mp: 15,
   loot: { gear: { common: 'sell', uncommon: 'keep', rare: 'keep', epic: 'keep' }, use: 'keep', mat: 'keep' },
   skipSkills: [], returnTown: true, buyHp: 20, buyMp: 10,
 });
@@ -301,6 +301,7 @@ export class World {
       Object.assign(e, { xp: save.xp, gold: save.gold, inv: save.inv.filter(s => this.defs.items[s.item]), equip, autoSell: save.autoSell, bars: save.bars ?? {}, barKnown: save.barKnown ?? {} });
       const cfg = { ...defaultAutoCfg(), ...(save.autoCfg ?? {}) };
       if (!save.autoCfg && save.autoSell) cfg.loot.gear.common = 'sell';
+      if (cfg.range === 8) cfg.range = 12;   // old default
       // rested XP: offline time since the last save fills the pool
       const rc = this.defs.balance.rested, need = xpToNext(this.defs.balance, save.level ?? 1);
       e.rested = Math.min(need * rc.capPct, save.rested ?? 0);

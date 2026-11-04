@@ -138,6 +138,25 @@
     .warn-t { color: #ff8a5b; }
     #npc button.armed { border-color: #ff5d5d; background: #3a1416; color: #ffd0d0; animation: arm .6s ease-in-out infinite alternate; }
     @keyframes arm { to { box-shadow: 0 0 10px #ff5d5d; } }
+    .mobile-only { display: none; }
+    /* phones: hotbar 2x5 bottom-left, system buttons 3 columns bottom-right, panels as bottom sheets, chat behind a button */
+    @media (max-width: 760px) {
+      .mobile-only { display: block; }
+      #bar { left: calc(6px + env(safe-area-inset-left, 0px)); transform: none; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: repeat(5, 38px); gap: 3px; padding: 4px; }
+      #bar .sk { width: 38px; height: 38px; } #bar .sk .ic { font-size: 17px; line-height: 38px; }
+      #side { right: calc(6px + env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); grid-template-columns: repeat(4, 36px); gap: 3px; padding: 4px; }
+      .sb { width: 36px; height: 36px; } .sb .ic { font-size: 16px; line-height: 36px; } .sb .key { display: none; }
+      .sb.wide { grid-column: span 4; height: 30px; font-size: 11px; }
+      #chat { bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important; left: calc(6px + env(safe-area-inset-left, 0px)); width: 60vw; }
+      #chatlog { font-size: 11px; } #chatlog div:nth-last-child(n+4) { display: none; }
+      #chatin { display: none; } #chat.open #chatin { display: block; }
+      #toasts { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+      .frame { width: 150px; padding: 6px; } .frame.target { width: 140px; }
+      #autosum { left: auto; right: calc(6px + env(safe-area-inset-right, 0px)); top: calc(10px + env(safe-area-inset-top, 0px)); width: 150px; font-size: 10px; }
+      .frame.target { top: calc(86px + env(safe-area-inset-top, 0px)); left: calc(10px + env(safe-area-inset-left, 0px)); right: auto; }
+      #bag, #npc, .panel, #autocfg { left: 6px; right: 6px; transform: none; width: auto; top: auto; bottom: calc(134px + env(safe-area-inset-bottom, 0px)); max-height: 52%; }
+      .equip { grid-template-columns: repeat(7, 1fr); gap: 4px; } .slot small { font-size: 8px; }
+    }
     #pick { position: fixed; inset: 0; z-index: 10; display: grid; place-content: center; gap: 16px; padding: 16px; text-align: center; background: radial-gradient(circle at 50% 40%, #2a3350, var(--bg)); }
     #pick h1 { margin: 0; font-size: 28px; letter-spacing: .04em; }
     #pick p { margin: 0; color: var(--muted); }
@@ -155,8 +174,6 @@
     .login .saved button { padding: 6px 10px; font: inherit; font-size: 12px; color: var(--fg); background: var(--panel); border: 1px solid var(--gold); border-radius: 999px; cursor: pointer; }
     #pick .hint { font-size: 11px; }
     #pick small { color: var(--muted); font-size: 11px; }
-    @media (max-width: 760px) { #bar { left: calc(8px + env(safe-area-inset-left, 0px)); transform: none; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: repeat(5, 40px); } #bar .sk { width: 40px; height: 40px; } #bar .sk .ic { font-size: 18px; line-height: 40px; } #side { grid-template-columns: repeat(2, 42px); } .sb { width: 42px; height: 42px; } .sb .ic { font-size: 19px; line-height: 42px; } #chat { bottom: calc(118px + env(safe-area-inset-bottom, 0px)) !important; } #toasts { bottom: calc(130px + env(safe-area-inset-bottom, 0px)); } }
-    @media (max-width: 600px) { #autosum { width: 150px; top: calc(150px + env(safe-area-inset-top, 0px)); } #autocfg { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); max-height: 60%; } .frame { width: 150px; } .frame.target { width: 140px; top: calc(96px + env(safe-area-inset-top, 0px)); left: calc(10px + env(safe-area-inset-left, 0px)); right: auto; } .sk { width: 42px; height: 42px; } .sk .ic { font-size: 19px; line-height: 42px; } .sk.wide { width: 46px; } #bar { gap: 4px; padding: 4px; } #chat { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); width: 55vw; } #bag, #npc { top: auto; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); max-height: 60%; } }
   </style>
 </head>
 <body>

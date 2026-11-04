@@ -31,6 +31,7 @@ interface View {
   wings?: Phaser.GameObjects.Container;
   rareSparks?: Phaser.GameObjects.Particles.ParticleEmitter; rareGlow?: Phaser.FX.Glow; pillar?: Phaser.GameObjects.Image; rareLv?: number;
   barFill?: number;
+  bubble?: Phaser.GameObjects.Text; bubbleUntil?: number;
   formKey?: string; tint?: number; stKey?: string; stIcons?: Phaser.GameObjects.Text; mount?: Phaser.GameObjects.Image; mountLook?: string; dust?: Phaser.GameObjects.Particles.ParticleEmitter;
   scale: number; phase: number; lunge: number; lungeDir: { x: number; y: number }; height: number;
 }
@@ -131,7 +132,7 @@ export class GameScene extends Phaser.Scene {
     const alpha = Math.min(1, this.acc / TICK_MS), now = this.time.now / 1000;
     for (const e of this.world.entities.values()) { if (!this.views.has(e.id)) this.makeView(e); this.syncView(e, alpha, now, dtMs); }
     for (const [id, v] of this.views) if (!this.world.entities.has(id)) {
-      v.body.destroy(); v.shadow.destroy(); v.bar.destroy(); v.stIcons?.destroy(); v.rareSparks?.destroy(); v.pillar?.destroy(); v.aura?.destroy(); v.sparks?.destroy(); v.ring?.destroy(); v.wings?.destroy(); v.mount?.destroy(); v.dust?.destroy();
+      v.body.destroy(); v.shadow.destroy(); v.bar.destroy(); v.stIcons?.destroy(); v.bubble?.destroy(); v.rareSparks?.destroy(); v.pillar?.destroy(); v.aura?.destroy(); v.sparks?.destroy(); v.ring?.destroy(); v.wings?.destroy(); v.mount?.destroy(); v.dust?.destroy();
       this.views.delete(id); this.names.get(id)?.destroy(); this.names.delete(id);
     }
     this.drawTargetRing();
@@ -205,6 +206,11 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.syncStatus(e, v, x, y - v.height * sqy - 18);
+    if (v.bubble?.visible) {
+      const left = (v.bubbleUntil ?? 0) - this.time.now;
+      if (left <= 0) v.bubble.setVisible(false);
+      else v.bubble.setPosition(x, y - v.height * sqy - (this.net && e.kind === 'player' ? 34 : 20)).setAlpha(Math.min(1, left / 400));
+    }
     // HP bar: geometry is rebuilt only when the filled width changes; moving is just setPosition
     const showBar = !e.dead && (e.kind === 'player' || e.hp < e.maxHp || this.player.target === e.id);
     v.bar.setVisible(showBar);
@@ -422,10 +428,11 @@ export class GameScene extends Phaser.Scene {
       this.hud.chatLine(ev.name, ev.text, ev.id === this.player.id);
       const v = this.views.get(ev.id);
       if (v) {
-        const b = this.add.text(v.body.x, v.body.y - v.height - 30, ev.text.length > 40 ? ev.text.slice(0, 40) + '…' : ev.text,
-          { fontFamily: 'system-ui, sans-serif', fontSize: '12px', color: '#1b1f2a', backgroundColor: '#ffffffee', padding: { x: 6, y: 3 } })
+        // one bubble per character, re-used and positioned every frame in syncView
+        const txt = ev.text.length > 40 ? ev.text.slice(0, 40) + '…' : ev.text;
+        if (!v.bubble) v.bubble = this.add.text(0, 0, '', { fontFamily: 'system-ui, sans-serif', fontSize: '12px', color: '#1b1f2a', backgroundColor: '#ffffffee', padding: { x: 6, y: 3 } })
           .setOrigin(0.5, 1).setDepth(9700).setResolution(2);
-        this.tweens.add({ targets: b, alpha: 0, delay: 3500, duration: 400, onComplete: () => b.destroy() });
+        v.bubble.setText(txt).setAlpha(1).setVisible(true); v.bubbleUntil = this.time.now + 4000;
       }
     } else if (ev.t === 'talk' && ev.id === this.player.id) {
       this.hud.openNpc(ev.npc);

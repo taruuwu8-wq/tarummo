@@ -42,6 +42,7 @@ export class Hud {
         <button type="button" class="sb" id="tf-btn" title="แปลงร่าง (T)"><span class="ic">✨</span><span class="key">T</span><i class="cd"></i></button>
         <button type="button" class="sb" id="mountbtn" title="ขี่พาหนะ (R)"><span class="ic">🐎</span><span class="key">R</span></button>
         <button type="button" class="sb" id="autocfgbtn" title="ตั้งค่า Auto"><span class="ic">⚙️</span></button>
+        <button type="button" class="sb mobile-only" id="chatbtn" title="แชท"><span class="ic">💬</span></button>
         <button type="button" class="sb wide" id="auto">AUTO<br>OFF</button>
       </div>
       <div id="bag" hidden>
@@ -71,6 +72,8 @@ export class Hud {
     this.$('autocfgbtn').addEventListener('click', () => this.autoPanel.toggle());
     this.el.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(b => b.addEventListener('click', () => { this.tab = b.dataset.tab as Tab; this.sel = null; this.invSig = ''; }));
     const chatIn = this.$('chatin') as HTMLInputElement;
+    this.$('chatbtn').addEventListener('click', () => { const c = this.$('chat'); c.classList.toggle('open'); if (c.classList.contains('open')) chatIn.focus(); });
+    chatIn.addEventListener('blur', () => this.$('chat').classList.remove('open'));
     chatIn.addEventListener('keydown', e => {
       e.stopPropagation();
       if (e.key === 'Enter') { const t = chatIn.value.trim(); if (t) send({ kind: 'chat', id: this.p.id, text: t }); chatIn.value = ''; chatIn.blur(); }
