@@ -39,11 +39,12 @@
     .toast { padding: 4px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; font-size: 12px; animation: tin .2s ease-out; }
     .toast.uncommon { color: #6ff08f; } .toast.rare { color: #6fb6ff; } .toast.epic { color: #d08bff; } .toast.warn { color: #ffb36b; } .toast.muted { color: var(--muted); }
     @keyframes tin { from { opacity: 0; transform: translateY(6px); } }
-    #bag { pointer-events: auto; position: absolute; right: calc(10px + env(safe-area-inset-right, 0px)); top: calc(80px + env(safe-area-inset-top, 0px)); width: min(340px, calc(100vw - 20px)); max-height: calc(100% - 190px); overflow-y: auto; display: grid; gap: 10px; padding: 12px; background: rgba(20,24,36,.95); border: 1px solid var(--line); border-radius: 12px; }
+    #bag { pointer-events: auto; position: absolute; right: calc(10px + env(safe-area-inset-right, 0px)); top: calc(80px + env(safe-area-inset-top, 0px)); width: min(340px, calc(100vw - 20px)); max-height: calc(100% - 190px); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; background: rgba(20,24,36,.95); border: 1px solid var(--line); border-radius: 12px; }
+    #bag > * { flex-shrink: 0; }
     #bag button { font: inherit; color: var(--fg); cursor: pointer; }
     .bag-head { display: flex; justify-content: space-between; align-items: center; }
     .bag-head button { background: none; border: 0; font-size: 16px; }
-    .equip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .equip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
     .slot { display: grid; justify-items: center; gap: 2px; padding: 6px 2px; background: #0f1320; border: 1px solid var(--line); border-radius: 8px; }
     .slot .ic { font-size: 22px; height: 26px; } .slot small { font-size: 10px; color: var(--muted); }
     .stats { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -53,6 +54,10 @@
     .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; min-height: 48px; }
     .cell { position: relative; aspect-ratio: 1; max-width: 100%; padding: 0; background: #0f1320; border: 1px solid var(--line); border-radius: 6px; font-size: 20px; }
     .cell b { position: absolute; right: 2px; bottom: 0; font-size: 10px; }
+    .cell em, .slot em { position: absolute; left: 2px; top: 0; font: 700 9px system-ui, sans-serif; font-style: normal; color: var(--gold); }
+    .slot { position: relative; } .slot.sel { outline: 2px solid var(--gold); }
+    #tf-btn.on { border-color: var(--gold); box-shadow: 0 0 10px var(--gold) inset; }
+    #skills { display: contents; }
     .cell.sel { outline: 2px solid var(--gold); }
     .count { grid-column: 1 / -1; text-align: right; font-size: 10px; color: var(--muted); }
     .common { border-color: #4a526e; } .uncommon { border-color: #3fae5e; } .rare { border-color: #3f7fd6; } .epic { border-color: #9a5fd6; }

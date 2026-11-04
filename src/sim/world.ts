@@ -2,7 +2,7 @@
 // Runs unchanged on a Node server later.
 import { findPath, Tile } from './path';
 import { rollAttack, xpToNext, Balance, CombatStats, Skill, BASIC, Element } from '../core/combat';
-import { playerStats, monsterStats, ClassDef, MonsterDef, ItemDef, Slot } from '../core/stats';
+import { playerStats, monsterStats, ClassDef, MonsterDef, ItemDef, Slot, Worn, Bonus } from '../core/stats';
 
 export const TICK_MS = 100;
 
@@ -18,11 +18,21 @@ export interface Defs {
   balance: Balance & { respawnMs: { monster: number; player: number } };
   classes: Record<string, ClassDef>; monsters: Record<string, MonsterDef>;
   items: Record<string, ItemDef>; skills: Record<string, SkillDef[]>;
+  cards: Record<string, CardDef>; upgrade: UpgradeCfg;
 }
-export interface InvSlot { item: string; qty: number }
+export interface CardDef {
+  name: string; class: string; role: string; sprite: string; height: number; icon: string; rarity: ItemDef['rarity'];
+  aura: string; element?: Element; bonus: Bonus; skills: SkillDef[];
+}
+export interface UpgradeCfg {
+  slots: Slot[]; successRate: number[]; gold: number[]; material: string[]; materialQty: number[];
+  cardXpPerLevel: number; cardMaxLevel: number; giftCardAtLevel: number;
+}
+/** up = upgrade level (gear), lv/xp = card level */
+export interface InvSlot { item: string; qty: number; up?: number; lv?: number; xp?: number }
 export const INV_SIZE = 30;
-export const SLOTS: Slot[] = ['weapon', 'armor', 'hat', 'charm'];
-export interface SaveData { cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, string>>; autoSell: boolean }
+export const SLOTS: Slot[] = ['weapon', 'armor', 'hat', 'charm', 'card'];
+export interface SaveData { cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean }
 
 export interface Entity {
   id: number; kind: 'player' | 'monster'; type: string; name: string;
@@ -36,7 +46,7 @@ export interface Entity {
   home?: Tile; idleTicks: number; xpReward: number; boss?: boolean;
   // player
   level: number; xp: number; auto: boolean;
-  gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, string>>; autoSell: boolean;
+  gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot>>; autoSell: boolean; transformed: boolean;
   cooldowns: Record<string, number>; pendingSkill: string | null;
 }
 
@@ -49,7 +59,9 @@ export type Intent =
   | { kind: 'unequip'; id: number; slot: Slot }
   | { kind: 'use'; id: number; index: number }
   | { kind: 'sell'; id: number; index: number }
-  | { kind: 'autoSell'; id: number; on: boolean };
+  | { kind: 'autoSell'; id: number; on: boolean }
+  | { kind: 'transform'; id: number }
+  | { kind: 'upgrade'; id: number; ref: number | Slot };
 
 export type GameEvent =
   | { t: 'attack'; from: number; to: number; ranged: boolean }
@@ -62,7 +74,10 @@ export type GameEvent =
   | { t: 'heal'; to: number; amount: number; mp?: boolean }
   | { t: 'loot'; id: number; item: string; qty: number; sold?: boolean }
   | { t: 'gold'; id: number; amount: number }
-  | { t: 'msg'; id: number; text: string };
+  | { t: 'msg'; id: number; text: string }
+  | { t: 'transform'; id: number; on: boolean }
+  | { t: 'upgrade'; id: number; item: string; ok: boolean; up: number }
+  | { t: 'cardLevel'; id: number; card: string; lv: number };
 
 export class World {
   entities = new Map<number, Entity>();
@@ -76,6 +91,10 @@ export class World {
     let s = seed >>> 0;
     this.rng = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
     for (const [x, y] of [...map.rocks, ...map.water]) this.blocked.add(y * 10000 + x);
+    // cards live in the item table too, so the bag/equip code handles them uniformly
+    for (const [id, c] of Object.entries(defs.cards)) if (!id.startsWith('_'))
+      defs.items[id] = { name: c.name, slot: 'card', rarity: c.rarity, icon: c.icon, class: c.class, price: 100, element: c.element, bonus: c.bonus };
+    delete (defs.cards as Record<string, unknown>)['_note'];
     for (const m of map.monsters) for (let i = 0; i < m.count; i++) this.spawnMonster(m.type, this.randomFreeTile());
   }
 
@@ -90,7 +109,7 @@ export class World {
       hp: 1, maxHp: 1, mp: 0, maxMp: 0, stats: undefined as unknown as CombatStats, speed: 1, range: 1, attackMs: 1000,
       target: null, nextAttack: 0, repathAt: 0, lastHurt: -1e9, dead: false, respawnAt: 0,
       idleTicks: 0, xpReward: 0, level: 1, xp: 0, auto: false,
-      gold: 0, inv: [], equip: {}, autoSell: false, cooldowns: {}, pendingSkill: null,
+      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, cooldowns: {}, pendingSkill: null,
     };
   }
 
@@ -98,8 +117,11 @@ export class World {
     const c = this.defs.classes[cls];
     const e = this.base('player', cls, this.map.spawn);
     Object.assign(e, { name: c.name, speed: c.speed, range: c.range, attackMs: c.attackMs });
-    if (save) Object.assign(e, { xp: save.xp, gold: save.gold, inv: save.inv.filter(s => this.defs.items[s.item]), equip: save.equip, autoSell: save.autoSell });
-    else { e.equip = { weapon: c.starterWeapon }; e.inv = [{ item: 'hp_potion', qty: 3 }]; }
+    if (save) {
+      const equip: Partial<Record<Slot, InvSlot>> = {};
+      for (const [k, v] of Object.entries(save.equip)) if (v) equip[k as Slot] = typeof v === 'string' ? { item: v, qty: 1, up: 0 } : v;  // v1 saves stored ids
+      Object.assign(e, { xp: save.xp, gold: save.gold, inv: save.inv.filter(s => this.defs.items[s.item]), equip, autoSell: save.autoSell });
+    } else { e.equip = { weapon: { item: c.starterWeapon, qty: 1, up: 0 } }; e.inv = [{ item: 'hp_potion', qty: 3 }]; }
     this.applyLevel(e, save?.level ?? 1);
     this.entities.set(e.id, e);
     return e;
@@ -123,7 +145,16 @@ export class World {
 
   /** Recompute stats from level + gear, keeping current HP/MP (clamped). */
   private recalc(e: Entity) {
-    const gear = SLOTS.map(s => e.equip[s]).filter((id): id is string => !!id).map(id => this.defs.items[id]);
+    const gear: Worn[] = [];
+    for (const s of SLOTS) {
+      const st = e.equip[s]; if (!st) continue;
+      if (s === 'card') {
+        if (!e.transformed) continue;
+        const k = 1 + 0.1 * ((st.lv ?? 1) - 1), b: Bonus = {};
+        for (const [key, v] of Object.entries(this.defs.items[st.item].bonus ?? {})) b[key as keyof Bonus] = v * k;
+        gear.push({ def: { ...this.defs.items[st.item], bonus: b }, up: 0 });
+      } else gear.push({ def: this.defs.items[st.item], up: st.up ?? 0 });
+    }
     const p = playerStats(this.defs.classes[e.type], e.level, gear);
     Object.assign(e, { stats: p.stats, maxHp: p.maxHp, maxMp: p.maxMp });
     e.hp = Math.min(e.hp, e.maxHp); e.mp = Math.min(e.mp, e.maxMp);
@@ -133,12 +164,58 @@ export class World {
     return { cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell };
   }
 
-  skillsOf(e: Entity) { return this.defs.skills[e.type] ?? []; }
+  skillsOf(e: Entity): SkillDef[] {
+    const card = e.transformed ? e.equip.card : undefined;
+    if (card) return this.defs.cards[card.item].skills.filter((_, i) => i < 2 || (card.lv ?? 1) >= 3);
+    return this.defs.skills[e.type] ?? [];
+  }
+
+  cardOf(e: Entity) { const c = e.transformed ? e.equip.card : undefined; return c ? this.defs.cards[c.item] : undefined; }
+
+  upgradeCost(st: InvSlot) {
+    const u = this.defs.upgrade, up = st.up ?? 0;
+    if (up >= 10) return null;
+    return { gold: u.gold[up], mat: u.material[up], qty: u.materialQty[up], rate: u.successRate[up] };
+  }
+
+  private upgrade(p: Entity, ref: number | Slot) {
+    const st = typeof ref === 'number' ? p.inv[ref] : p.equip[ref];
+    if (!st) return;
+    const def = this.defs.items[st.item];
+    if (!this.defs.upgrade.slots.includes(def.slot as Slot)) return;
+    const c = this.upgradeCost(st);
+    if (!c) { this.events.push({ t: 'msg', id: p.id, text: 'ตีบวกสูงสุดแล้ว' }); return; }
+    const mat = p.inv.find(s => s.item === c.mat);
+    if (p.gold < c.gold || !mat || mat.qty < c.qty) { this.events.push({ t: 'msg', id: p.id, text: 'ทองหรือวัตถุดิบไม่พอ' }); return; }
+    p.gold -= c.gold; mat.qty -= c.qty;
+    if (mat.qty <= 0) p.inv.splice(p.inv.indexOf(mat), 1);
+    const ok = this.rng() < c.rate;
+    if (ok) st.up = (st.up ?? 0) + 1;
+    this.events.push({ t: 'upgrade', id: p.id, item: st.item, ok, up: st.up ?? 0 });
+    this.recalc(p);
+  }
+
+  private transform(p: Entity) {
+    if (!p.equip.card) { this.events.push({ t: 'msg', id: p.id, text: 'ยังไม่ได้ใส่ Spirit Card' }); return; }
+    if ((p.cooldowns['transform'] ?? 0) > this.now) { this.events.push({ t: 'msg', id: p.id, text: `รออีก ${Math.ceil(((p.cooldowns['transform'] ?? 0) - this.now) / 1000)} วิ` }); return; }
+    p.transformed = !p.transformed;
+    p.cooldowns['transform'] = this.now + (p.transformed ? 3000 : 10000);
+    p.pendingSkill = null;
+    const hpPct = p.hp / p.maxHp, mpPct = p.mp / p.maxMp;
+    this.recalc(p);
+    p.hp = Math.round(p.maxHp * hpPct); p.mp = Math.round(p.maxMp * mpPct);
+    this.events.push({ t: 'transform', id: p.id, on: p.transformed });
+  }
+
+  private randomCardFor(cls: string) {
+    const ids = Object.entries(this.defs.cards).filter(([, c]) => c.class === cls).map(([id]) => id);
+    return ids[Math.floor(this.rng() * ids.length)];
+  }
 
   /** Single entry point for items (catch-up / shared loot can hook in later). Returns false if bag full. */
   grantItem(p: Entity, item: string, qty = 1): boolean {
     const def = this.defs.items[item];
-    if (p.autoSell && def.rarity === 'common' && SLOTS.includes(def.slot as Slot)) {
+    if (p.autoSell && def.rarity === 'common' && SLOTS.includes(def.slot as Slot) && def.slot !== 'card') {
       p.gold += def.price * qty;
       this.events.push({ t: 'loot', id: p.id, item, qty, sold: true });
       return true;
@@ -146,7 +223,7 @@ export class World {
     const stackable = def.slot === 'use' || def.slot === 'mat';
     const st = stackable ? p.inv.find(s => s.item === item) : undefined;
     if (st) st.qty += qty;
-    else if (p.inv.length < INV_SIZE) p.inv.push({ item, qty });
+    else if (p.inv.length < INV_SIZE) p.inv.push(def.slot === 'card' ? { item, qty, lv: 1, xp: 0 } : stackable ? { item, qty } : { item, qty, up: 0 });
     else { this.events.push({ t: 'msg', id: p.id, text: 'กระเป๋าเต็ม' }); return false; }
     this.events.push({ t: 'loot', id: p.id, item, qty });
     return true;
@@ -159,16 +236,18 @@ export class World {
     if (def.class && def.class !== p.type) { this.events.push({ t: 'msg', id: p.id, text: `ใช้ได้เฉพาะ ${this.defs.classes[def.class].name}` }); return; }
     if ((def.level ?? 1) > p.level) { this.events.push({ t: 'msg', id: p.id, text: `ต้องการ Lv ${def.level}` }); return; }
     const slot = def.slot as Slot, old = p.equip[slot];
+    if (slot === 'card' && p.transformed) { this.events.push({ t: 'msg', id: p.id, text: 'คืนร่างก่อนเปลี่ยนการ์ด' }); return; }
     p.inv.splice(index, 1);
-    if (old) p.inv.splice(index, 0, { item: old, qty: 1 });
-    p.equip[slot] = st.item;
+    if (old) p.inv.splice(index, 0, old);
+    p.equip[slot] = st;
     this.recalc(p);
   }
 
   private unequip(p: Entity, slot: Slot) {
-    const id = p.equip[slot]; if (!id) return;
+    const st = p.equip[slot]; if (!st) return;
+    if (slot === 'card' && p.transformed) { this.events.push({ t: 'msg', id: p.id, text: 'คืนร่างก่อนถอดการ์ด' }); return; }
     if (p.inv.length >= INV_SIZE) { this.events.push({ t: 'msg', id: p.id, text: 'กระเป๋าเต็ม' }); return; }
-    delete p.equip[slot]; p.inv.push({ item: id, qty: 1 });
+    delete p.equip[slot]; p.inv.push(st);
     this.recalc(p);
   }
 
@@ -207,6 +286,8 @@ export class World {
     else if (intent.kind === 'use') this.use(e, intent.index);
     else if (intent.kind === 'sell') this.sell(e, intent.index);
     else if (intent.kind === 'autoSell') e.autoSell = intent.on;
+    else if (intent.kind === 'transform') this.transform(e);
+    else if (intent.kind === 'upgrade') this.upgrade(e, intent.ref);
   }
 
   private pathTo(e: Entity, to: Tile) {
@@ -321,6 +402,7 @@ export class World {
       const g = m.gold[0] + Math.floor(this.rng() * (m.gold[1] - m.gold[0] + 1));
       from.gold += g; this.events.push({ t: 'gold', id: from.id, amount: g });
       for (const [item, chance, qty] of m.drops) if (this.rng() < chance) this.grantItem(from, item, qty ?? 1);
+      if (m.cardChance && this.rng() < m.cardChance) this.grantItem(from, this.randomCardFor(from.type));
     }
   }
 
@@ -332,6 +414,20 @@ export class World {
       p.xp -= this.xpNeeded(p);
       this.applyLevel(p, p.level + 1);
       this.events.push({ t: 'level', id: p.id, level: p.level });
+      if (p.level === this.defs.upgrade.giftCardAtLevel) {
+        this.events.push({ t: 'msg', id: p.id, text: `ครบ Lv ${p.level}! ได้รับ Spirit Card` });
+        this.grantItem(p, this.randomCardFor(p.type));
+      }
+    }
+    // card levels while transformed
+    const card = p.transformed ? p.equip.card : undefined, u = this.defs.upgrade;
+    if (card && (card.lv ?? 1) < u.cardMaxLevel) {
+      card.xp = (card.xp ?? 0) + amount;
+      while ((card.lv ?? 1) < u.cardMaxLevel && card.xp >= u.cardXpPerLevel * (card.lv ?? 1)) {
+        card.xp -= u.cardXpPerLevel * (card.lv ?? 1); card.lv = (card.lv ?? 1) + 1;
+        this.events.push({ t: 'cardLevel', id: p.id, card: card.item, lv: card.lv });
+        this.recalc(p);
+      }
     }
   }
 

@@ -121,7 +121,8 @@
         "ember_staff",
         0.02
       ]
-    ]
+    ],
+    "cardChance": 0.005
   },
   "golem": {
     "name": "Meadow Golem",
@@ -181,6 +182,7 @@
         "golem_staff",
         0.15
       ]
-    ]
+    ],
+    "cardChance": 0.25
   }
 }

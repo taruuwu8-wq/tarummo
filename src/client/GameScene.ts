@@ -6,12 +6,14 @@ import classes from '../../data/classes.json';
 import monsters from '../../data/monsters.json';
 import items from '../../data/items.json';
 import skills from '../../data/skills.json';
+import cards from '../../data/cards.json';
+import upgrade from '../../data/upgrade.json';
 import type { SaveData } from '../sim/world';
 import { writeSave } from './save';
 import { Hud } from './hud';
 
 const TW = 64, TH = 32;
-const defs = { balance, classes, monsters, items, skills } as unknown as Defs;
+const defs = { balance, classes, monsters, items, skills, cards, upgrade } as unknown as Defs;
 
 const toScreen = (x: number, y: number) => ({ sx: (x - y) * (TW / 2), sy: (x + y) * (TH / 2) });
 const toTile = (sx: number, sy: number) => ({
@@ -21,6 +23,7 @@ const toTile = (sx: number, sy: number) => ({
 
 interface View {
   body: Phaser.GameObjects.Image; shadow: Phaser.GameObjects.Ellipse; bar: Phaser.GameObjects.Graphics;
+  aura?: Phaser.GameObjects.Ellipse;
   scale: number; phase: number; lunge: number; lungeDir: { x: number; y: number }; height: number;
 }
 
@@ -37,7 +40,7 @@ export class GameScene extends Phaser.Scene {
   constructor() { super('game'); }
 
   preload() {
-    for (const d of [...Object.values(defs.classes), ...Object.values(defs.monsters)]) this.load.image(d.sprite, `sprites/${d.sprite}.png`);
+    for (const d of [...Object.values(defs.classes), ...Object.values(defs.monsters), ...Object.values(defs.cards)]) if (d.sprite) this.load.image(d.sprite, `sprites/${d.sprite}.png`);
   }
 
   create(data: { cls: string; save?: SaveData }) {
@@ -112,6 +115,7 @@ export class GameScene extends Phaser.Scene {
     v.body.setPosition(x, y).setScale(v.scale * sqx * e.facing, v.scale * sqy);
     v.shadow.setPosition(sx, sy + 1).setScale(1 + bob / 30);
     v.body.setDepth(10 + sy); v.shadow.setDepth(2);
+    if (v.aura) { v.aura.setPosition(sx, sy + 1).setVisible(!e.dead).setScale(1 + Math.sin(now * 4) * 0.08); }
     v.body.setVisible(!e.dead || v.body.alpha > 0.01); v.shadow.setVisible(!e.dead);
 
     v.bar.clear();
@@ -147,6 +151,23 @@ export class GameScene extends Phaser.Scene {
     } else if (ev.t === 'xp' && ev.id === this.player.id) {
       const { sx, sy } = toScreen(this.player.x, this.player.y);
       this.floatText(sx, sy - 80, `+${ev.amount} XP`, '#9be7ff', 13);
+    } else if (ev.t === 'transform') {
+      const e = this.world.entities.get(ev.id)!, v = this.views.get(e.id)!;
+      const card = this.world.cardOf(e), base = defs.classes[e.type];
+      const sprite = card ? card.sprite : base.sprite, height = card ? card.height : base.height;
+      v.body.setTexture(sprite); v.scale = height / v.body.height; v.height = height;
+      v.aura?.destroy(); v.aura = undefined;
+      if (card) v.aura = this.add.ellipse(0, 0, 56, 26, parseInt(card.aura, 16), 0.35).setDepth(2).setStrokeStyle(2, parseInt(card.aura, 16), 0.9);
+      const { sx, sy } = toScreen(e.x, e.y);
+      const g = this.add.graphics().setDepth(9000).setPosition(sx, sy - height / 2);
+      g.fillStyle(card ? parseInt(card.aura, 16) : 0xffffff, 0.8).fillCircle(0, 0, 30);
+      this.tweens.add({ targets: g, scale: 2.5, alpha: 0, duration: 500, onComplete: () => g.destroy() });
+      if (e.id === this.player.id) this.hud.toast(card ? `แปลงร่างเป็น ${card.name}` : 'คืนร่าง', card ? 'rare' : 'muted');
+    } else if (ev.t === 'upgrade' && ev.id === this.player.id) {
+      const d = defs.items[ev.item];
+      this.hud.toast(ev.ok ? `ตีบวกสำเร็จ! ${d.name} +${ev.up}` : `ตีบวกล้มเหลว ${d.name} ยังเป็น +${ev.up}`, ev.ok ? 'uncommon' : 'warn');
+    } else if (ev.t === 'cardLevel' && ev.id === this.player.id) {
+      this.hud.toast(`${defs.items[ev.card].name} เลเวลอัป! Lv ${ev.lv}${ev.lv === 3 ? ' · ปลดล็อกสกิลที่ 3' : ''}`, 'rare');
     } else if (ev.t === 'skill') {
       this.skillFx(ev.skill, ev.x, ev.y, ev.aoe);
     } else if (ev.t === 'heal') {

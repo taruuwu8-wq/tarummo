@@ -1,0 +1,11 @@
+{
+  "_note": "Upgrade +0 -> +10 for weapon/armor. Fail = lose gold+materials only, never the item.",
+  "slots": ["weapon", "armor"],
+  "successRate": [1.0, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+  "gold": [20, 40, 80, 140, 220, 320, 450, 600, 800, 1000],
+  "material": ["slime_jelly", "slime_jelly", "slime_jelly", "slime_jelly", "pumpkin_seed", "pumpkin_seed", "pumpkin_seed", "golem_shard", "golem_shard", "golem_shard"],
+  "materialQty": [2, 3, 4, 5, 3, 4, 5, 2, 3, 4],
+  "cardXpPerLevel": 60,
+  "cardMaxLevel": 10,
+  "giftCardAtLevel": 3
+}

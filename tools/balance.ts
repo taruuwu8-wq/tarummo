@@ -11,7 +11,7 @@ let s = 12345; const rng = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 42949
 const N = 1000;
 console.log('class      lv monster   | sec-to-kill  dmg-taken  win%  | xp/min');
 for (const [cid, c] of Object.entries(C)) for (const lv of [1, 3, 6]) for (const [mid, m] of Object.entries(M)) {
-  const p = playerStats(c, lv, [I[c.starterWeapon]]), ms = monsterStats(m);
+  const p = playerStats(c, lv, [{ def: I[c.starterWeapon], up: 0 }]), ms = monsterStats(m);
   let tSum = 0, taken = 0, wins = 0;
   for (let i = 0; i < N; i++) {
     let php = p.maxHp, mhp = m.hp, t = 0, pNext = 0, mNext = m.range < c.range ? 1500 : 0; // ranged gets a head start
