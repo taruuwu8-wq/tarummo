@@ -2,6 +2,7 @@
 import type { Entity, World, Intent, SkillDef, InvSlot } from '../sim/world';
 import { SLOTS } from '../sim/world';
 import { Hotbar } from './hotbar';
+import { AutoPanel } from './autopanel';
 import type { ItemDef, Slot } from '../core/stats';
 
 type Tab = 'gear' | 'card' | 'use' | 'mat';
@@ -10,7 +11,8 @@ const RARITY_TH: Record<string, string> = { common: 'ธรรมดา', uncomm
 
 export class Hud {
   private el = document.getElementById('hud')!;
-  private auto = false;
+  autoPanel!: AutoPanel;
+  private autoShown: boolean | null = null;
   private tab: Tab = 'gear';
   private invSig = '';
   private sel: number | Slot | null = null;
@@ -33,6 +35,7 @@ export class Hud {
         <button type="button" class="sb" id="cardbtn" title="สลับการ์ด (C)"><span class="ic">🃏</span><span class="key">C</span></button>
         <button type="button" class="sb" id="tf-btn" title="แปลงร่าง (T)"><span class="ic">✨</span><span class="key">T</span><i class="cd"></i></button>
         <button type="button" class="sb" id="mountbtn" title="ขี่พาหนะ (R)"><span class="ic">🐎</span><span class="key">R</span></button>
+        <button type="button" class="sb" id="autocfgbtn" title="ตั้งค่า Auto"><span class="ic">⚙️</span></button>
         <button type="button" class="sb wide" id="auto">AUTO<br>OFF</button>
       </div>
       <div id="bag" hidden>
@@ -42,7 +45,7 @@ export class Hud {
         <div class="tabs">${(['gear', 'card', 'use', 'mat'] as Tab[]).map(t => `<button type="button" data-tab="${t}">${{ gear: 'อุปกรณ์', card: 'การ์ด', use: 'ของใช้', mat: 'วัตถุดิบ' }[t]}</button>`).join('')}</div>
         <div class="grid" id="grid"></div>
         <div class="detail" id="detail"></div>
-        <label class="autosell"><input type="checkbox" id="autosell"> ขายอุปกรณ์ระดับธรรมดาอัตโนมัติ</label>
+        <small class="muted">ตั้งค่าขาย/ทิ้งของอัตโนมัติได้ที่ ⚙ ข้างปุ่ม AUTO</small>
       </div>
       <div id="npc" hidden></div>
       <div id="dg" hidden></div>
@@ -58,8 +61,8 @@ export class Hud {
     this.$('bagbtn').addEventListener('click', () => this.toggleBag());
     this.$('bagx').addEventListener('click', () => this.toggleBag(false));
     this.$('auto').addEventListener('click', () => this.toggleAuto());
-    (this.$('autosell') as HTMLInputElement).checked = p.autoSell;
-    this.$('autosell').addEventListener('change', e => send({ kind: 'autoSell', id: p.id, on: (e.target as HTMLInputElement).checked }));
+    this.autoPanel = new AutoPanel(this.el, world, p, items, send);
+    this.$('autocfgbtn').addEventListener('click', () => this.autoPanel.toggle());
     this.el.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(b => b.addEventListener('click', () => { this.tab = b.dataset.tab as Tab; this.sel = null; this.invSig = ''; }));
     const chatIn = this.$('chatin') as HTMLInputElement;
     chatIn.addEventListener('keydown', e => {
@@ -77,7 +80,7 @@ export class Hud {
       else if (e.key === 't' || e.key === 'T') this.send({ kind: 'transform', id: this.p.id });
       else if (e.key === 'r' || e.key === 'R') this.send({ kind: 'mount', id: this.p.id });
       else if (e.key === 'i' || e.key === 'I') this.toggleBag();
-      else if (e.key === 'Escape') { this.toggleBag(false); this.closeNpc(); this.hot.toggle('skillwin', false); this.hot.toggle('cardpop', false); }
+      else if (e.key === 'Escape') { this.autoPanel.toggle(false); this.toggleBag(false); this.closeNpc(); this.hot.toggle('skillwin', false); this.hot.toggle('cardpop', false); }
     };
     window.addEventListener('keydown', this.onKey);
     this.$('npc').addEventListener('click', e => this.onNpcClick(e));
@@ -159,9 +162,7 @@ export class Hud {
   private cast(skill: string) { this.send({ kind: 'skill', id: this.p.id, skill }); }
   private toggleBag(force?: boolean) { const b = this.$('bag'); b.hidden = force === undefined ? !b.hidden : !force; this.invSig = ''; }
   private toggleAuto() {
-    this.auto = !this.auto;
-    const btn = this.$('auto'); btn.innerHTML = `AUTO<br>${this.auto ? 'ON' : 'OFF'}`; btn.classList.toggle('on', this.auto);
-    this.send({ kind: 'auto', id: this.p.id, on: this.auto });
+    this.send({ kind: 'auto', id: this.p.id, on: !this.p.auto });
   }
 
   toast(text: string, cls = '') {
@@ -190,11 +191,14 @@ export class Hud {
     // skill bar follows the active form
     const now = this.world.now;
     this.hot.update();
+    this.autoPanel.update();
+    if (this.autoShown !== p.auto) { this.autoShown = p.auto; const btn = this.$('auto'); btn.innerHTML = `AUTO<br>${p.auto ? 'ON' : 'OFF'}`; btn.classList.toggle('on', p.auto); }
     const tb = this.$('tf-btn'), card = p.equip.card;
     tb.classList.toggle('on', p.transformed); tb.classList.toggle('nomp', !card);
     (tb.querySelector('.ic') as HTMLElement).textContent = card ? this.items[card.item].icon : '✨';
     const tl = Math.max(0, (p.cooldowns['transform'] ?? 0) - now);
-    (tb.querySelector('.cd') as HTMLElement).style.height = `${Math.min(1, tl / 10000) * 100}%`;
+    (tb.querySelector(".cd") as HTMLElement).style.height = `${Math.min(1, tl / 10000) * 100}%`;
+    tb.classList.toggle("busy", this.world.inCombat(p));
     const mb = this.$('mountbtn'), mt = p.equip.mount;
     mb.classList.toggle('on', p.mounted); mb.classList.toggle('nomp', !mt);
     (mb.querySelector('.ic') as HTMLElement).textContent = mt ? this.items[mt.item].icon : '🐎';

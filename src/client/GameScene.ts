@@ -53,11 +53,12 @@ export class GameScene extends Phaser.Scene {
   private net?: Net;
   private act: (i: Intent) => void = () => {};
   private names = new Map<number, Phaser.GameObjects.Text>();
+  private autoRing?: Phaser.GameObjects.Graphics;
   private doorViews: { room: number; imgs: Phaser.GameObjects.Image[] }[] = [];
   private gated: { objs: Phaser.GameObjects.GameObject[] }[] = [];
 
   create(data: SceneData) {
-    this.views.clear(); this.names.clear(); this.doorViews = []; this.gated = []; this.acc = 0; this.leaving = false; this.net = data.net;
+    this.views.clear(); this.names.clear(); this.autoRing = undefined; this.doorViews = []; this.gated = []; this.acc = 0; this.leaving = false; this.net = data.net;
     (window as unknown as { __scene: GameScene }).__scene = this;  // handy for automated playtests
     const net = data.net;
     const map = MAPS[net ? net.map : data.map ?? data.save?.map ?? 'town'] ?? MAPS.town;
@@ -130,6 +131,7 @@ export class GameScene extends Phaser.Scene {
       this.views.delete(id); this.names.get(id)?.destroy(); this.names.delete(id);
     }
     this.drawTargetRing();
+    this.drawAutoRange();
     const dg = this.world.dungeon;
     for (const d of this.doorViews) for (const im of d.imgs) im.setVisible(!dg.openDoors.includes(d.room));
     for (const g of this.gated) for (const o of g.objs) (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(dg.cleared);
@@ -426,6 +428,17 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5).setDepth(10000).setResolution(2);
     t.x += (Math.random() - 0.5) * 12;
     this.tweens.add({ targets: t, y: y - 28, alpha: 0, duration: ms, ease: 'Cubic.easeOut', onComplete: () => t.destroy() });
+  }
+
+  /** Auto hunting radius around its anchor (or around you while the settings are open). */
+  private drawAutoRange() {
+    const g = this.autoRing ??= this.add.graphics().setDepth(1.5);
+    g.clear();
+    const p = this.player, a = p.auto ? p.autoAnchor : this.hud.autoPanel.isOpen ? [p.x, p.y] as [number, number] : null;
+    if (!a || this.world.map.dungeon || p.autoTrip) return;
+    const { sx, sy } = toScreen(a[0], a[1]), r = p.autoCfg.range * Math.SQRT2;
+    g.fillStyle(0x9be7ff, 0.06).fillEllipse(sx, sy, r * TW, r * TH);
+    g.lineStyle(2, 0x9be7ff, 0.55).strokeEllipse(sx, sy, r * TW, r * TH);
   }
 
   private drawTargetRing() {

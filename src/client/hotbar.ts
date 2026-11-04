@@ -120,7 +120,7 @@ export class Hotbar {
     document.getElementById('cardbody')!.innerHTML = `
       ${cur ? `<div class="crow cur"><span class="sic">${this.items[cur.item].icon}</span><span class="snm"><b>${this.items[cur.item].name}</b><small>ใส่อยู่ · +${cur.up ?? 0} · Job ${cur.lv ?? 1}${p.transformed ? ' · แปลงร่างอยู่' : ''}</small></span></div>` : ''}
       ${list.map(c => `<button type="button" class="crow" data-card="${c.i}"><span class="sic">${c.d.icon}</span><span class="snm"><b>${c.d.name}</b><small>+${c.st.up ?? 0} · Job ${c.st.lv ?? 1}</small></span></button>`).join('') || '<p class="muted">ไม่มีการ์ดอื่นในกระเป๋า</p>'}
-      <p class="muted small">${p.transformed ? 'สลับตอนแปลงร่าง = แปลงเป็นใบใหม่ทันที (คูลดาวน์ 10 วิ)' : 'กด T เพื่อแปลงร่าง'}</p>`;
+      <p class="muted small">${p.transformed ? 'สลับตอนแปลงร่าง = แปลงเป็นใบใหม่ทันที · คูลดาวน์ 10 วิ หรือเท่าสกิลที่เหลือนานสุด · ระหว่างต่อสู้สลับไม่ได้' : 'กด T เพื่อแปลงร่าง'}</p>`;
   }
 
   // ---- drag & drop ----

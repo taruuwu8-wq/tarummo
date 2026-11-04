@@ -125,9 +125,9 @@
       "element": "fire"
     },
     {
-      "id": "orb_bolt",
-      "name": "Orb Bolt",
-      "icon": "🔮",
+      "id": "arcane_shot",
+      "name": "Arcane Shot",
+      "icon": "🔫",
       "mp": 8,
       "cooldownMs": 3000,
       "unlock": 3,

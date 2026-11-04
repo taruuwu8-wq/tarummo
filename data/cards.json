@@ -591,9 +591,9 @@
         "unlock": 4
       },
       {
-        "id": "orb_frost",
-        "name": "Frost Orb",
-        "icon": "🔮",
+        "id": "frost_bullet",
+        "name": "Frost Bullet",
+        "icon": "🔫",
         "mp": 10,
         "cooldownMs": 3000,
         "unlock": 6,

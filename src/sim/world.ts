@@ -33,6 +33,28 @@ export interface PassiveDef { id: string; name: string; icon: string; unlock: nu
 /** hotbar entry: 's:<skillId>' or 'i:<itemId>' */
 export type BarRef = string | null;
 export const BAR_SIZE = 10;
+/** Renamed ids: old saves are migrated on load. */
+const RENAMED: Record<string, string> = { glass_orb: 'spell_gun', star_orb: 'arcane_pistol', orb_bolt: 'arcane_shot', orb_frost: 'frost_bullet' };
+const FORM_CD_MS = 10000, COMBAT_MS = 5000;
+
+export type LootAct = 'keep' | 'sell' | 'drop';
+export interface AutoCfg {
+  range: number;            // tiles around the anchor (where Auto was switched on)
+  skip: string[];           // monster types Auto ignores
+  bosses: boolean; levelAbove: number;
+  hp: number; mp: number;   // potion thresholds in %, 0 = off
+  loot: { gear: Record<'common' | 'uncommon' | 'rare' | 'epic', LootAct>; use: LootAct; mat: LootAct };
+  skipSkills: string[];
+  returnTown: boolean; buyHp: number; buyMp: number;
+}
+export const defaultAutoCfg = (): AutoCfg => ({
+  range: 8, skip: [], bosses: false, levelAbove: 1, hp: 35, mp: 15,
+  loot: { gear: { common: 'sell', uncommon: 'keep', rare: 'keep', epic: 'keep' }, use: 'keep', mat: 'keep' },
+  skipSkills: [], returnTown: true, buyHp: 20, buyMp: 10,
+});
+export interface AutoTrip { phase: 'toTown' | 'shop' | 'back'; home: string; spot: Tile }
+export interface AutoStats { since: number; xp: number; gold: number; kills: number; items: Record<string, number> }
+const GEAR_SLOTS = ['weapon', 'offhand', 'armor', 'hat', 'charm'];
 export interface Defs {
   balance: Balance & { respawnMs: { monster: number; player: number } };
   classes: Record<string, ClassDef>; monsters: Record<string, MonsterDef>;
@@ -58,7 +80,7 @@ export const STASH_SIZE = 60;
 /** Players within this many tiles of a kill share its XP, gold and (own) drop rolls. */
 export const SHARE_RANGE = 12;
 export const SLOTS: Slot[] = ['weapon', 'offhand', 'armor', 'hat', 'charm', 'card', 'mount'];
-export interface SaveData { bars?: Record<string, BarRef[]>; barKnown?: Record<string, string[]>; transformed?: boolean; mounted?: boolean; map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean }
+export interface SaveData { autoStats?: AutoStats & { elapsed?: number }; autoOn?: boolean; autoCfg?: AutoCfg; autoAnchor?: Tile | null; autoTrip?: AutoTrip | null; bars?: Record<string, BarRef[]>; barKnown?: Record<string, string[]>; transformed?: boolean; mounted?: boolean; map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean }
 
 export interface Entity {
   id: number; kind: 'player' | 'monster'; type: string; name: string;
@@ -74,6 +96,8 @@ export interface Entity {
   level: number; xp: number; auto: boolean;
   gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot>>; autoSell: boolean; transformed: boolean;
   cooldowns: Record<string, number>; pendingSkill: string | null; talkTo: string | null;
+  lastHit: number;
+  autoCfg: AutoCfg; autoAnchor: Tile | null; autoTrip: AutoTrip | null; autoStats: AutoStats;
   mounted: boolean; aggro: number; noRespawn: boolean; nextBlast: number; room?: number;
   bars: Record<string, BarRef[]>; barKnown: Record<string, string[]>;
   passive: { lifesteal: number; lowhp?: { threshold: number; reduce: number } };
@@ -100,7 +124,8 @@ export type Intent =
   | { kind: 'debug'; id: number; what: 'level' | 'level5' | 'gold' | 'mats' | 'card' | 'job' }
   | { kind: 'mount'; id: number }
   | { kind: 'setBar'; id: number; slot: number; ref: BarRef }
-  | { kind: 'switchCard'; id: number; index: number };
+  | { kind: 'switchCard'; id: number; index: number }
+  | { kind: 'autoCfg'; id: number; cfg: AutoCfg };
 
 export type GameEvent =
   | { t: 'attack'; from: number; to: number; ranged: boolean }
@@ -171,7 +196,7 @@ export class World {
     const d = this.defs.items[offer.item], stack = d.slot === 'use' || d.slot === 'mat';
     if (!stack && qty > 1) qty = 1;
     const saved = p.autoSell; p.autoSell = false;   // never auto-sell what you just bought
-    if (this.grantItem(p, offer.item, qty)) p.gold -= offer.price * qty;
+    if (this.grantItem(p, offer.item, qty, { filter: false })) p.gold -= offer.price * qty;
     p.autoSell = saved;
   }
 
@@ -209,7 +234,7 @@ export class World {
       hp: 1, maxHp: 1, mp: 0, maxMp: 0, stats: undefined as unknown as CombatStats, speed: 1, range: 1, attackMs: 1000,
       target: null, nextAttack: 0, repathAt: 0, lastHurt: -1e9, dead: false, respawnAt: 0,
       idleTicks: 0, xpReward: 0, level: 1, xp: 0, auto: false,
-      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, cooldowns: {}, pendingSkill: null, talkTo: null, mounted: false, aggro: 0, noRespawn: false, nextBlast: 0, bars: {}, barKnown: {}, passive: { lifesteal: 0 },
+      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, cooldowns: {}, pendingSkill: null, talkTo: null, lastHit: -1e9, autoCfg: defaultAutoCfg(), autoAnchor: null, autoTrip: null, autoStats: { since: 0, xp: 0, gold: 0, kills: 0, items: {} }, mounted: false, aggro: 0, noRespawn: false, nextBlast: 0, bars: {}, barKnown: {}, passive: { lifesteal: 0 },
     };
   }
 
@@ -218,9 +243,14 @@ export class World {
     const e = this.base('player', cls, at ?? this.map.spawn);
     Object.assign(e, { name: c.name, speed: c.speed, range: c.range, attackMs: c.attackMs });
     if (save) {
+      save = JSON.parse(JSON.stringify(save).replace(/"(i:|s:)?(glass_orb|star_orb|orb_bolt|orb_frost)"/g, (_, pre, id) => `"${pre ?? ''}${RENAMED[id]}"`)) as SaveData;
       const equip: Partial<Record<Slot, InvSlot>> = {};
       for (const [k, v] of Object.entries(save.equip)) if (v) equip[k as Slot] = typeof v === 'string' ? { item: v, qty: 1, up: 0 } : v;  // v1 saves stored ids
       Object.assign(e, { xp: save.xp, gold: save.gold, inv: save.inv.filter(s => this.defs.items[s.item]), equip, autoSell: save.autoSell, bars: save.bars ?? {}, barKnown: save.barKnown ?? {} });
+      const cfg = { ...defaultAutoCfg(), ...(save.autoCfg ?? {}) };
+      if (!save.autoCfg && save.autoSell) cfg.loot.gear.common = 'sell';
+      Object.assign(e, { autoCfg: cfg, auto: !!save.autoOn, autoAnchor: save.autoAnchor ?? null, autoTrip: save.autoTrip ?? null });
+      if (e.auto) e.autoStats = save.autoStats ? { ...save.autoStats, since: this.now - (save.autoStats.elapsed ?? 0) } : { since: this.now, xp: 0, gold: 0, kills: 0, items: {} };
       if (!e.equip.offhand && !e.inv.some(s => s.item === c.starterOffhand)) e.equip.offhand = { item: c.starterOffhand, qty: 1, up: 0 };  // older saves
     } else { e.equip = { weapon: { item: c.starterWeapon, qty: 1, up: 0 }, offhand: { item: c.starterOffhand, qty: 1, up: 0 } }; e.inv = [{ item: 'hp_potion', qty: 3 }]; }
     this.applyLevel(e, save?.level ?? 1);
@@ -280,7 +310,7 @@ export class World {
   }
 
   save(e: Entity): SaveData {
-    return { bars: e.bars, barKnown: e.barKnown, transformed: e.transformed, mounted: e.mounted, map: this.map.id, cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell };
+    return { autoStats: { ...e.autoStats, elapsed: this.now - e.autoStats.since }, autoOn: e.auto, autoCfg: e.autoCfg, autoAnchor: e.autoAnchor, autoTrip: e.autoTrip, bars: e.bars, barKnown: e.barKnown, transformed: e.transformed, mounted: e.mounted, map: this.map.id, cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell };
   }
 
   /** 'base' or the active card id; each form keeps its own hotbar */
@@ -346,15 +376,32 @@ export class World {
   }
 
   /** Quick card swap. While transformed you stay transformed in the new card (shares the transform cooldown). */
+  inCombat(e: Entity) { return this.now - Math.max(e.lastHurt, e.lastHit) < COMBAT_MS; }
+
+  /** Cooldown after any form change: 10 s, or longer if a skill that was just used still has more left. */
+  private formCooldown(e: Entity) {
+    let left = FORM_CD_MS;
+    for (const k of this.skillsOf(e)) left = Math.max(left, (e.cooldowns[k.id] ?? 0) - this.now);
+    return left;
+  }
+
+  /** Returns an error text, or null if the form may change now. */
+  private formChangeBlocked(p: Entity) {
+    if (this.inCombat(p)) return 'อยู่ในการต่อสู้ เปลี่ยนร่างไม่ได้';
+    const cd = (p.cooldowns['transform'] ?? 0) - this.now;
+    return cd > 0 ? `รออีก ${Math.ceil(cd / 1000)} วิ` : null;
+  }
+
   private switchCard(p: Entity, index: number) {
     const st = p.inv[index]; if (!st || this.defs.items[st.item]?.slot !== 'card') return;
     if (this.defs.items[st.item].class !== p.type) { this.events.push({ t: 'msg', id: p.id, text: 'การ์ดนี้ไม่ใช่ของอาชีพเรา' }); return; }
-    if (p.transformed && (p.cooldowns['transform'] ?? 0) > this.now) { this.events.push({ t: 'msg', id: p.id, text: `รออีก ${Math.ceil(((p.cooldowns['transform'] ?? 0) - this.now) / 1000)} วิ` }); return; }
+    const block = p.transformed ? this.formChangeBlocked(p) : null;
+    if (block) { this.events.push({ t: 'msg', id: p.id, text: block }); return; }
     const old = p.equip.card;
     p.inv.splice(index, 1); if (old) p.inv.splice(index, 0, old);
     p.equip.card = st; p.pendingSkill = null;
     if (p.transformed) {
-      p.cooldowns['transform'] = this.now + 10000;
+      p.cooldowns['transform'] = this.now + this.formCooldown(p);
       const hpPct = p.hp / p.maxHp, mpPct = p.mp / p.maxMp;
       this.recalc(p); p.hp = Math.round(p.maxHp * hpPct); p.mp = Math.round(p.maxMp * mpPct);
       this.ensureBar(p);
@@ -364,9 +411,11 @@ export class World {
 
   private transform(p: Entity) {
     if (!p.equip.card) { this.events.push({ t: 'msg', id: p.id, text: 'ยังไม่ได้ใส่ Spirit Card' }); return; }
-    if ((p.cooldowns['transform'] ?? 0) > this.now) { this.events.push({ t: 'msg', id: p.id, text: `รออีก ${Math.ceil(((p.cooldowns['transform'] ?? 0) - this.now) / 1000)} วิ` }); return; }
+    const block = this.formChangeBlocked(p);
+    if (block) { this.events.push({ t: 'msg', id: p.id, text: block }); return; }
+    const cd = this.formCooldown(p);   // measured on the form we are leaving
     p.transformed = !p.transformed;
-    p.cooldowns['transform'] = this.now + (p.transformed ? 3000 : 10000);
+    p.cooldowns['transform'] = this.now + cd;
     p.pendingSkill = null;
     const hpPct = p.hp / p.maxHp, mpPct = p.mp / p.maxMp;
     this.recalc(p);
@@ -397,13 +446,14 @@ export class World {
   }
 
   /** Single entry point for items (catch-up / shared loot can hook in later). Returns false if bag full. */
-  grantItem(p: Entity, item: string, qty = 1): boolean {
+  grantItem(p: Entity, item: string, qty = 1, opts: { filter?: boolean } = {}): boolean {
     const def = this.defs.items[item];
-    if (p.autoSell && def.rarity === 'common' && SLOTS.includes(def.slot as Slot) && def.slot !== 'card') {
-      p.gold += def.price * qty;
-      this.events.push({ t: 'loot', id: p.id, item, qty, sold: true });
-      return true;
+    if (opts.filter !== false) {
+      const act = this.lootAct(p, def);
+      if (act === 'sell') { p.gold += def.price * qty; this.events.push({ t: 'loot', id: p.id, item, qty, sold: true }); return true; }
+      if (act === 'drop') return true;
     }
+    if (p.auto) p.autoStats.items[item] = (p.autoStats.items[item] ?? 0) + qty;
     const stackable = def.slot === 'use' || def.slot === 'mat';
     const st = stackable ? p.inv.find(s => s.item === item) : undefined;
     if (st) st.qty += qty;
@@ -411,6 +461,28 @@ export class World {
     else { this.events.push({ t: 'msg', id: p.id, text: 'กระเป๋าเต็ม' }); return false; }
     this.events.push({ t: 'loot', id: p.id, item, qty });
     return true;
+  }
+
+  /** What the loot filter does with an item (cards and mounts are always kept). */
+  lootAct(p: Entity, d: ItemDef): LootAct {
+    const l = p.autoCfg.loot;
+    if (GEAR_SLOTS.includes(d.slot)) return l.gear[d.rarity] ?? 'keep';
+    if (d.slot === 'use') return l.use;
+    if (d.slot === 'mat') return l.mat;
+    return 'keep';
+  }
+
+  private cleanCfg(c: AutoCfg): AutoCfg {
+    const d = defaultAutoCfg(), n = (v: unknown, lo: number, hi: number, def: number) => Number.isFinite(Number(v)) ? Math.max(lo, Math.min(hi, Math.round(Number(v)))) : def;
+    const act = (v: unknown): LootAct => (v === 'sell' || v === 'drop' ? v : 'keep');
+    const strs = (v: unknown) => Array.isArray(v) ? v.filter(x => typeof x === 'string').slice(0, 50) as string[] : [];
+    return {
+      range: n(c?.range, 3, 15, d.range), skip: strs(c?.skip), bosses: !!c?.bosses, levelAbove: n(c?.levelAbove, 0, 10, d.levelAbove),
+      hp: n(c?.hp, 0, 90, d.hp), mp: n(c?.mp, 0, 90, d.mp),
+      loot: { gear: { common: act(c?.loot?.gear?.common), uncommon: act(c?.loot?.gear?.uncommon), rare: act(c?.loot?.gear?.rare), epic: act(c?.loot?.gear?.epic) },
+        use: act(c?.loot?.use), mat: act(c?.loot?.mat) },
+      skipSkills: strs(c?.skipSkills), returnTown: c?.returnTown !== false, buyHp: n(c?.buyHp, 0, 99, d.buyHp), buyMp: n(c?.buyMp, 0, 99, d.buyMp),
+    };
   }
 
   private equip(p: Entity, index: number) {
@@ -475,7 +547,12 @@ export class World {
     }
     else if (intent.kind === 'attack') {
       e.mounted = false; const t = this.entities.get(intent.target); if (t && !t.dead) { e.target = t.id; e.repathAt = 0; } }
-    else if (intent.kind === 'auto') e.auto = intent.on;
+    else if (intent.kind === 'auto') {
+      e.auto = intent.on; e.autoTrip = null;
+      e.autoAnchor = intent.on ? [Math.round(e.x), Math.round(e.y)] : null;
+      if (intent.on) e.autoStats = { since: this.now, xp: 0, gold: 0, kills: 0, items: {} };
+    }
+    else if (intent.kind === 'autoCfg') e.autoCfg = this.cleanCfg(intent.cfg);
     else if (intent.kind === 'skill') {
       e.mounted = false;
       if (intent.target != null) { const t = this.entities.get(intent.target); if (t && !t.dead && t.kind === 'monster') e.target = t.id; }
@@ -613,6 +690,7 @@ export class World {
     if (Math.hypot(n.x - e.x, n.y - e.y) <= 1.6) {
       e.path = []; e.talkTo = null;
       e.facing = (n.x - n.y) > (e.x - e.y) ? 1 : -1;
+      if (e.autoTrip?.phase === 'shop') { this.autoShop(e); e.autoTrip.phase = 'back'; return; }
       this.events.push({ t: 'talk', id: e.id, npc: n.id });
     } else if (this.now >= e.repathAt && !e.path.length) {
       e.repathAt = this.now + 500;
@@ -657,6 +735,7 @@ export class World {
   }
 
   private strike(e: Entity, t: Entity, sk: Skill) {
+    e.lastHit = this.now;
     const r = rollAttack(this.defs.balance, e.stats, t.stats, this.rng, sk);
     const lh = t.passive?.lowhp;
     if (lh && r.hit && t.hp / t.maxHp < lh.threshold) r.dmg = Math.max(1, Math.round(r.dmg * (1 - lh.reduce)));
@@ -715,6 +794,7 @@ export class World {
         this.grantXp(p, t.xpReward);
         const g = m.gold[0] + Math.floor(this.rng() * (m.gold[1] - m.gold[0] + 1));
         p.gold += g; this.events.push({ t: 'gold', id: p.id, amount: g });
+        if (p.auto) { p.autoStats.gold += g; p.autoStats.kills++; }
         for (const [item, chance, qty] of m.drops) if (this.rng() < chance) this.grantItem(p, item, qty ?? 1);
         if (m.cardChance && this.rng() < m.cardChance) this.grantItem(p, this.randomCardFor(p.type));
       }
@@ -724,6 +804,7 @@ export class World {
   // Single entry point for XP so catch-up / rested bonuses can hook in later.
   grantXp(p: Entity, amount: number) {
     this.events.push({ t: 'xp', id: p.id, amount });
+    if (p.auto) p.autoStats.xp += amount;
     p.xp += amount;
     while (p.xp >= this.xpNeeded(p)) {
       p.xp -= this.xpNeeded(p);
@@ -755,28 +836,82 @@ export class World {
     this.events.push({ t: 'respawn', id: e.id });
   }
 
+  private potionIdx(e: Entity, kind: 'hp' | 'mp') { return e.inv.findIndex(s => this.defs.items[s.item].heal?.[kind]); }
+
   private playerAi(e: Entity) {
     if (!e.auto || e.dead) return;
-    if (e.mounted) e.mounted = false;   // Auto fights, so it gets off the mount
-    if (e.hp < e.maxHp * 0.35) { const i = e.inv.findIndex(s => this.defs.items[s.item].heal?.hp); if (i >= 0) this.use(e, i); }
-    if (e.mp < e.maxMp * 0.15) { const i = e.inv.findIndex(s => this.defs.items[s.item].heal?.mp); if (i >= 0) this.use(e, i); }
-    if (e.target == null && !e.path.length) {
-      // in a dungeon: only the current room (doors block the rest), bosses included
-      const m = this.map.dungeon
-        ? [...this.entities.values()].filter(o => o.kind === 'monster' && !o.dead && o.room === this.dungeon.room).sort((p, q) => this.dist(e, p) - this.dist(e, q))[0]
-        : this.nearestMonster(e, 14, e.level + 1);
-      if (m && (!m.boss || this.map.dungeon)) { e.target = m.id; e.repathAt = 0; }
+    if (e.mounted && !e.autoTrip) e.mounted = false;   // Auto fights, so it gets off the mount
+    const c = e.autoCfg;
+    if (c.hp && e.hp < e.maxHp * c.hp / 100) { const i = this.potionIdx(e, 'hp'); if (i >= 0) this.use(e, i); }
+    if (c.mp && e.mp < e.maxMp * c.mp / 100) { const i = this.potionIdx(e, 'mp'); if (i >= 0) this.use(e, i); }
+
+    // return-to-town trip (not inside dungeons)
+    if (!e.autoTrip && c.returnTown && !this.map.dungeon && this.map.id !== 'town'
+      && ((c.hp && this.potionIdx(e, 'hp') < 0) || e.inv.length >= INV_SIZE)) {
+      e.autoTrip = { phase: 'toTown', home: this.map.id, spot: e.autoAnchor ?? [Math.round(e.x), Math.round(e.y)] };
+      e.target = null; e.pendingSkill = null;
+      this.events.push({ t: 'msg', id: e.id, text: 'Auto: ยาหมด/กระเป๋าเต็ม กลับเมืองไปซื้อของ' });
     }
-    // skills in bar order; heal only when hurt; whirlwind only when the target is close
+    if (e.autoTrip) { this.autoTripStep(e, e.autoTrip); return; }
+
+    if (e.target == null && !e.path.length) {
+      let m: Entity | undefined;
+      if (this.map.dungeon) {
+        // dungeon: only the current room (doors block the rest), bosses included
+        m = [...this.entities.values()].filter(o => o.kind === 'monster' && !o.dead && o.room === this.dungeon.room && !c.skip.includes(o.type))
+          .sort((p, q) => this.dist(e, p) - this.dist(e, q))[0];
+      } else {
+        const [ax, ay] = e.autoAnchor ?? [e.x, e.y];
+        m = [...this.entities.values()].filter(o => o.kind === 'monster' && !o.dead && !c.skip.includes(o.type)
+          && (!o.boss || c.bosses) && o.level <= e.level + c.levelAbove && Math.hypot(o.x - ax, o.y - ay) <= c.range)
+          .sort((p, q) => this.dist(e, p) - this.dist(e, q))[0];
+        if (!m && Math.hypot(e.x - ax, e.y - ay) > 1.5) this.pathTo(e, [Math.round(ax), Math.round(ay)]);
+      }
+      if (m) { e.target = m.id; e.repathAt = 0; }
+    }
+    // skills in bar order (minus the ones switched off); heal only when hurt; self-AoE only when the target is close
     if (e.target != null && !e.pendingSkill) {
       const t = this.entities.get(e.target);
       for (const sk of this.barSkills(e)) {
-        if (!this.skillReady(e, sk)) continue;
+        if (c.skipSkills.includes(sk.id) || !this.skillReady(e, sk)) continue;
         if (sk.heal && e.hp > e.maxHp * 0.5) continue;
         if (sk.self && sk.aoe && (!t || this.dist(e, t) > sk.aoe)) continue;
         e.pendingSkill = sk.id; break;
       }
     }
+  }
+
+  private autoTripStep(e: Entity, trip: AutoTrip) {
+    const walkTo = (t: Tile) => { if (!e.path.length && this.now >= e.repathAt) { e.repathAt = this.now + 800; this.pathTo(e, t); } };
+    const portalTo = (to: string) => this.map.portals.find(p => p.to === to && !p.when) ?? this.map.portals.find(p => !p.when);
+    if (trip.phase === 'toTown') {
+      if (this.map.id === 'town') { trip.phase = 'shop'; e.talkTo = 'shop'; e.repathAt = 0; return; }
+      const pt = portalTo('town'); if (pt) walkTo([pt.x, pt.y]);
+    } else if (trip.phase === 'shop') {
+      if (!e.talkTo) e.talkTo = 'shop';          // walkToNpc does the walking; autoShop runs on arrival
+    } else {
+      if (this.map.id !== trip.home) { const pt = portalTo(trip.home); if (pt) walkTo([pt.x, pt.y]); return; }
+      if (Math.hypot(e.x - trip.spot[0], e.y - trip.spot[1]) <= 1.5) { e.autoTrip = null; e.autoAnchor = trip.spot; e.mounted = false; return; }
+      walkTo(trip.spot);
+    }
+    if (e.equip.mount && !e.mounted) e.mounted = true;   // ride while travelling
+  }
+
+  /** At the shop during an Auto trip: sell what the filter says to sell, then restock potions. */
+  private autoShop(e: Entity) {
+    for (let i = e.inv.length - 1; i >= 0; i--) {
+      const st = e.inv[i], d = this.defs.items[st.item];
+      if (this.lootAct(e, d) === 'sell') { e.gold += d.price * st.qty; e.inv.splice(i, 1); }
+    }
+    const n = this.map.npcs.find(x => this.defs.npcs[x.id].role === 'shop'); if (!n) return;
+    const sells = this.defs.npcs[n.id].sells ?? [];
+    for (const [kind, want] of [['hp', e.autoCfg.buyHp], ['mp', e.autoCfg.buyMp]] as const) {
+      const oi = sells.findIndex(o => this.defs.items[o.item].heal?.[kind]); if (oi < 0 || !want) continue;
+      const have = e.inv.filter(s => this.defs.items[s.item].heal?.[kind]).reduce((a, s) => a + s.qty, 0);
+      const qty = Math.min(want - have, Math.floor(e.gold / sells[oi].price));
+      if (qty > 0) { e.gold -= sells[oi].price * qty; this.grantItem(e, sells[oi].item, qty, { filter: false }); }
+    }
+    this.events.push({ t: 'msg', id: e.id, text: 'Auto: ขายของและซื้อยาแล้ว กำลังกลับจุดล่า' });
   }
 
   private monsterAi(e: Entity) {

@@ -344,32 +344,32 @@
       "critDmg": 0.9
     }
   },
-  "glass_orb": {
-    "name": "Glass Orb",
+  "spell_gun": {
+    "name": "Spell Gun",
     "slot": "offhand",
     "rarity": "common",
-    "icon": "🔮",
+    "icon": "🔫",
     "level": 1,
     "class": "mage",
     "price": 5,
     "weapon": {
       "min": 10,
       "max": 14,
-      "critDmg": 0.4
+      "critDmg": 0.5
     }
   },
-  "star_orb": {
-    "name": "Star Orb",
+  "arcane_pistol": {
+    "name": "Arcane Pistol",
     "slot": "offhand",
     "rarity": "uncommon",
-    "icon": "🔮",
+    "icon": "🔫",
     "level": 5,
     "class": "mage",
     "price": 60,
     "weapon": {
       "min": 16,
       "max": 22,
-      "critDmg": 0.5
+      "critDmg": 0.6
     },
     "bonus": {
       "elemRate": 0.03
