@@ -69,7 +69,7 @@ export interface Defs {
 }
 export interface RecipeDef { id: string; out: string; qty: number; inputs: [string, number][]; gold: number; cat: string; level: number }
 export interface QuestDef {
-  id: string; name: string; map?: string;
+  id: string; name: string; map?: string; group?: boolean;
   goal: { type: 'kill' | 'level' | 'clear' | 'visit'; monster?: string; count?: number; level?: number };
   reward: { gold?: number; xp?: number; items?: [string, number][]; shellSrc?: 'boss' | 'normal' };
 }
@@ -135,6 +135,8 @@ export interface Entity {
   cooldowns: Record<string, number>; pendingSkill: string | null; talkTo: string | null;
   lastHit: number;
   rested: number;
+  /** set when a town trip could not free the bag; Auto stops re-triggering trips until space frees up */
+  bagFullAck?: boolean;
   quest: QuestState; autoQuest: boolean;
   autoCfg: AutoCfg; autoAnchor: Tile | null; autoTrip: AutoTrip | null; autoStats: AutoStats;
   mounted: boolean; aggro: number; noRespawn: boolean; nextBlast: number; room?: number;
@@ -1252,6 +1254,7 @@ export class World {
 
   private playerAi(e: Entity) {
     if (!e.auto || e.dead) return;
+    if (e.bagFullAck && e.inv.length < INV_SIZE - 2) e.bagFullAck = false;
     if (e.mounted && !e.autoTrip) e.mounted = false;   // Auto fights, so it gets off the mount
     const c = e.autoCfg;
     if (c.hp && e.hp < e.maxHp * c.hp / 100) { const i = this.potionIdx(e, 'hp'); if (i >= 0) this.use(e, i); }
@@ -1259,7 +1262,7 @@ export class World {
 
     // return-to-town trip (not inside dungeons)
     if (!e.autoTrip && c.returnTown && !this.map.dungeon && this.map.id !== 'town'
-      && ((c.hp && this.potionIdx(e, 'hp') < 0) || e.inv.length >= INV_SIZE)) {
+      && ((c.hp && this.potionIdx(e, 'hp') < 0) || (e.inv.length >= INV_SIZE && !e.bagFullAck))) {
       e.autoTrip = { phase: 'toTown', home: this.map.id, spot: e.autoAnchor ?? [Math.round(e.x), Math.round(e.y)] };
       e.target = null; e.pendingSkill = null;
       this.events.push({ t: 'msg', id: e.id, text: 'Auto: ยาหมด/กระเป๋าเต็ม กลับเมืองไปซื้อของ' });
@@ -1267,7 +1270,8 @@ export class World {
     if (e.autoTrip) { this.autoTripStep(e, e.autoTrip); return; }
 
     // Auto quest: go to the quest's map first (route over portals), then hunt only the quest monster
-    const q = e.autoQuest ? this.questOf(e) : undefined;
+    // group quests (bosses) are not done by Auto alone: hunt normally instead
+    const q0 = e.autoQuest ? this.questOf(e) : undefined, q = q0?.group ? undefined : q0;
     if (q?.map && q.map !== this.map.id) {
       const hop = this.nextHop(e, q.map);
       if (!hop) { e.autoQuest = false; this.events.push({ t: 'msg', id: e.id, text: 'Auto เควสต์: ยังเข้าแมพเป้าหมายไม่ได้ (เลเวลไม่ถึง)' }); return; }
@@ -1337,6 +1341,7 @@ export class World {
       const qty = Math.min(want - have, Math.floor(e.gold / sells[oi].price));
       if (qty > 0) { e.gold -= sells[oi].price * qty; this.grantItem(e, sells[oi].item, qty, { filter: false }); }
     }
+    if (e.inv.length >= INV_SIZE) { e.bagFullAck = true; this.events.push({ t: 'msg', id: e.id, text: 'Auto: กระเป๋ายังเต็ม (ของที่ตั้งให้เก็บ) — ล่าต่อแต่จะเก็บของเพิ่มไม่ได้ ลองขายหลายชิ้นหรือฝากคลังกลาง' }); }
     this.events.push({ t: 'msg', id: e.id, text: 'Auto: ขายของและซื้อยาแล้ว กำลังกลับจุดล่า' });
   }
 

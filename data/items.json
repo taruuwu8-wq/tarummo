@@ -50,8 +50,8 @@
     "class": "archer",
     "price": 5,
     "weapon": {
-      "min": 10,
-      "max": 18,
+      "min": 11,
+      "max": 20,
       "critDmg": 0.8
     }
   },
@@ -64,8 +64,8 @@
     "class": "archer",
     "price": 40,
     "weapon": {
-      "min": 15,
-      "max": 26,
+      "min": 17,
+      "max": 29,
       "critDmg": 0.9
     }
   },
@@ -78,8 +78,8 @@
     "class": "archer",
     "price": 160,
     "weapon": {
-      "min": 22,
-      "max": 38,
+      "min": 25,
+      "max": 42,
       "critDmg": 1.0
     }
   },
@@ -480,8 +480,8 @@
     "class": "archer",
     "price": 220,
     "weapon": {
-      "min": 27,
-      "max": 46,
+      "min": 30,
+      "max": 51,
       "critDmg": 1.0
     },
     "bonus": {

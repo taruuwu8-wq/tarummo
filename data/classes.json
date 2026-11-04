@@ -3,14 +3,14 @@
     "name": "Swordsman",
     "sprite": "swordsman_m",
     "height": 64,
-    "speed": 3.2,
+    "speed": 3.5,
     "attackType": "melee",
     "range": 1.3,
-    "attackMs": 850,
+    "attackMs": 720,
     "base": {
       "hp": 220,
       "mp": 60,
-      "atk": 10,
+      "atk": 13,
       "armor": {
         "melee": 12,
         "ranged": 10,
@@ -21,9 +21,9 @@
       "critRate": 0.08
     },
     "growth": {
-      "hp": 28,
+      "hp": 30,
       "mp": 6,
-      "atk": 2.6,
+      "atk": 3.0,
       "armor": {
         "melee": 2.0,
         "ranged": 1.6,
@@ -57,9 +57,9 @@
       "critRate": 0.15
     },
     "growth": {
-      "hp": 20,
+      "hp": 23,
       "mp": 8,
-      "atk": 2.4,
+      "atk": 2.7,
       "armor": {
         "melee": 1.2,
         "ranged": 2.0,
@@ -92,7 +92,7 @@
       "eva": 18,
       "critRate": 0.05,
       "element": "fire",
-      "elemRate": 0.15
+      "elemRate": 0.1
     },
     "growth": {
       "hp": 17,
@@ -105,7 +105,7 @@
       },
       "acc": 3,
       "eva": 1.2,
-      "elemRate": 0.008
+      "elemRate": 0.005
     },
     "starterWeapon": "apprentice_staff",
     "starterOffhand": "spell_gun"
