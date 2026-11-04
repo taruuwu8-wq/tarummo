@@ -152,8 +152,10 @@
       #chatin { display: none; } #chat.open #chatin { display: block; }
       #toasts { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
       .frame { width: 150px; padding: 6px; } .frame.target { width: 140px; }
+      #quest { width: 150px; top: calc(86px + env(safe-area-inset-top, 0px)); font-size: 10px; }
+      #autosum { top: calc(10px + env(safe-area-inset-top, 0px)) !important; }
       #autosum { left: auto; right: calc(6px + env(safe-area-inset-right, 0px)); top: calc(10px + env(safe-area-inset-top, 0px)); width: 150px; font-size: 10px; }
-      .frame.target { top: calc(86px + env(safe-area-inset-top, 0px)); left: calc(10px + env(safe-area-inset-left, 0px)); right: auto; }
+      .frame.target { top: calc(170px + env(safe-area-inset-top, 0px)); left: calc(10px + env(safe-area-inset-left, 0px)); right: auto; }
       #bag, #npc, .panel, #autocfg { left: 6px; right: 6px; transform: none; width: auto; top: auto; bottom: calc(134px + env(safe-area-inset-bottom, 0px)); max-height: 52%; }
       .equip { grid-template-columns: repeat(7, 1fr); gap: 4px; } .slot small { font-size: 8px; }
     }
@@ -169,6 +171,11 @@
     #sell-go { padding: 10px; border: 1px solid var(--gold); border-radius: 8px; background: #0f1320; }
     #sell-go:disabled { opacity: .4; }
     #sell-go.armed { border-color: #ff5d5d; background: #3a1416; color: #ffd0d0; }
+    #quest { position: absolute; left: calc(10px + env(safe-area-inset-left, 0px)); top: calc(104px + env(safe-area-inset-top, 0px)); width: 210px; display: grid; gap: 3px; padding: 6px 8px; font-size: 11px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; pointer-events: auto; }
+    #quest button { padding: 4px; font: 700 11px system-ui, sans-serif; color: var(--fg); background: #0f1320; border: 1px solid #6fb6ff; border-radius: 6px; cursor: pointer; }
+    #quest button.on { background: #6fb6ff; color: #1b1f2a; }
+    #autosum { top: calc(186px + env(safe-area-inset-top, 0px)) !important; }
+    .frame.target { top: calc(10px + env(safe-area-inset-top, 0px)); }
     #pick { position: fixed; inset: 0; z-index: 10; display: grid; place-content: center; gap: 16px; padding: 16px; text-align: center; background: radial-gradient(circle at 50% 40%, #2a3350, var(--bg)); }
     #pick h1 { margin: 0; font-size: 28px; letter-spacing: .04em; }
     #pick p { margin: 0; color: var(--muted); }

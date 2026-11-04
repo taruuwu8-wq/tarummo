@@ -405,6 +405,8 @@ export class GameScene extends Phaser.Scene {
     } else if (ev.t === 'status') {
       const e = this.world.entities.get(ev.id), v = e && this.views.get(e.id);
       if (e && v) { const { sx, sy } = toScreen(e.x, e.y); this.floatText(sx, sy - v.height - 22, defs.statuses[ev.type].name, '#ffe9a8', 12, 700); }
+    } else if (ev.t === 'quest' && ev.id === this.player.id) {
+      if (ev.done) this.hud.banner(`✅ ${ev.daily ? 'เควสต์รายวัน' : 'เควสต์'}สำเร็จ: ${ev.name}`); else this.hud.toast(`📜 เควสต์ใหม่: ${ev.name}`, 'rare');
     } else if (ev.t === 'unlock') {
       this.hud.banner(`🔓 ${ev.by} ปลดล็อก ${MAPS[ev.map]?.name ?? ev.map} ให้ทั้งกลุ่มแล้ว`);
     } else if (ev.t === 'locked' && ev.id === this.player.id) {

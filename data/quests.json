@@ -1,0 +1,189 @@
+{
+  "_note": "Minimal quest chain (auto-accepted, rewards on completion). goal: kill {monster,count} | level {level} | clear {} (dungeon on map) | visit {}. map = where Auto quest goes.",
+  "main": [
+    {
+      "id": "q_slime",
+      "name": "กำจัดสไลม์ชมพู",
+      "goal": {
+        "type": "kill",
+        "monster": "slime",
+        "count": 10
+      },
+      "map": "meadow",
+      "reward": {
+        "gold": 60,
+        "xp": 40,
+        "items": [
+          [
+            "hp_potion",
+            5
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_pumpkin",
+      "name": "ปราบฟักทองจอมซน",
+      "goal": {
+        "type": "kill",
+        "monster": "pumpkin",
+        "count": 8
+      },
+      "map": "meadow",
+      "reward": {
+        "gold": 120,
+        "xp": 150,
+        "items": [
+          [
+            "cloud_board",
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_lv5",
+      "name": "ฝึกฝนให้ถึง Lv 5",
+      "goal": {
+        "type": "level",
+        "level": 5
+      },
+      "map": "meadow",
+      "reward": {
+        "gold": 200,
+        "xp": 0,
+        "items": [
+          [
+            "mp_potion",
+            10
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_ruins",
+      "name": "เคลียร์ซากปรักหักพัง",
+      "goal": {
+        "type": "clear"
+      },
+      "map": "ruins",
+      "reward": {
+        "gold": 400,
+        "xp": 400,
+        "items": [
+          [
+            "spirit_crystal",
+            2
+          ],
+          [
+            "upgrade_scroll",
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_lv8",
+      "name": "แข็งแกร่งพอจะเข้าป่า (Lv 8)",
+      "goal": {
+        "type": "level",
+        "level": 8
+      },
+      "map": "meadow",
+      "reward": {
+        "gold": 300,
+        "xp": 0,
+        "items": [
+          [
+            "hp_potion",
+            10
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_treant",
+      "name": "ต้นไม้เดินได้",
+      "goal": {
+        "type": "kill",
+        "monster": "treant",
+        "count": 10
+      },
+      "map": "frostwood",
+      "reward": {
+        "gold": 500,
+        "xp": 900,
+        "items": [
+          [
+            "reroll_scroll",
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_icegolem",
+      "name": "หัวใจน้ำแข็ง",
+      "goal": {
+        "type": "kill",
+        "monster": "ice_golem",
+        "count": 8
+      },
+      "map": "frostwood",
+      "reward": {
+        "gold": 800,
+        "xp": 1500,
+        "items": [
+          [
+            "protect_scroll",
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_wyrm",
+      "name": "มังกรแห่ง Frostwood",
+      "goal": {
+        "type": "kill",
+        "monster": "frost_wyrm",
+        "count": 1
+      },
+      "map": "frostwood",
+      "reward": {
+        "gold": 1500,
+        "xp": 2500,
+        "items": [
+          [
+            "shell_weapon",
+            1
+          ],
+          [
+            "upgrade_scroll",
+            2
+          ]
+        ],
+        "shellSrc": "boss"
+      }
+    }
+  ],
+  "daily": {
+    "id": "daily_hunt",
+    "name": "ล่ามอนประจำวัน",
+    "goal": {
+      "type": "kill",
+      "monster": "*",
+      "count": 50
+    },
+    "reward": {
+      "goldPerLevel": 40,
+      "xpPctOfLevel": 0.25,
+      "items": [
+        [
+          "hp_potion",
+          5
+        ]
+      ]
+    }
+  }
+}

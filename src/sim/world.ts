@@ -12,6 +12,8 @@ export interface DungeonDef {
   rooms: { area: [number, number, number, number]; monsters: [string, number][] }[];
   aggro: number; hpScale: number[]; rankSec: { S: number; A: number };
   rewards: Record<'S' | 'A' | 'B', { gold: [number, number]; items: [string, number][]; cardChance: number }>;
+  /** the one card this dungeon can drop, per class */
+  cards?: Record<string, string>;
 }
 export interface DungeonState { active: boolean; startedAt: number; room: number; openDoors: number[]; cleared: boolean; rank: 'S' | 'A' | 'B' | null; timeMs: number }
 export interface MapData {
@@ -61,7 +63,16 @@ export interface Defs {
   items: Record<string, ItemDef>; skills: Record<string, SkillDef[]>;
   cards: Record<string, CardDef>; upgrade: UpgradeCfg; npcs: Record<string, NpcDef>;
   options: { options: OptDef[] }; rarity: RarityCfg; statuses: Record<StatusType, StatusDef>;
+  quests: { main: QuestDef[]; daily: QuestDef & { reward: { goldPerLevel: number; xpPctOfLevel: number; items: [string, number][] } } };
+  mapGraph: Record<string, { to: string; x: number; y: number; minLevel?: number; when?: string }[]>;
 }
+export interface QuestDef {
+  id: string; name: string; map?: string;
+  goal: { type: 'kill' | 'level' | 'clear' | 'visit'; monster?: string; count?: number; level?: number };
+  reward: { gold?: number; xp?: number; items?: [string, number][]; shellSrc?: 'boss' | 'normal' };
+}
+/** main: index into the chain + progress; daily: per-day kill counter */
+export interface QuestState { main: number; prog: number; daily: { day: string; prog: number; done: boolean } }
 export type StatusType = 'burn' | 'bleed' | 'slow' | 'stun' | 'freeze';
 export interface StatusDef { name: string; icon: string; tint: string; tick?: boolean; maxHpCap?: number; moveMul?: number; attackMul?: number; noAct?: boolean; breakOnHit?: boolean }
 /** chance 0..1, ms duration, power = DoT per second as a fraction of the triggering hit */
@@ -104,7 +115,7 @@ export const STASH_SIZE = 60;
 /** Players within this many tiles of a kill share its XP, gold and (own) drop rolls. */
 export const SHARE_RANGE = 12;
 export const SLOTS: Slot[] = ['weapon', 'offhand', 'armor', 'hat', 'charm', 'card', 'mount'];
-export interface SaveData { rested?: number; lastSeen?: number; autoStats?: AutoStats & { elapsed?: number }; autoOn?: boolean; autoCfg?: AutoCfg; autoAnchor?: Tile | null; autoTrip?: AutoTrip | null; bars?: Record<string, BarRef[]>; barKnown?: Record<string, string[]>; transformed?: boolean; mounted?: boolean; map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean }
+export interface SaveData { quest?: QuestState; autoQuest?: boolean; rested?: number; lastSeen?: number; autoStats?: AutoStats & { elapsed?: number }; autoOn?: boolean; autoCfg?: AutoCfg; autoAnchor?: Tile | null; autoTrip?: AutoTrip | null; bars?: Record<string, BarRef[]>; barKnown?: Record<string, string[]>; transformed?: boolean; mounted?: boolean; map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean }
 
 export interface Entity {
   id: number; kind: 'player' | 'monster'; type: string; name: string;
@@ -122,6 +133,7 @@ export interface Entity {
   cooldowns: Record<string, number>; pendingSkill: string | null; talkTo: string | null;
   lastHit: number;
   rested: number;
+  quest: QuestState; autoQuest: boolean;
   autoCfg: AutoCfg; autoAnchor: Tile | null; autoTrip: AutoTrip | null; autoStats: AutoStats;
   mounted: boolean; aggro: number; noRespawn: boolean; nextBlast: number; room?: number;
   bars: Record<string, BarRef[]>; barKnown: Record<string, string[]>;
@@ -156,6 +168,7 @@ export type Intent =
   | { kind: 'autoCfg'; id: number; cfg: AutoCfg }
   | { kind: 'rarify'; id: number; ref: number | Slot; protect: boolean }
   | { kind: 'sellMany'; id: number; indices: number[] }
+  | { kind: 'autoQuest'; id: number; on: boolean }
   | { kind: 'applyShell'; id: number; shell: number; ref: number | Slot }
   | { kind: 'reroll'; id: number; ref: number | Slot };
 
@@ -174,6 +187,7 @@ export type GameEvent =
   | { t: 'transform'; id: number; on: boolean }
   | { t: 'status'; id: number; type: StatusType }
   | { t: 'unlock'; map: string; by: string }
+  | { t: 'quest'; id: number; name: string; done: boolean; daily?: boolean }
   | { t: 'locked'; id: number; map: string; level: number }
   | { t: 'rested'; id: number; amount: number; hours: number }
   | { t: 'rarify'; id: number; item: string; result: 'ok' | 'broke' | 'saved'; rare: number }
@@ -287,7 +301,7 @@ export class World {
       hp: 1, maxHp: 1, mp: 0, maxMp: 0, stats: undefined as unknown as CombatStats, speed: 1, range: 1, attackMs: 1000,
       target: null, nextAttack: 0, repathAt: 0, lastHurt: -1e9, dead: false, respawnAt: 0,
       idleTicks: 0, xpReward: 0, level: 1, xp: 0, auto: false,
-      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, cooldowns: {}, pendingSkill: null, talkTo: null, lastHit: -1e9, rested: 0, autoCfg: defaultAutoCfg(), autoAnchor: null, autoTrip: null, autoStats: { since: 0, xp: 0, gold: 0, kills: 0, items: {} }, mounted: false, aggro: 0, noRespawn: false, nextBlast: 0, bars: {}, barKnown: {}, passive: { lifesteal: 0 }, extra: NO_EXTRA(), statuses: [], prot: {}, onHit: [], nextSummon: 0,
+      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, cooldowns: {}, pendingSkill: null, talkTo: null, lastHit: -1e9, rested: 0, quest: { main: 0, prog: 0, daily: { day: '', prog: 0, done: false } }, autoQuest: false, autoCfg: defaultAutoCfg(), autoAnchor: null, autoTrip: null, autoStats: { since: 0, xp: 0, gold: 0, kills: 0, items: {} }, mounted: false, aggro: 0, noRespawn: false, nextBlast: 0, bars: {}, barKnown: {}, passive: { lifesteal: 0 }, extra: NO_EXTRA(), statuses: [], prot: {}, onHit: [], nextSummon: 0,
     };
   }
 
@@ -311,6 +325,8 @@ export class World {
         const gain = Math.min(need * rc.capPct - e.rested, Math.round(need * rc.perHourPct * awayH));
         if (gain > 0) { e.rested += gain; this.pendingEvents.push({ t: 'rested', id: e.id, amount: gain, hours: Math.round(awayH * 10) / 10 }); }
       }
+      if (save.quest) e.quest = save.quest;
+      e.autoQuest = !!save.autoQuest;
       Object.assign(e, { autoCfg: cfg, auto: !!save.autoOn, autoAnchor: save.autoAnchor ?? null, autoTrip: save.autoTrip ?? null });
       if (e.auto) e.autoStats = save.autoStats ? { ...save.autoStats, since: this.now - (save.autoStats.elapsed ?? 0) } : { since: this.now, xp: 0, gold: 0, kills: 0, items: {} };
       if (!e.equip.offhand && !e.inv.some(s => s.item === c.starterOffhand)) e.equip.offhand = { item: c.starterOffhand, qty: 1, up: 0 };  // older saves
@@ -321,6 +337,8 @@ export class World {
     if (vitals) { e.hp = Math.max(1, Math.min(e.maxHp, vitals.hp)); e.mp = Math.min(e.maxMp, vitals.mp); }
     this.ensureBar(e);
     this.entities.set(e.id, e);
+    this.questEvent(e, 'visit');
+    this.questEvent(e, 'level');
     return e;
   }
 
@@ -493,7 +511,7 @@ export class World {
   }
 
   save(e: Entity): SaveData {
-    return { rested: Math.round(e.rested), lastSeen: Date.now(), autoStats: { ...e.autoStats, elapsed: this.now - e.autoStats.since }, autoOn: e.auto, autoCfg: e.autoCfg, autoAnchor: e.autoAnchor, autoTrip: e.autoTrip, bars: e.bars, barKnown: e.barKnown, transformed: e.transformed, mounted: e.mounted, map: this.map.id, cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell };
+    return { quest: e.quest, autoQuest: e.autoQuest, rested: Math.round(e.rested), lastSeen: Date.now(), autoStats: { ...e.autoStats, elapsed: this.now - e.autoStats.since }, autoOn: e.auto, autoCfg: e.autoCfg, autoAnchor: e.autoAnchor, autoTrip: e.autoTrip, bars: e.bars, barKnown: e.barKnown, transformed: e.transformed, mounted: e.mounted, map: this.map.id, cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell };
   }
 
   /** 'base' or the active card id; each form keeps its own hotbar */
@@ -729,6 +747,68 @@ export class World {
     if (--st.qty <= 0) p.inv.splice(index, 1);
   }
 
+  // ---- quests ----
+  questOf(e: Entity): QuestDef | undefined { return this.defs.quests.main[e.quest.main]; }
+  private today() { return new Date().toISOString().slice(0, 10); }
+
+  /** Progress hooks: kill (monster type), clear (dungeon), level, visit (map entered). */
+  private questEvent(p: Entity, kind: 'kill' | 'clear' | 'level' | 'visit', monster?: string) {
+    if (p.kind !== 'player') return;
+    const q = this.questOf(p);
+    if (q && q.goal.type === kind) {
+      const onMap = !q.map || q.map === this.map.id;
+      if (kind === 'kill' && onMap && q.goal.monster === monster) p.quest.prog++;
+      else if (kind === 'clear' && onMap) p.quest.prog = 1;
+      else if (kind === 'visit' && onMap) p.quest.prog = 1;
+      else if (kind === 'level') p.quest.prog = p.level >= (q.goal.level ?? 1) ? 1 : 0;
+      const need = q.goal.type === 'kill' ? q.goal.count ?? 1 : 1;
+      if (p.quest.prog >= need) this.finishQuest(p, q);
+    }
+    if (kind === 'kill') {
+      const d = this.defs.quests.daily, dq = p.quest.daily, day = this.today();
+      if (dq.day !== day) { dq.day = day; dq.prog = 0; dq.done = false; }
+      if (!dq.done && ++dq.prog >= (d.goal.count ?? 1)) {
+        dq.done = true;
+        const g = d.reward.goldPerLevel * p.level;
+        p.gold += g; this.events.push({ t: 'gold', id: p.id, amount: g });
+        this.grantXp(p, Math.round(this.xpNeeded(p) * d.reward.xpPctOfLevel), false);
+        for (const [it, q2] of d.reward.items) this.grantItem(p, it, q2, { filter: false });
+        this.events.push({ t: 'quest', id: p.id, name: d.name, done: true, daily: true });
+      }
+    }
+  }
+
+  private finishQuest(p: Entity, q: QuestDef) {
+    const r = q.reward;
+    if (r.gold) { p.gold += r.gold; this.events.push({ t: 'gold', id: p.id, amount: r.gold }); }
+    for (const [it, n] of r.items ?? []) this.grantItem(p, it, n, { filter: false, src: this.defs.items[it]?.slot === 'shell' ? r.shellSrc : undefined });
+    p.quest.main++; p.quest.prog = 0;
+    this.events.push({ t: 'quest', id: p.id, name: q.name, done: true });
+    if (r.xp) this.grantXp(p, r.xp, false);          // may level up -> next quest's level check runs
+    const next = this.questOf(p);
+    if (!next) p.autoQuest = false;
+    else { this.events.push({ t: 'quest', id: p.id, name: next.name, done: false }); this.questEvent(p, 'level'); this.questEvent(p, 'visit'); }
+  }
+
+  /** Next portal on the shortest route to `to` (BFS over the map graph), skipping portals this player can't use. */
+  private nextHop(p: Entity, to: string) {
+    const g = this.defs.mapGraph, prev = new Map<string, { from: string; x: number; y: number }>([[this.map.id, { from: '', x: 0, y: 0 }]]);
+    const q = [this.map.id];
+    while (q.length) {
+      const cur = q.shift()!;
+      if (cur === to) break;
+      for (const l of g[cur] ?? []) {
+        if (prev.has(l.to) || l.when) continue;
+        if (l.minLevel && p.level < l.minLevel && !this.unlocks.includes(l.to)) continue;
+        prev.set(l.to, { from: cur, x: l.x, y: l.y }); q.push(l.to);
+      }
+    }
+    if (!prev.has(to)) return null;
+    let n = to;
+    while (prev.get(n)!.from !== this.map.id) n = prev.get(n)!.from;
+    const s = prev.get(n)!; return [s.x, s.y] as Tile;
+  }
+
   /** Sell several bag slots at once (indices into the bag; duplicates and bad indices ignored). */
   private sellMany(p: Entity, indices: number[]) {
     if (!Array.isArray(indices)) return;
@@ -765,6 +845,11 @@ export class World {
     else if (intent.kind === 'rarify') { if (this.nearNpc(e, 'rarer')) this.rarify(e, intent.ref, intent.protect); else this.events.push({ t: 'msg', id: e.id, text: 'สุ่ม Rare ได้ที่ Rina ในเมือง' }); }
     else if (intent.kind === 'applyShell') this.applyShell(e, intent.shell, intent.ref);
     else if (intent.kind === 'sellMany') this.sellMany(e, intent.indices);
+    else if (intent.kind === 'autoQuest') {
+      e.autoQuest = intent.on && !!this.questOf(e);
+      if (e.autoQuest && !e.auto) this.apply({ kind: 'auto', id: e.id, on: true });
+      if (!intent.on) e.autoQuest = false;
+    }
     else if (intent.kind === 'reroll') this.reroll(e, intent.ref);
     else if (intent.kind === 'mount') {
       if (!e.equip.mount) { this.events.push({ t: 'msg', id: e.id, text: 'ยังไม่ได้ใส่พาหนะ (ซื้อที่ร้าน Mira)' }); return; }
@@ -774,6 +859,7 @@ export class World {
       e.mounted = false; const t = this.entities.get(intent.target); if (t && !t.dead) { e.target = t.id; e.repathAt = 0; } }
     else if (intent.kind === 'auto') {
       e.auto = intent.on; e.autoTrip = null;
+      if (!intent.on) e.autoQuest = false;
       e.autoAnchor = intent.on ? [Math.round(e.x), Math.round(e.y)] : null;
       if (intent.on) e.autoStats = { since: this.now, xp: 0, gold: 0, kills: 0, items: {} };
     }
@@ -908,7 +994,9 @@ export class World {
         const g = rw.gold[0] + Math.floor(this.rng() * (rw.gold[1] - rw.gold[0] + 1));
         p.gold += g; this.events.push({ t: 'gold', id: p.id, amount: g });
         for (const [item, q] of rw.items) this.grantItem(p, item, q);
-        if (this.rng() < rw.cardChance) this.grantItem(p, this.randomCardFor(p.type, p));
+        const card = d.cards?.[p.type];
+        if (card && this.rng() < rw.cardChance) this.grantItem(p, card, 1, { filter: false });
+        this.questEvent(p, 'clear');
       }
       this.events.push({ t: 'dungeon', state: 'clear', rank: st.rank, timeMs: st.timeMs });
     }
@@ -1077,6 +1165,7 @@ export class World {
         const g = Math.round((m.gold[0] + Math.floor(this.rng() * (m.gold[1] - m.gold[0] + 1))) * (1 + p.extra.gold));
         p.gold += g; this.events.push({ t: 'gold', id: p.id, amount: g });
         if (p.auto) { p.autoStats.gold += g; p.autoStats.kills++; }
+        this.questEvent(p, 'kill', t.type);
         for (const [item, chance, qty] of m.drops) if (this.rng() < chance) this.grantItem(p, item, qty ?? 1, { src: 'normal' });
         if (m.loot) this.bossLoot(p, this.defs.rarity[m.loot as 'bossLoot'], m.loot === 'bossLoot' && this.map.dungeon ? 'boss' : 'normal');
         if (m.cardChance && this.rng() < m.cardChance) this.grantItem(p, this.randomCardFor(p.type, p));
@@ -1099,6 +1188,7 @@ export class World {
       this.applyLevel(p, p.level + 1);
       this.events.push({ t: 'level', id: p.id, level: p.level });
       this.ensureBar(p);
+      this.questEvent(p, 'level');
       if (p.level === this.defs.upgrade.giftCardAtLevel) {
         this.events.push({ t: 'msg', id: p.id, text: `ครบ Lv ${p.level}! ได้รับ Spirit Card` });
         this.grantItem(p, this.firstCardFor(p.type), 1, { filter: false });
@@ -1142,6 +1232,19 @@ export class World {
     }
     if (e.autoTrip) { this.autoTripStep(e, e.autoTrip); return; }
 
+    // Auto quest: go to the quest's map first (route over portals), then hunt only the quest monster
+    const q = e.autoQuest ? this.questOf(e) : undefined;
+    if (q?.map && q.map !== this.map.id) {
+      const hop = this.nextHop(e, q.map);
+      if (!hop) { e.autoQuest = false; this.events.push({ t: 'msg', id: e.id, text: 'Auto เควสต์: ยังเข้าแมพเป้าหมายไม่ได้ (เลเวลไม่ถึง)' }); return; }
+      e.target = null;
+      if (e.equip.mount && !e.mounted) e.mounted = true;
+      if (!e.path.length && this.now >= e.repathAt) { e.repathAt = this.now + 800; this.pathTo(e, hop); }
+      return;
+    }
+    if (q && e.mounted) e.mounted = false;
+    if (q && !e.autoAnchor) e.autoAnchor = [Math.round(e.x), Math.round(e.y)];
+
     if (e.target == null && !e.path.length) {
       let m: Entity | undefined;
       if (this.map.dungeon) {
@@ -1150,8 +1253,9 @@ export class World {
           .sort((p, q) => this.dist(e, p) - this.dist(e, q))[0];
       } else {
         const [ax, ay] = e.autoAnchor ?? [e.x, e.y];
-        m = [...this.entities.values()].filter(o => o.kind === 'monster' && !o.dead && !c.skip.includes(o.type)
-          && (!o.boss || c.bosses) && o.level <= e.level + c.levelAbove && Math.hypot(o.x - ax, o.y - ay) <= c.range)
+        const qm = q?.goal.type === 'kill' ? q.goal.monster : undefined;   // quest target overrides the filters
+        m = [...this.entities.values()].filter(o => o.kind === 'monster' && !o.dead && (qm ? o.type === qm
+          : !c.skip.includes(o.type) && (!o.boss || c.bosses) && o.level <= e.level + c.levelAbove && Math.hypot(o.x - ax, o.y - ay) <= c.range))
           .sort((p, q) => this.dist(e, p) - this.dist(e, q))[0];
         if (!m && Math.hypot(e.x - ax, e.y - ay) > 1.5) this.pathTo(e, [Math.round(ax), Math.round(ay)]);
       }

@@ -581,6 +581,11 @@
         ],
         "cardChance": 0.02
       }
+    },
+    "cards": {
+      "swordsman": "guardian",
+      "archer": "forest_warden",
+      "mage": "frost_sage"
     }
   }
 }
