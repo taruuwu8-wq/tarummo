@@ -6,7 +6,7 @@ import { writeSave, readStash, writeStash, readUnlocks, writeUnlocks } from './s
 import type { Net } from './net';
 import type { Intent } from '../sim/world';
 import { Hud } from './hud';
-import { paintGround, makeProps, scatter, PX, MARGIN, PROP_SETS, propsFor } from './mapart';
+import { paintGround, makeProps, scatter, PX, MARGIN, PROP_SETS, propsFor, mulTint, recolored } from './mapart';
 import PROPS from '../../data/props.json';
 
 const TW = 64, TH = 32;
@@ -646,6 +646,7 @@ export class GameScene extends Phaser.Scene {
     const h = (x: number, y: number, s = 0) => ((((Math.round(x * 13) + s * 31) * 73856093) ^ (Math.round(y * 17) * 19349663)) >>> 0) % 1000 / 1000;
     const pickOf = <T,>(arr: T[], x: number, y: number, s = 0) => arr[Math.floor(h(x, y, s) * arr.length) % arr.length];
     const P = PROPS as unknown as Record<string, { h: number; w: number }>;
+    const S = PROP_SETS[map.ground] ?? PROP_SETS.grass, gsw = S.groundSway ? 1 : 0;
     // margin props are baked into one texture (bake != null): they never meet a player, and ~1000 live images was too many
     let bake: Phaser.GameObjects.Image[] | null = null;
     const img = (x: number, y: number, key: string) => { if (!bake) return this.add.image(x, y, key); const o = this.make.image({ x, y, key }, false); bake.push(o); return o; };
@@ -653,12 +654,13 @@ export class GameScene extends Phaser.Scene {
       const { sx, sy } = toScreen(fx, fy), sc = o.scale ?? 1;
       const sw = o.shadow ?? 0.7;
       if (sw > 0) img(sx, sy + 3, 'm_shadow').setScale(P[id].w * sc * sw / 32, P[id].w * sc * sw / 80).setDepth(1.5);
-      const im = img(sx, sy + 4, `p_${id}`).setOrigin(0.5, 0.96).setScale(0.5 * sc).setDepth(10 + sy + (o.above ?? 0)).setFlipX(o.flip ?? h(fx, fy, 7) > 0.5);
-      if (o.tint) im.setTint(o.tint);
+      const tk = S.recolor ? recolored(this, `p_${id}`, S.recolor, map.ground) : `p_${id}`;
+      const im = img(sx, sy + 4, tk).setOrigin(0.5, 0.96).setScale(0.5 * sc).setDepth(10 + sy + (o.above ?? 0)).setFlipX(o.flip ?? h(fx, fy, 7) > 0.5);
+      const tt = o.tint != null && S.tint != null ? mulTint(o.tint, S.tint) : o.tint ?? S.tint;
+      if (tt != null) im.setTint(tt);
       if (o.sway && !bake) this.sway.push({ o: im, ph: h(fx, fy) * 6.28, amp: o.sway });
       return im;
     };
-    const S = PROP_SETS[map.ground] ?? PROP_SETS.grass, gsw = S.groundSway ? 1 : 0;
     const grass = (x: number, y: number) => prop(pickOf(S.ground, x, y, 1), x, y, { sway: 0.1 * gsw, scale: 0.8 + h(x, y, 2) * 0.4, shadow: 0 });
     const bush = (x: number, y: number, scale = 1) => prop(pickOf(S.bushes, x, y), x, y, { scale });
     const tree = (x: number, y: number, far = false) => {
@@ -721,7 +723,17 @@ export class GameScene extends Phaser.Scene {
     const c0 = toScreen(0, H), c1 = toScreen(W, 0), c2 = toScreen(W, H);
     this.bounds = { x0: c0.sx, x1: c1.sx, y0: 0, y1: c2.sy };
     for (let i = 0; i < 3; i++) this.clouds.push(this.add.image(c0.sx + (c1.sx - c0.sx) * (i / 3), c2.sy * (0.2 + i * 0.3), 'm_cloud').setScale(9, 7).setAlpha(0.08).setDepth(1));
-    if (map.ground === 'ash') this.add.particles(0, 0, 'dust', {   // ash drifting on the wind
+    const AMB: Record<string, { tint: number[]; up?: boolean; add?: boolean; freq: number }> = {
+      lava: { tint: [0xff8a3a, 0xffc060, 0xff5a2a], up: true, add: true, freq: 90 }, void: { tint: [0xb07aff, 0x8a5ae0], up: true, add: true, freq: 140 },
+      marsh: { tint: [0xc8ff9a, 0xe8ffb0], add: true, freq: 220 }, twilight: { tint: [0xc8b8ff, 0x9ad0f0], add: true, freq: 220 }, sky: { tint: [0xffffff, 0xfff2c8], add: true, freq: 200 },
+    };
+    const amb = AMB[map.ground];
+    if (amb) this.add.particles(0, 0, 'dust', {   // per-theme air: embers/void sparks rise, fireflies/motes wander
+      x: { min: c0.sx, max: c1.sx }, y: { min: 0, max: c2.sy }, lifespan: 6000, frequency: amb.freq, quantity: 1,
+      speedX: { min: -8, max: 8 }, speedY: amb.up ? { min: -38, max: -14 } : { min: -8, max: 6 }, scale: { min: 0.12, max: 0.3 }, tint: amb.tint, blendMode: amb.add ? 'ADD' : 'NORMAL',
+      alpha: { onUpdate: (_p: unknown, _k: string, t: number) => Math.sin(t * Math.PI) * 0.9 },
+    }).setDepth(9000);
+    else     if (map.ground === 'ash') this.add.particles(0, 0, 'dust', {   // ash drifting on the wind
       x: { min: c0.sx - 300, max: c1.sx }, y: { min: -200, max: c2.sy }, lifespan: 8000, frequency: 110, quantity: 1,
       speedX: { min: 18, max: 40 }, speedY: { min: -4, max: 10 }, scale: { min: 0.15, max: 0.35 }, tint: [0x9a9088, 0xb8aea2, 0x6e6660],
       alpha: { onUpdate: (_p: unknown, _k: string, t: number) => Math.min(1, t * 5, (1 - t) * 4) * 0.7 },

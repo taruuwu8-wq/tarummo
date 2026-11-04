@@ -246,7 +246,6 @@
       6
     ]
   ],
-  "treeTint": "0x6a5a9a",
   "walls": [],
   "monsters": [
     {
@@ -300,5 +299,6 @@
       "minLevel": 50
     }
   ],
-  "npcs": []
+  "npcs": [],
+  "art": "v2"
 }

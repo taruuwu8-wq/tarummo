@@ -50,11 +50,34 @@ const ASH: Theme = {
   cliff: [0x93593a, 0x7d4b30, 0x673e27, 0x52311f],              // red rock strata
   flowers: [], flowerRate: 0,
 };
-export const THEMES: Record<string, Theme> = { grass: MEADOW, stone: TOWN, snow: SNOW, ash: ASH };
+// draft themes (until their own prop sheets arrive): ground palettes per map
+const MARSH: Theme = {
+  grass: [0x3e5644, 0x46604b, 0x4f6a52, 0x58745a, 0x627e62], dirt: [0x4e4a3a, 0x5a5542, 0x66604a, 0x716b53], sand: 0x4e5844,
+  water: [0x22403b, 0x2a4b45, 0x345850, 0x5c8277], cliff: [0x3e3a2e, 0x343026, 0x2a271f, 0x201e18], flowers: [], flowerRate: 0,
+};
+const SKY: Theme = {
+  grass: [0xc2cde0, 0xcbd5e5, 0xd4ddeb, 0xdde4f0, 0xe6ecf5], dirt: [0xb3a98f, 0xbfb59b, 0xcac1a8, 0xd5cdb5], sand: 0xeef2f8,
+  water: [0x7da2c8, 0x91b3d4, 0xa8c4de, 0xd2e2f0], cliff: [0x9fb0cc, 0x8a9cba, 0x7587a6, 0x617290], flowers: [0xf2c6dc, 0xf3e3a2, 0xd4c8f0], flowerRate: 0.005,
+};
+const LAVA: Theme = {
+  grass: [0x3a2c2a, 0x42322f, 0x4a3834, 0x533f3a, 0x5c4640], dirt: [0x6a3020, 0x7a3826, 0x8a422c, 0x9a4c32], sand: 0x2c2220,
+  water: [0xb8401c, 0xd0561e, 0xe8762a, 0xffb04a], cliff: [0x2e2422, 0x261e1c, 0x1e1716, 0x161110], flowers: [], flowerRate: 0,
+};
+const TWILIGHT: Theme = {
+  grass: [0x55547a, 0x5d5c83, 0x66658c, 0x6f6e95, 0x78779e], dirt: [0x454262, 0x4d4a6b, 0x555274, 0x5d5a7d], sand: 0x7c7aa0,
+  water: [0x3a4a78, 0x46588a, 0x56689a, 0x8a9cc8], cliff: [0x3e3a5a, 0x34304e, 0x2a2742, 0x201e36], flowers: [0xb8a6e8, 0x9ad0f0], flowerRate: 0.003,
+};
+const VOID: Theme = {
+  grass: [0x2a2238, 0x30273f, 0x362c46, 0x3c324d, 0x433854], dirt: [0x4a2e5e, 0x54356a, 0x5e3c76, 0x684382], sand: 0x1c1626,
+  water: [0x3a1e5a, 0x4a2a70, 0x5c3888, 0x9a6ad0], cliff: [0x1c1626, 0x16111f, 0x110d18, 0x0c0911], flowers: [0xc08aff], flowerRate: 0.002,
+};
+export const THEMES: Record<string, Theme> = { grass: MEADOW, stone: TOWN, snow: SNOW, ash: ASH, marsh: MARSH, sky: SKY, lava: LAVA, twilight: TWILIGHT, void: VOID };
 
 /** Which sheet props a theme scatters (ids from data/props.json). */
 /** back: cumulative chances for the back margin [tree, rock cluster, spire] (rest: patches/ground); spireScale for those */
-export interface PropSet { trees: string[]; bushes: string[]; rocks: string[]; rockSmall: string; spires: string[]; ground: string[]; patches: string[]; extras: string[]; groundSway: boolean; farTint: number; back?: [number, number, number]; spireScale?: number }
+/** recolor: foliage pixels (green hues) are moved to `hue` with saturation/lightness multipliers; trunks/rocks keep their colour */
+export interface Recolor { hue: number; sat: number; light: number }
+export interface PropSet { tint?: number; recolor?: Recolor; trees: string[]; bushes: string[]; rocks: string[]; rockSmall: string; spires: string[]; ground: string[]; patches: string[]; extras: string[]; groundSway: boolean; farTint: number; back?: [number, number, number]; spireScale?: number }
 const GREEN: PropSet = {
   trees: ['oak_a', 'oak_b', 'oak_a', 'pine'], bushes: ['bush_white', 'bush_pink'], rocks: ['rock_big', 'rock_mid'], rockSmall: 'rock_small', spires: ['rock_spire'],
   ground: ['grass_a', 'grass_b', 'grass_c', 'grass_fl1', 'grass_fl2'], patches: ['fl_white', 'fl_pink', 'fl_purple', 'fl_yellow', 'fb_white', 'fb_pink', 'fb_blue', 'fb_mix'],
@@ -73,7 +96,35 @@ const DESERT: PropSet = {
   extras: ['cactus_small', 'cactus_round', 'skull', 'sand_stone_small', 'dune', 'sand_slab', 'dune_b'], groundSway: true, farTint: 0xc4b6a6,
   back: [0.3, 0.5, 0.82], spireScale: 1.35,   // canyon walls: mostly rock towers behind
 };
-export const PROP_SETS: Record<string, PropSet> = { grass: GREEN, stone: GREEN, snow: SNOWY, ash: DESERT };
+// draft sets: existing props recoloured (tint) per theme
+const MARSHY: PropSet = {
+  recolor: { hue: 80, sat: 0.5, light: 0.72 }, tint: 0xd8dcd0, trees: ['dead_tree', 'dead_tree', 'oak_b', 'pine', 'dead_tree'], bushes: ['bush_green_a', 'bush_green_b', 'bush_green_c'], rocks: ['rock_mid', 'rock_big'], rockSmall: 'rock_small',
+  spires: ['rock_spire'], ground: ['grass_a', 'grass_b', 'grass_c'], patches: ['bush_green_a', 'grass_fl1', 'mush_small'], extras: ['mush_red', 'mush_orange', 'mush_small', 'skull'],
+  groundSway: true, farTint: 0x9aa0a0,
+};
+const SKYISH: PropSet = {   // pastel blossom isles
+  recolor: { hue: 338, sat: 0.45, light: 1.45 }, trees: ['oak_a', 'oak_b', 'oak_green'], bushes: ['bush_pink', 'bush_white'], rocks: ['rock_mid', 'rock_big'], rockSmall: 'rock_small',
+  spires: ['stone_pillar', 'stone_arch', 'ice_crystal_big', 'rock_spire'], ground: ['grass_fl1', 'grass_fl2', 'grass_c'], patches: ['fb_white', 'fb_pink', 'fl_white', 'fl_yellow', 'fb_mix'],
+  extras: ['ice_crystal_small', 'ice_shard'], groundSway: true, farTint: 0xd8dceb, back: [0.45, 0.55, 0.75],
+};
+const LAVAY: PropSet = {
+  tint: 0x7a625c, trees: ['dead_tree', 'dead_tree', 'sand_pillar'], bushes: ['dry_grass_b', 'desert_grass'], rocks: ['sand_rocks', 'sand_rock_big'], rockSmall: 'sand_rock_small',
+  spires: ['sand_tower', 'sand_pillar', 'rock_spire'], ground: ['dry_grass', 'sand_stone_small'], patches: ['dry_grass_b', 'sand_stone_small'], extras: ['skull', 'sand_slab'],
+  groundSway: false, farTint: 0x9a8a88, back: [0.25, 0.5, 0.85], spireScale: 1.3,
+};
+const TWI: PropSet = {
+  recolor: { hue: 268, sat: 0.5, light: 0.85 }, tint: 0xd0cce4, trees: ['dead_tree', 'bare_tree_snow', 'oak_b', 'pine', 'oak_a'], bushes: ['bush_green_b', 'bush_snowy'], rocks: ['rock_big', 'rock_mid'], rockSmall: 'rock_small',
+  spires: ['stone_arch', 'stone_pillar', 'ice_crystal_big', 'rock_spire'], ground: ['grass_a', 'grass_c'], patches: ['ice_crystal_small', 'bush_green_a', 'grass_fl2'],
+  extras: ['ice_shard', 'ice_crystal_small', 'skull'], groundSway: true, farTint: 0xb0b0c8,
+};
+const VOIDY: PropSet = {
+  recolor: { hue: 282, sat: 0.6, light: 0.6 }, tint: 0x9a88c4, trees: ['dead_tree', 'bare_tree_snow'], bushes: ['bush_snowy', 'bush_green_a'], rocks: ['snow_rock_big', 'rock_big'], rockSmall: 'rock_small',
+  spires: ['ice_crystal_big', 'stone_pillar', 'stone_arch', 'snow_cliff'], ground: ['ice_sprig', 'grass_c'], patches: ['ice_crystal_small', 'ice_shard'],
+  extras: ['ice_crystal_small', 'skull', 'ice_shard'], groundSway: false, farTint: 0x9a90b0, back: [0.35, 0.5, 0.8], spireScale: 1.2,
+};
+export const PROP_SETS: Record<string, PropSet> = { grass: GREEN, stone: GREEN, snow: SNOWY, ash: DESERT, marsh: MARSHY, sky: SKYISH, lava: LAVAY, twilight: TWI, void: VOIDY };
+/** multiply two 0xRRGGBB tints */
+export const mulTint = (a: number, b: number) => (((((a >> 16) & 255) * ((b >> 16) & 255)) / 255) << 16) | (((((a >> 8) & 255) * ((b >> 8) & 255)) / 255) << 8) | (((a & 255) * (b & 255)) / 255);
 export const TOWN_PROPS = ['house_tree', 'house_blue', 'house_vine', 'house_mill', 'lamp', 'flower_bush', 'bench', 'signpost', 'banner', 'sign_board', 'stall_red', 'stall_blue', 'tent', 'stump_axe', 'hay_crates', 'barrel_stone', 'cart', 'crate', 'pot_stand'];
 /** Prop textures a v2 map needs (preload only these). */
 export function propsFor(map: MapData) {
@@ -211,5 +262,28 @@ export function scatter(map: MapData, blocked: (x: number, y: number) => boolean
     if (blocked(tx, ty) || Math.hypot(tx - map.spawn[0], ty - map.spawn[1]) < 2 || map.portals.some(p => Math.hypot(p.x - tx, p.y - ty) < 2)) continue;
     out.push([x, y]);
   }
+  return out;
+}
+
+/** Make (once) a copy of a prop texture with its foliage moved to another hue. Returns the key to use. */
+export function recolored(scene: Phaser.Scene, key: string, rc: Recolor, tag: string) {
+  const out = `${key}~${tag}`;
+  if (scene.textures.exists(out)) return out;
+  const src = scene.textures.get(key).getSourceImage() as HTMLImageElement, w = src.width, h = src.height;
+  const tex = scene.textures.createCanvas(out, w, h)!, ctx = tex.getContext();
+  ctx.drawImage(src, 0, 0);
+  const img = ctx.getImageData(0, 0, w, h), d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] < 20) continue;
+    const r = d[i] / 255, g = d[i + 1] / 255, b = d[i + 2] / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, dl = mx - mn;
+    if (dl < 0.08) continue;                                          // greys (rocks, snow, outlines) stay
+    let hh = mx === r ? ((g - b) / dl) % 6 : mx === g ? (b - r) / dl + 2 : (r - g) / dl + 4; hh *= 60; if (hh < 0) hh += 360;
+    if (hh < 55 || hh > 175) continue;                                // only foliage greens
+    const sat0 = dl / (1 - Math.abs(2 * l - 1)), H = (rc.hue + (hh - 115) * 0.4 + 360) % 360, S = Math.min(1, sat0 * rc.sat), L = Math.min(0.95, l * rc.light);
+    const c = (1 - Math.abs(2 * L - 1)) * S, x = c * (1 - Math.abs(((H / 60) % 2) - 1)), m = L - c / 2;
+    const [r1, g1, b1] = H < 60 ? [c, x, 0] : H < 120 ? [x, c, 0] : H < 180 ? [0, c, x] : H < 240 ? [0, x, c] : H < 300 ? [x, 0, c] : [c, 0, x];
+    d[i] = (r1 + m) * 255; d[i + 1] = (g1 + m) * 255; d[i + 2] = (b1 + m) * 255;
+  }
+  ctx.putImageData(img, 0, 0); tex.refresh();
   return out;
 }

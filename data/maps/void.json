@@ -246,7 +246,6 @@
       11
     ]
   ],
-  "treeTint": "0x5a2a7a",
   "walls": [],
   "monsters": [
     {
@@ -278,5 +277,6 @@
       "label": "แดนสนธยา"
     }
   ],
-  "npcs": []
+  "npcs": [],
+  "art": "v2"
 }
