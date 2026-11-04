@@ -156,6 +156,7 @@
       #toasts { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
       .frame { width: 150px; padding: 6px; } .frame.target { width: 140px; }
       #quest { width: 150px; top: calc(86px + env(safe-area-inset-top, 0px)); font-size: 10px; }
+      body:has(#bag:not([hidden])) #quest, body:has(#npc:not([hidden])) #quest { display: none; }   /* panels cover it on phones */
       #autosum { top: calc(10px + env(safe-area-inset-top, 0px)) !important; }
       #autosum { left: auto; right: calc(6px + env(safe-area-inset-right, 0px)); top: calc(10px + env(safe-area-inset-top, 0px)); width: 150px; font-size: 10px; }
       .frame.target { top: calc(170px + env(safe-area-inset-top, 0px)); left: calc(10px + env(safe-area-inset-left, 0px)); right: auto; }
