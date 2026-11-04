@@ -1,3 +1,4 @@
+import { ic } from './itemtext';
 // Hotbar (10 slots, per form), skills window (K), card quick-switch (C), pointer drag & drop (works on touch).
 import type { Entity, World, Intent, BarRef } from '../sim/world';
 import { BAR_SIZE } from '../sim/world';
@@ -104,7 +105,7 @@ export class Hotbar {
     }).join('');
     const pas = card ? (card.passives ?? []).map(ps => `<div class="srow${ps.unlock > lv ? ' locked' : ''}"><span class="sic">${ps.icon}</span><span class="snm"><b>${ps.name}</b><small>${ps.unlock > lv ? `🔒 Job ${ps.unlock}` : 'ทำงานอัตโนมัติ'} · ${ps.desc}</small></span></div>`).join('') : '';
     const uses = [...new Set(p.inv.filter(s => this.items[s.item].heal).map(s => s.item))]
-      .map(id => `<span class="sic" data-drag="i:${id}" title="${this.items[id].name}">${this.items[id].icon}</span>`).join('');
+      .map(id => `<span class="sic" data-drag="i:${id}" title="${this.items[id].name}">${ic(this.items[id])}</span>`).join('');
     document.getElementById('skillbody')!.innerHTML = `
       <p class="muted small">${card ? `ร่าง ${card.name} · Job ${lv} · ใช้${card.weapon === 'offhand' ? 'อาวุธรอง' : 'อาวุธหลัก'}เป็นหลัก` : `ร่างปกติ · Lv ${lv}`} · ลากไอคอนลงแถบด้านล่าง ลากออกจากแถบเพื่อเอาออก</p>
       ${rows}${pas ? `<b>Passive</b>${pas}` : ''}<b>ของใช้</b><div class="uses">${uses || '<span class="muted">ไม่มี</span>'}</div>`;
@@ -118,8 +119,8 @@ export class Hotbar {
     const cur = p.equip.card;
     const list = p.inv.map((st, i) => ({ st, i, d: this.items[st.item] })).filter(c => c.d.slot === 'card' && c.d.class === p.type);
     document.getElementById('cardbody')!.innerHTML = `
-      ${cur ? `<div class="crow cur"><span class="sic">${this.items[cur.item].icon}</span><span class="snm"><b>${this.items[cur.item].name}</b><small>ใส่อยู่ · +${cur.up ?? 0} · Job ${cur.lv ?? 1}${p.transformed ? ' · แปลงร่างอยู่' : ''}</small></span></div>` : ''}
-      ${list.map(c => `<button type="button" class="crow" data-card="${c.i}"><span class="sic">${c.d.icon}</span><span class="snm"><b>${c.d.name}</b><small>+${c.st.up ?? 0} · Job ${c.st.lv ?? 1}</small></span></button>`).join('') || '<p class="muted">ไม่มีการ์ดอื่นในกระเป๋า</p>'}
+      ${cur ? `<div class="crow cur"><span class="sic">${ic(this.items[cur.item])}</span><span class="snm"><b>${this.items[cur.item].name}</b><small>ใส่อยู่ · +${cur.up ?? 0} · Job ${cur.lv ?? 1}${p.transformed ? ' · แปลงร่างอยู่' : ''}</small></span></div>` : ''}
+      ${list.map(c => `<button type="button" class="crow" data-card="${c.i}"><span class="sic">${ic(c.d)}</span><span class="snm"><b>${c.d.name}</b><small>+${c.st.up ?? 0} · Job ${c.st.lv ?? 1}</small></span></button>`).join('') || '<p class="muted">ไม่มีการ์ดอื่นในกระเป๋า</p>'}
       <p class="muted small">${p.transformed ? 'สลับตอนแปลงร่าง = แปลงเป็นใบใหม่ทันที · คูลดาวน์ 10 วิ หรือเท่าสกิลที่เหลือนานสุด · ระหว่างต่อสู้สลับไม่ได้' : 'กด T เพื่อแปลงร่าง'}</p>`;
   }
 

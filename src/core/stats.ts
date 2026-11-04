@@ -16,7 +16,7 @@ export interface Bonus { hp?: number; mp?: number; atk?: number; armor?: number;
 export interface ItemDef {
   name: string; slot: Slot | 'use' | 'mat' | 'shell'; element?: Element;
   /** bag tab for materials: mat (default) | drop | enh */
-  tab?: 'mat' | 'drop' | 'enh'; rarity: 'common' | 'uncommon' | 'rare' | 'epic'; icon: string;
+  tab?: 'mat' | 'drop' | 'enh'; rarity: 'common' | 'uncommon' | 'rare' | 'epic'; icon: string; img?: string;
   level?: number; class?: string; price: number;
   weapon?: { min: number; max: number; critDmg: number }; bonus?: Bonus; heal?: { hp?: number; mp?: number };
   mount?: { speed: number; look: string; color: string; sprite: string | null };

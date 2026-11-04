@@ -4,7 +4,7 @@ import { SLOTS, JOB_LEVEL, BASE_CLASS } from '../sim/world';
 import { Hotbar } from './hotbar';
 import { AutoPanel } from './autopanel';
 import { SellPanel } from './sellpanel';
-import { itemName, optLines, RARE_COLOR } from './itemtext';
+import { itemName, optLines, RARE_COLOR, ic } from './itemtext';
 import type { ItemDef, Slot } from '../core/stats';
 
 type Tab = 'gear' | 'card' | 'use' | 'enh' | 'mat' | 'drop';
@@ -174,7 +174,7 @@ export class Hud {
       body = (d.sells ?? []).map((o, i) => {
         const it = this.items[o.item], stack = it.slot === 'use' || it.slot === 'mat';
         const req = it.class ? ` · ${this.world.defs.classes[it.class].name}` : '';
-        return `<div class="row"><span class="ic">${it.icon}</span><span class="nm ${it.rarity}-t">${it.name}<small class="muted">${it.level && it.level > 1 ? ' Lv' + it.level : ''}${req}</small></span>
+        return `<div class="row"><span class="ic">${ic(it)}</span><span class="nm ${it.rarity}-t">${it.name}<small class="muted">${it.level && it.level > 1 ? ' Lv' + it.level : ''}${req}</small></span>
           <span class="pr">${o.price} G</span><button type="button" data-act="buy" data-i="${i}" data-q="1"${p.gold < o.price ? ' disabled' : ''}>ซื้อ</button>${stack ? `<button type="button" data-act="buy" data-i="${i}" data-q="10"${p.gold < o.price * 10 ? ' disabled' : ''}>×10</button>` : ''}</div>`;
       }).join('');
     } else if (d.role === 'smith') {
@@ -187,16 +187,16 @@ export class Hud {
         ${this.useUpProt && !sc ? '<p class="warn-t small">⚠ ใบกันแตกหมดแล้ว! ตีบวกตอนนี้ของอาจแตก</p>' : ''}`
         + (refs.map(({ ref, st, where }) => {
         const it = this.items[st.item], c = this.world.upgradeCost(st);
-        if (!c) return `<div class="row"><span class="ic">${it.icon}</span><span class="nm">${itemName(this.world, st)}<small class="muted"> · ${where}</small></span><span class="pr">สูงสุด</span></div>`;
+        if (!c) return `<div class="row"><span class="ic">${ic(it)}</span><span class="nm">${itemName(this.world, st)}<small class="muted"> · ${where}</small></span><span class="pr">สูงสุด</span></div>`;
         const m = this.items[c.mat], have = p.inv.find(x => x.item === c.mat)?.qty ?? 0, ok = p.gold >= c.gold && have >= c.qty;
         const risk = c.breakChance > 0 && !prot, armed = this.confirmKey === 'up:' + ref;
-        return `<div class="row"><span class="ic">${it.icon}</span><span class="nm">${itemName(this.world, st)}<small class="muted"> · ${where}<br>สำเร็จ ${Math.round(c.rate * 100)}%${c.breakChance ? ` · <span class="${prot ? '' : 'warn-t'}">พลาดแล้วแตก ${Math.round(c.breakChance * 100)}%${prot ? ' (กันไว้)' : ''}</span>` : ''} · ${c.gold} G · ${m.icon}${have}/${c.qty}</small></span>
+        return `<div class="row"><span class="ic">${ic(it)}</span><span class="nm">${itemName(this.world, st)}<small class="muted"> · ${where}<br>สำเร็จ ${Math.round(c.rate * 100)}%${c.breakChance ? ` · <span class="${prot ? '' : 'warn-t'}">พลาดแล้วแตก ${Math.round(c.breakChance * 100)}%${prot ? ' (กันไว้)' : ''}</span>` : ''} · ${c.gold} G · ${ic(m)}${have}/${c.qty}</small></span>
           <button type="button" data-act="up" data-ref="${ref}"${risk ? ' data-risk="1"' : ''} class="${armed ? 'armed' : ''}"${ok ? '' : ' disabled'}>${armed ? 'ยืนยัน! เสี่ยงแตก' : 'ตีบวก'}</button></div>`;
       }).join('') || '<p class="muted">ไม่มีอาวุธ เกราะ หรือการ์ดให้ตีบวก</p>');
       body += '<p class="muted small">+0 ถึง +4 ล้มเหลวแค่เสียทองกับวัตถุดิบ · ตั้งแต่ +5 (การ์ด +7) ล้มเหลวอาจแตก · ใบกันแตกใช้ไป 1 ใบทุกครั้งที่ติ๊กไว้</p>';
     } else if (d.role === 'stash') {
       const cell = (st: InvSlot, i: number, act: string) => { const it = this.items[st.item];
-        return `<button type="button" class="cell ${it.rarity}" data-act="${act}" data-i="${i}" title="${it.name}"><span class="ic">${it.icon}</span>${st.up ? `<em>+${st.up}</em>` : ''}${st.qty > 1 ? `<b>${st.qty}</b>` : ''}</button>`; };
+        return `<button type="button" class="cell ${it.rarity}" data-act="${act}" data-i="${i}" title="${it.name}"><span class="ic">${ic(it)}</span>${st.up ? `<em>+${st.up}</em>` : ''}${st.qty > 1 ? `<b>${st.qty}</b>` : ''}</button>`; };
       body = `<b>คลังกลาง (${this.world.stash.length}/60) · คลิกเพื่อหยิบ</b><div class="grid">${this.world.stash.map((st, i) => cell(st, i, 'take')).join('') || '<span class="muted">ว่าง</span>'}</div>
         <b>กระเป๋า · คลิกเพื่อฝาก</b><div class="grid">${p.inv.map((st, i) => cell(st, i, 'put')).join('') || '<span class="muted">ว่าง</span>'}</div>`;
     } else if (d.role === 'rarer') {
@@ -207,7 +207,7 @@ export class Hud {
       body = `<label class="chk"><input type="checkbox" id="useprot"${this.useProt ? ' checked' : ''}> ใช้ใบกันแตก (Rare) · เหลือ <b class="${prot ? '' : 'warn-t'}">${prot}</b></label>
         ${this.useProt && !prot ? '<p class="warn-t small">⚠ ใบกันแตก (Rare) หมดแล้ว!</p>' : ''}
         <p class="muted small">ผลสุ่ม R1-R7 · โอกาสแตก ${Math.round(r.rarify.breakChance * 100)}% (ของหายถาวร ถ้าไม่ใช้ใบกันแตก) · สุ่มออฟใหม่ตาม Rare</p>`
-        + (refs.map(({ ref, st, where }) => `<div class="row"><span class="ic">${this.items[st.item].icon}</span><span class="nm">${itemName(w, st)}<small class="muted"> · ${where}</small></span>
+        + (refs.map(({ ref, st, where }) => `<div class="row"><span class="ic">${ic(this.items[st.item])}</span><span class="nm">${itemName(w, st)}<small class="muted"> · ${where}</small></span>
           <span class="pr">${w.rarifyCost(st)} G</span>${(() => { const hi = (st.rare ?? 0) >= 6, noProt = !(this.useProt && prot), armed = this.confirmKey === 'rare:' + ref;
             return `<button type="button" data-act="rare" data-ref="${ref}"${hi || noProt ? ' data-risk="1"' : ''} class="${armed ? 'armed' : ''}"${p.gold < w.rarifyCost(st) ? ' disabled' : ''}>${armed ? (hi ? `ยืนยัน! สุ่มทับ R${st.rare}` : 'ยืนยัน! เสี่ยงแตก') : 'สุ่ม Rare'}</button>`; })()}</div>`).join('') || '<p class="muted">ไม่มีอาวุธ อาวุธรอง หรือเกราะ</p>');
     } else if (d.role === 'craft') {
@@ -216,9 +216,9 @@ export class Hud {
       body = cats.map(cat => `<b>${cat}</b>` + recs.filter(r => r.cat === cat).map(r => {
         const out = this.items[r.out], n = w.craftable(p, r), lock = p.level < r.level;
         const need = r.inputs.map(([it, q]) => { const have = p.inv.filter(s => s.item === it).reduce((a, s) => a + s.qty, 0);
-          return `<span class="${have >= q ? '' : 'warn-t'}">${this.items[it].icon}${have}/${q}</span>`; }).join(' ');
+          return `<span class="${have >= q ? '' : 'warn-t'}">${ic(this.items[it])}${have}/${q}</span>`; }).join(' ');
         const stack = out.slot === 'use' || out.slot === 'mat';
-        return `<div class="row"><span class="ic">${out.icon}</span><span class="nm">${out.name}${r.qty > 1 ? ' ×' + r.qty : ''}${lock ? ` <small class="warn-t">ต้อง Lv ${r.level}</small>` : ''}<small class="muted"><br>${need} · ${r.gold} G</small></span>
+        return `<div class="row"><span class="ic">${ic(out)}</span><span class="nm">${out.name}${r.qty > 1 ? ' ×' + r.qty : ''}${lock ? ` <small class="warn-t">ต้อง Lv ${r.level}</small>` : ''}<small class="muted"><br>${need} · ${r.gold} G</small></span>
           <button type="button" data-act="craft" data-r="${r.id}" data-n="1"${n ? '' : ' disabled'}>ทำ</button>${stack ? `<button type="button" data-act="craft" data-r="${r.id}" data-n="5"${n >= 5 ? '' : ' disabled'}>×5</button>` : ''}</div>`;
       }).join('')).join('') + '<p class="muted small">อาวุธ/เกราะที่คราฟต์จะสุ่ม Rare 0-5 เหมือนของดรอป · Shell สุ่มออฟเหมือน Shell ทั่วไป</p>';
     } else if (d.role === 'guild') {
@@ -329,7 +329,7 @@ export class Hud {
     const badge = (st: InvSlot) => (st.up || st.lv || st.rare) ? `<em style="color:${RARE_COLOR[st.rare ?? 0]}">${st.rare ? 'R' + st.rare + ' ' : ''}${st.up ? '+' + st.up : ''}${st.lv ? (st.up ? ' ' : '') + 'Lv' + st.lv : ''}</em>` : '';
     this.$('equip').innerHTML = SLOTS.map(s => {
       const st = p.equip[s], d = st ? this.items[st.item] : null;
-      return `<button type="button" class="slot ${d ? d.rarity : 'empty'}${this.sel === s ? ' sel' : ''}" data-slot="${s}" title="${d ? d.name : SLOT_TH[s]}"><span class="ic">${d ? d.icon : ''}</span>${st ? badge(st) : ''}<small>${SLOT_TH[s]}</small></button>`;
+      return `<button type="button" class="slot ${d ? d.rarity : 'empty'}${this.sel === s ? ' sel' : ''}" data-slot="${s}" title="${d ? d.name : SLOT_TH[s]}"><span class="ic">${d ? ic(d) : ''}</span>${st ? badge(st) : ''}<small>${SLOT_TH[s]}</small></button>`;
     }).join('');
     this.$('equip').querySelectorAll<HTMLButtonElement>('[data-slot]').forEach(b => b.addEventListener('click', () => { const sl = b.dataset.slot as Slot; if (p.equip[sl]) { this.sel = sl; this.invSig = ''; } }));
     const s = p.stats;
@@ -346,7 +346,7 @@ export class Hud {
     const tabOf = (d: ItemDef): Tab => d.slot === 'card' ? 'card' : SLOTS.includes(d.slot as Slot) ? 'gear' : d.slot === 'use' ? 'use' : d.slot === 'shell' ? (d.tab ?? 'enh') : d.tab ?? 'mat';
     const inTab = (d: ItemDef) => tabOf(d) === this.tab;
     const cells = p.inv.map((st, i) => ({ st, i, d: this.items[st.item] })).filter(c => inTab(c.d));
-    this.$('grid').innerHTML = cells.map(c => `<button type="button" class="cell ${c.d.rarity}${this.sel === c.i ? ' sel' : ''}" data-i="${c.i}" title="${c.d.name}"><span class="ic">${c.d.icon}</span>${badge(c.st)}${c.st.qty > 1 ? `<b>${c.st.qty}</b>` : ''}</button>`).join('')
+    this.$('grid').innerHTML = cells.map(c => `<button type="button" class="cell ${c.d.rarity}${this.sel === c.i ? ' sel' : ''}" data-i="${c.i}" title="${c.d.name}"><span class="ic">${ic(c.d)}</span>${badge(c.st)}${c.st.qty > 1 ? `<b>${c.st.qty}</b>` : ''}</button>`).join('')
       + `<span class="count">${p.inv.length} / 30</span>`;
     this.$('grid').querySelectorAll<HTMLButtonElement>('[data-i]').forEach(b => b.addEventListener('click', () => { this.sel = Number(b.dataset.i); this.invSig = ''; }));
 
@@ -371,7 +371,7 @@ export class Hud {
     let extra = '';
     if (cost) {
       const have = p.inv.find(x => x.item === cost.mat)?.qty ?? 0, m = this.items[cost.mat];
-      extra = `<div class="muted">ตีบวก +${st.up ?? 0} → +${(st.up ?? 0) + 1} · โอกาส ${Math.round(cost.rate * 100)}% · ${cost.gold} G + ${m.icon} ${m.name} ${have}/${cost.qty} <br><small>ตีบวกได้ที่ช่าง Brann ในเมือง</small></div>`;
+      extra = `<div class="muted">ตีบวก +${st.up ?? 0} → +${(st.up ?? 0) + 1} · โอกาส ${Math.round(cost.rate * 100)}% · ${cost.gold} G + ${ic(m)} ${m.name} ${have}/${cost.qty} <br><small>ตีบวกได้ที่ช่าง Brann ในเมือง</small></div>`;
     } else if (cost === null) extra = '<div class="muted">ตีบวกสูงสุดแล้ว (+10)</div>';
     const w = this.world;
     extra += optLines(w, st);
@@ -398,7 +398,7 @@ export class Hud {
         <div class="muted">อาวุธหลัก: <b>${card.weapon === 'offhand' ? 'อาวุธรอง' : 'อาวุธหลัก'}</b> (อีกชิ้นเพิ่มสเตตัสอย่างเดียว)</div>
         <div class="muted">สกิล: ${card.skills.map(k => `${k.icon} ${k.name}${k.unlock > lv ? ` (Job ${k.unlock})` : ''}`).join(' · ')}</div>`;
     }
-    det.innerHTML = `<div><b>${d.icon} ${itemName(w, st)}</b> <small class="muted">${RARITY_TH[d.rarity]}${req ? ' · ต้องการ ' + req : ''}${worn ? ' · สวมอยู่' : ''}</small></div>
+    det.innerHTML = `<div><b>${ic(d)} ${itemName(w, st)}</b> <small class="muted">${RARITY_TH[d.rarity]}${req ? ' · ต้องการ ' + req : ''}${worn ? ' · สวมอยู่' : ''}</small></div>
       <div class="muted">${lines.join(' · ') || 'วัตถุดิบ ใช้ตีบวกอุปกรณ์'}</div>${extra}
       <div class="acts">${canEquip ? '<button type="button" id="act-eq">สวมใส่</button>' : ''}${worn ? '<button type="button" id="act-un">ถอด</button>' : ''}${canUse ? '<button type="button" id="act-use">ใช้</button>' : ''}${worn ? '' : `<button type="button" id="act-sell">ขาย ${w.priceOf(st) * st.qty} G</button>`}</div>`;
     det.querySelectorAll<HTMLElement>('[data-tgt]').forEach(b => b.addEventListener('click', () => {

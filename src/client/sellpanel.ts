@@ -1,7 +1,7 @@
 // Bulk sell inside the bag: filter by type / rarity / rare / upgrade, untick exceptions, sell in one go.
 import type { Entity, World, Intent, InvSlot } from '../sim/world';
 import type { ItemDef } from '../core/stats';
-import { itemName } from './itemtext';
+import { itemName, ic } from './itemtext';
 
 type Cat = 'gear' | 'use' | 'mat' | 'shell';
 const CAT_TH: Record<Cat, string> = { gear: 'อุปกรณ์', use: 'ของใช้', mat: 'วัตถุดิบ', shell: 'Shell' };
@@ -68,7 +68,7 @@ export class SellPanel {
       <div class="sellf">${RAR.map(r => `<label class="chip"><input type="checkbox" data-rar="${r.id}"${this.rars.has(r.id) ? ' checked' : ''}>${r.th}</label>`).join('')}</div>
       <div class="sellf"><label>Rare ไม่เกิน <select id="sell-maxr">${[0, 1, 2, 3, 4, 5, 6, 7].map(r => `<option value="${r}"${r === this.maxRare ? ' selected' : ''}>R${r}</option>`).join('')}</select></label>
         <label class="chip"><input type="checkbox" id="sell-up"${this.skipUpgraded ? ' checked' : ''}>ไม่รวมของที่ตีบวกแล้ว</label></div>
-      <div class="selll">${m.map(({ st, i, d }) => `<label class="sellrow"><input type="checkbox" data-pick="${i}"${this.skipped.has(st) ? '' : ' checked'}><span>${d.icon} ${itemName(this.world, st)}${st.qty > 1 ? ' ×' + st.qty : ''}</span><b>${(this.world.priceOf(st) * st.qty).toLocaleString()} G</b></label>`).join('') || '<p class="muted">ไม่มีของที่ตรงตัวกรอง</p>'}</div>
+      <div class="selll">${m.map(({ st, i, d }) => `<label class="sellrow"><input type="checkbox" data-pick="${i}"${this.skipped.has(st) ? '' : ' checked'}><span>${ic(d)} ${itemName(this.world, st)}${st.qty > 1 ? ' ×' + st.qty : ''}</span><b>${(this.world.priceOf(st) * st.qty).toLocaleString()} G</b></label>`).join('') || '<p class="muted">ไม่มีของที่ตรงตัวกรอง</p>'}</div>
       <p class="muted small">การ์ดและพาหนะไม่ถูกขายจากหน้านี้</p>
       <button type="button" id="sell-go" class="${armed ? 'armed' : ''}"${sel.length ? '' : ' disabled'}>${armed ? `ยืนยัน! มีของดีปนอยู่ ขาย ${sel.length} ชิ้น` : `ขาย ${sel.length} ชิ้น · ${total.toLocaleString()} G`}</button>`;
   }

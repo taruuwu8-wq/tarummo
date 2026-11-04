@@ -19,3 +19,6 @@ export function optLines(w: World, st: InvSlot) {
     return `<div class="opt"><b style="color:${GRADE_COLOR[o.grade]}">${o.grade}</b> ${o.label.replace('{v}', String(l.v))}</div>`;
   }).join('');
 }
+
+/** Item icon as HTML: the item's picture when it has one (weapons by tier), else its emoji. */
+export const ic = (d: { icon: string; img?: string }) => d.img ? `<img class="iic" src="${d.img}" alt="">` : d.icon;

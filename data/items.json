@@ -11,7 +11,8 @@
       "min": 14,
       "max": 19,
       "critDmg": 0.6
-    }
+    },
+    "img": "icons/w_sword_0.png"
   },
   "iron_sword": {
     "name": "Iron Sword",
@@ -25,7 +26,8 @@
       "min": 20,
       "max": 27,
       "critDmg": 0.7
-    }
+    },
+    "img": "icons/w_sword_0.png"
   },
   "golem_blade": {
     "name": "Golem Blade",
@@ -39,7 +41,8 @@
       "min": 30,
       "max": 40,
       "critDmg": 0.8
-    }
+    },
+    "img": "icons/w_sword_1.png"
   },
   "short_bow": {
     "name": "Short Bow",
@@ -53,7 +56,8 @@
       "min": 11,
       "max": 20,
       "critDmg": 0.8
-    }
+    },
+    "img": "icons/w_bow_0.png"
   },
   "hunter_bow": {
     "name": "Hunter Bow",
@@ -67,7 +71,8 @@
       "min": 17,
       "max": 29,
       "critDmg": 0.9
-    }
+    },
+    "img": "icons/w_bow_0.png"
   },
   "golem_bow": {
     "name": "Golem Bow",
@@ -81,7 +86,8 @@
       "min": 25,
       "max": 42,
       "critDmg": 1.0
-    }
+    },
+    "img": "icons/w_bow_1.png"
   },
   "apprentice_staff": {
     "name": "Apprentice Staff",
@@ -95,7 +101,8 @@
       "min": 14,
       "max": 20,
       "critDmg": 0.5
-    }
+    },
+    "img": "icons/w_staff_0.png"
   },
   "ember_staff": {
     "name": "Ember Staff",
@@ -112,7 +119,8 @@
     },
     "bonus": {
       "elemRate": 0.05
-    }
+    },
+    "img": "icons/w_staff_0.png"
   },
   "golem_staff": {
     "name": "Golem Staff",
@@ -129,7 +137,8 @@
     },
     "bonus": {
       "elemRate": 0.1
-    }
+    },
+    "img": "icons/w_staff_1.png"
   },
   "cloth_tunic": {
     "name": "Cloth Tunic",
@@ -304,7 +313,8 @@
       "min": 8,
       "max": 12,
       "critDmg": 0.5
-    }
+    },
+    "img": "icons/w_crossbow_0.png"
   },
   "steel_crossbow": {
     "name": "Steel Crossbow",
@@ -318,7 +328,8 @@
       "min": 14,
       "max": 20,
       "critDmg": 0.6
-    }
+    },
+    "img": "icons/w_crossbow_0.png"
   },
   "hunting_dagger": {
     "name": "Hunting Dagger",
@@ -332,7 +343,8 @@
       "min": 9,
       "max": 13,
       "critDmg": 0.7
-    }
+    },
+    "img": "icons/w_dagger_0.png"
   },
   "shadow_dagger": {
     "name": "Shadow Dagger",
@@ -346,7 +358,8 @@
       "min": 15,
       "max": 21,
       "critDmg": 0.9
-    }
+    },
+    "img": "icons/w_dagger_0.png"
   },
   "spell_gun": {
     "name": "Spell Gun",
@@ -360,7 +373,8 @@
       "min": 10,
       "max": 14,
       "critDmg": 0.5
-    }
+    },
+    "img": "icons/w_pistol_0.png"
   },
   "arcane_pistol": {
     "name": "Arcane Pistol",
@@ -377,7 +391,8 @@
     },
     "bonus": {
       "elemRate": 0.03
-    }
+    },
+    "img": "icons/w_pistol_0.png"
   },
   "shell_weapon": {
     "name": "Weapon Shell",
@@ -481,7 +496,8 @@
     },
     "bonus": {
       "elemRate": 0.05
-    }
+    },
+    "img": "icons/w_sword_1.png"
   },
   "frostbite_bow": {
     "name": "Frostbite Bow",
@@ -498,7 +514,8 @@
     },
     "bonus": {
       "elemRate": 0.05
-    }
+    },
+    "img": "icons/w_bow_1.png"
   },
   "frostbite_staff": {
     "name": "Frostbite Staff",
@@ -515,7 +532,8 @@
     },
     "bonus": {
       "elemRate": 0.12
-    }
+    },
+    "img": "icons/w_staff_1.png"
   },
   "bark_armor": {
     "name": "Bark Armor",
@@ -541,7 +559,8 @@
       "min": 48,
       "max": 64,
       "critDmg": 0.85
-    }
+    },
+    "img": "icons/w_sword_2.png"
   },
   "ashen_bow": {
     "name": "Ashen Bow",
@@ -555,7 +574,8 @@
       "min": 40,
       "max": 66,
       "critDmg": 1.05
-    }
+    },
+    "img": "icons/w_bow_2.png"
   },
   "ashen_staff": {
     "name": "Ashen Staff",
@@ -572,7 +592,8 @@
     },
     "bonus": {
       "elemRate": 0.08
-    }
+    },
+    "img": "icons/w_staff_2.png"
   },
   "abyssal_sword": {
     "name": "Abyssal Sword",
@@ -586,7 +607,8 @@
       "min": 62,
       "max": 82,
       "critDmg": 0.9
-    }
+    },
+    "img": "icons/w_sword_3.png"
   },
   "abyssal_bow": {
     "name": "Abyssal Bow",
@@ -600,7 +622,8 @@
       "min": 52,
       "max": 86,
       "critDmg": 1.1
-    }
+    },
+    "img": "icons/w_bow_3.png"
   },
   "abyssal_staff": {
     "name": "Abyssal Staff",
@@ -617,7 +640,8 @@
     },
     "bonus": {
       "elemRate": 0.12
-    }
+    },
+    "img": "icons/w_staff_3.png"
   },
   "ashen_crossbow": {
     "name": "Ashen Crossbow",
@@ -631,7 +655,8 @@
       "min": 26,
       "max": 36,
       "critDmg": 0.65
-    }
+    },
+    "img": "icons/w_crossbow_2.png"
   },
   "ashen_dagger": {
     "name": "Ashen Dagger",
@@ -645,7 +670,8 @@
       "min": 27,
       "max": 37,
       "critDmg": 0.95
-    }
+    },
+    "img": "icons/w_dagger_2.png"
   },
   "ashen_pistol": {
     "name": "Ashen Pistol",
@@ -662,7 +688,8 @@
     },
     "bonus": {
       "elemRate": 0.04
-    }
+    },
+    "img": "icons/w_pistol_2.png"
   },
   "abyssal_crossbow": {
     "name": "Abyssal Crossbow",
@@ -676,7 +703,8 @@
       "min": 34,
       "max": 46,
       "critDmg": 0.7
-    }
+    },
+    "img": "icons/w_crossbow_3.png"
   },
   "abyssal_dagger": {
     "name": "Abyssal Dagger",
@@ -690,7 +718,8 @@
       "min": 35,
       "max": 48,
       "critDmg": 1.0
-    }
+    },
+    "img": "icons/w_dagger_3.png"
   },
   "abyssal_pistol": {
     "name": "Abyssal Pistol",
@@ -707,7 +736,8 @@
     },
     "bonus": {
       "elemRate": 0.05
-    }
+    },
+    "img": "icons/w_pistol_3.png"
   },
   "ashen_mail": {
     "name": "Ashen Mail",
@@ -769,7 +799,8 @@
       "min": 78,
       "max": 104,
       "critDmg": 0.95
-    }
+    },
+    "img": "icons/w_sword_3.png"
   },
   "celestial_bow": {
     "name": "Celestial Bow",
@@ -783,7 +814,8 @@
       "min": 66,
       "max": 110,
       "critDmg": 1.15
-    }
+    },
+    "img": "icons/w_bow_3.png"
   },
   "celestial_staff": {
     "name": "Celestial Staff",
@@ -800,7 +832,8 @@
     },
     "bonus": {
       "elemRate": 0.15
-    }
+    },
+    "img": "icons/w_staff_3.png"
   },
   "celestial_crossbow": {
     "name": "Celestial Crossbow",
@@ -814,7 +847,8 @@
       "min": 43,
       "max": 58,
       "critDmg": 0.75
-    }
+    },
+    "img": "icons/w_crossbow_3.png"
   },
   "celestial_dagger": {
     "name": "Celestial Dagger",
@@ -828,7 +862,8 @@
       "min": 44,
       "max": 60,
       "critDmg": 1.05
-    }
+    },
+    "img": "icons/w_dagger_3.png"
   },
   "celestial_pistol": {
     "name": "Celestial Pistol",
@@ -845,7 +880,8 @@
     },
     "bonus": {
       "elemRate": 0.06
-    }
+    },
+    "img": "icons/w_pistol_3.png"
   },
   "celestial_mail": {
     "name": "Celestial Mail",
@@ -871,7 +907,8 @@
       "min": 96,
       "max": 128,
       "critDmg": 0.95
-    }
+    },
+    "img": "icons/w_sword_4.png"
   },
   "infernal_bow": {
     "name": "Infernal Bow",
@@ -885,7 +922,8 @@
       "min": 81,
       "max": 135,
       "critDmg": 1.15
-    }
+    },
+    "img": "icons/w_bow_4.png"
   },
   "infernal_staff": {
     "name": "Infernal Staff",
@@ -902,7 +940,8 @@
     },
     "bonus": {
       "elemRate": 0.18
-    }
+    },
+    "img": "icons/w_staff_4.png"
   },
   "infernal_crossbow": {
     "name": "Infernal Crossbow",
@@ -916,7 +955,8 @@
       "min": 53,
       "max": 71,
       "critDmg": 0.75
-    }
+    },
+    "img": "icons/w_crossbow_4.png"
   },
   "infernal_dagger": {
     "name": "Infernal Dagger",
@@ -930,7 +970,8 @@
       "min": 54,
       "max": 74,
       "critDmg": 1.05
-    }
+    },
+    "img": "icons/w_dagger_4.png"
   },
   "infernal_pistol": {
     "name": "Infernal Pistol",
@@ -947,7 +988,8 @@
     },
     "bonus": {
       "elemRate": 0.07
-    }
+    },
+    "img": "icons/w_pistol_4.png"
   },
   "infernal_plate": {
     "name": "Infernal Plate",
@@ -1021,7 +1063,8 @@
       "min": 115,
       "max": 154,
       "critDmg": 0.95
-    }
+    },
+    "img": "icons/w_sword_4.png"
   },
   "dusk_bow": {
     "name": "Dusk Bow",
@@ -1035,7 +1078,8 @@
       "min": 97,
       "max": 162,
       "critDmg": 1.15
-    }
+    },
+    "img": "icons/w_bow_4.png"
   },
   "dusk_staff": {
     "name": "Dusk Staff",
@@ -1052,7 +1096,8 @@
     },
     "bonus": {
       "elemRate": 0.198
-    }
+    },
+    "img": "icons/w_staff_4.png"
   },
   "dusk_crossbow": {
     "name": "Dusk Crossbow",
@@ -1066,7 +1111,8 @@
       "min": 64,
       "max": 85,
       "critDmg": 0.75
-    }
+    },
+    "img": "icons/w_crossbow_4.png"
   },
   "dusk_dagger": {
     "name": "Dusk Dagger",
@@ -1080,7 +1126,8 @@
       "min": 65,
       "max": 89,
       "critDmg": 1.05
-    }
+    },
+    "img": "icons/w_dagger_4.png"
   },
   "dusk_pistol": {
     "name": "Dusk Pistol",
@@ -1097,7 +1144,8 @@
     },
     "bonus": {
       "elemRate": 0.077
-    }
+    },
+    "img": "icons/w_pistol_4.png"
   },
   "dusk_plate": {
     "name": "Dusk Plate",
@@ -1123,7 +1171,8 @@
       "min": 138,
       "max": 184,
       "critDmg": 0.95
-    }
+    },
+    "img": "icons/w_sword_5.png"
   },
   "void_bow": {
     "name": "Void Bow",
@@ -1137,7 +1186,8 @@
       "min": 117,
       "max": 194,
       "critDmg": 1.15
-    }
+    },
+    "img": "icons/w_bow_5.png"
   },
   "void_staff": {
     "name": "Void Staff",
@@ -1154,7 +1204,8 @@
     },
     "bonus": {
       "elemRate": 0.22
-    }
+    },
+    "img": "icons/w_staff_5.png"
   },
   "void_crossbow": {
     "name": "Void Crossbow",
@@ -1168,7 +1219,8 @@
       "min": 76,
       "max": 102,
       "critDmg": 0.75
-    }
+    },
+    "img": "icons/w_crossbow_5.png"
   },
   "void_dagger": {
     "name": "Void Dagger",
@@ -1182,7 +1234,8 @@
       "min": 78,
       "max": 107,
       "critDmg": 1.05
-    }
+    },
+    "img": "icons/w_dagger_5.png"
   },
   "void_pistol": {
     "name": "Void Pistol",
@@ -1199,7 +1252,8 @@
     },
     "bonus": {
       "elemRate": 0.085
-    }
+    },
+    "img": "icons/w_pistol_5.png"
   },
   "void_plate": {
     "name": "Void Plate",
@@ -1225,7 +1279,8 @@
       "min": 12,
       "max": 17,
       "critDmg": 0.6
-    }
+    },
+    "img": "icons/w_sword_0.png"
   },
   "traveler_blade": {
     "name": "Traveler's Blade",
@@ -1239,6 +1294,7 @@
       "min": 18,
       "max": 25,
       "critDmg": 0.7
-    }
+    },
+    "img": "icons/w_sword_0.png"
   }
 }
