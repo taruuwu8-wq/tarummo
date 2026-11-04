@@ -19,7 +19,7 @@ export interface DungeonState { active: boolean; startedAt: number; room: number
 export interface MapData {
   id: string; name: string; ground: 'grass' | 'stone' | 'ruin' | 'snow' | 'ash' | 'marsh' | 'temple' | 'sky' | 'lava' | 'crystal'; safe: boolean; width: number; height: number; spawn: Tile;
   rocks: Tile[]; water: Tile[]; trees: Tile[]; walls?: Tile[]; monsters: { type: string; count: number }[];
-  portals: Portal[]; npcs: { id: string; x: number; y: number }[]; dungeon?: DungeonDef;
+  treeTint?: string; portals: Portal[]; npcs: { id: string; x: number; y: number }[]; dungeon?: DungeonDef;
 }
 export interface NpcDef {
   name: string; title: string; sprite: string; height: number; role: 'shop' | 'smith' | 'healer' | 'stash' | 'debug' | 'rarer' | 'craft'; greet: string;

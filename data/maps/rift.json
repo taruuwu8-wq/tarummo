@@ -299,7 +299,19 @@
         28
       ],
       "label": "เกาะลอยฟ้า"
+    },
+    {
+      "x": 29,
+      "y": 29,
+      "to": "twilight",
+      "spawn": [
+        3,
+        3
+      ],
+      "label": "แดนสนธยา Twilight Wastes · Lv 45+",
+      "minLevel": 45
     }
   ],
-  "npcs": []
+  "npcs": [],
+  "treeTint": "0x7a3a2a"
 }

@@ -24,10 +24,11 @@ function autoEquip(w: World, e: Entity) {
 for (const cls of Object.keys(defs.classes)) {
   // START=30 → begin at that level on the right map with the previous gear tier (skips replaying early game)
   const START = Number(process.env.START ?? 0);
-  const tierOf = (lv: number) => lv >= 25 ? 'abyssal' : lv >= 18 ? 'ashen' : '';
+  const tierOf = (lv: number) => lv >= 45 ? 'infernal' : lv >= 38 ? 'celestial' : lv >= 25 ? 'abyssal' : lv >= 18 ? 'ashen' : '';
+  const ARMOR: Record<string, string> = { ashen: 'ashen_mail', abyssal: 'abyssal_plate', celestial: 'celestial_mail', infernal: 'infernal_plate' };
   const T = tierOf(START), K = { swordsman: ['sword', 'crossbow'], archer: ['bow', 'dagger'], mage: ['staff', 'pistol'] }[cls]!;
-  const startSave = START ? { cls, level: START, xp: 0, gold: 20000, autoSell: false, map: START >= 30 ? 'marsh' : 'canyon', inv: [{ item: 'hp_potion_big', qty: 40 }, { item: 'mp_potion_big', qty: 40 }],
-    equip: { weapon: { item: `${T}_${K[0]}`, qty: 1, up: 5, rare: 3 }, offhand: { item: `${T}_${K[1]}`, qty: 1, up: 3, rare: 2 }, armor: { item: T === 'abyssal' ? 'abyssal_plate' : 'ashen_mail', qty: 1, up: 5, rare: 3 } },
+  const startSave = START ? { cls, level: START, xp: 0, gold: 20000, autoSell: false, map: START >= 45 ? 'rift' : START >= 30 ? 'marsh' : 'canyon', inv: [{ item: 'hp_potion_big', qty: 40 }, { item: 'mp_potion_big', qty: 40 }],
+    equip: { weapon: { item: `${T}_${K[0]}`, qty: 1, up: 5, rare: 3 }, offhand: { item: `${T}_${K[1]}`, qty: 1, up: 3, rare: 2 }, armor: { item: ARMOR[T], qty: 1, up: 5, rare: 3 } },
     quest: { main: defs.quests.main.findIndex(q => q.id === `q_lv${START}`), prog: 0, daily: { day: '', prog: 0, done: false } } } as SaveData : undefined;
   let world = new World(structuredClone(MAPS[startSave?.map ?? START_MAP]), defs, 7);
   let e = world.spawnPlayer(cls, startSave);

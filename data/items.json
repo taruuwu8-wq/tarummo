@@ -984,5 +984,233 @@
     "icon": "💠",
     "price": 60,
     "tab": "mat"
+  },
+  "twilight_shard": {
+    "name": "Twilight Shard",
+    "slot": "mat",
+    "rarity": "uncommon",
+    "icon": "🌒",
+    "price": 18,
+    "tab": "drop"
+  },
+  "void_essence": {
+    "name": "Void Essence",
+    "slot": "mat",
+    "rarity": "uncommon",
+    "icon": "🟣",
+    "price": 22,
+    "tab": "drop"
+  },
+  "eclipse_core": {
+    "name": "Eclipse Core",
+    "slot": "mat",
+    "rarity": "rare",
+    "icon": "🌘",
+    "price": 80,
+    "tab": "mat"
+  },
+  "dusk_sword": {
+    "name": "Dusk Sword",
+    "slot": "weapon",
+    "rarity": "epic",
+    "icon": "⚔️",
+    "level": 48,
+    "class": "swordsman",
+    "price": 600,
+    "weapon": {
+      "min": 115,
+      "max": 154,
+      "critDmg": 0.95
+    }
+  },
+  "dusk_bow": {
+    "name": "Dusk Bow",
+    "slot": "weapon",
+    "rarity": "epic",
+    "icon": "🏹",
+    "level": 48,
+    "class": "archer",
+    "price": 600,
+    "weapon": {
+      "min": 97,
+      "max": 162,
+      "critDmg": 1.15
+    }
+  },
+  "dusk_staff": {
+    "name": "Dusk Staff",
+    "slot": "weapon",
+    "rarity": "epic",
+    "icon": "🪄",
+    "level": 48,
+    "class": "mage",
+    "price": 600,
+    "weapon": {
+      "min": 112,
+      "max": 150,
+      "critDmg": 0.75
+    },
+    "bonus": {
+      "elemRate": 0.198
+    }
+  },
+  "dusk_crossbow": {
+    "name": "Dusk Crossbow",
+    "slot": "offhand",
+    "rarity": "epic",
+    "icon": "🏹",
+    "level": 48,
+    "class": "swordsman",
+    "price": 480,
+    "weapon": {
+      "min": 64,
+      "max": 85,
+      "critDmg": 0.75
+    }
+  },
+  "dusk_dagger": {
+    "name": "Dusk Dagger",
+    "slot": "offhand",
+    "rarity": "epic",
+    "icon": "🗡️",
+    "level": 48,
+    "class": "archer",
+    "price": 480,
+    "weapon": {
+      "min": 65,
+      "max": 89,
+      "critDmg": 1.05
+    }
+  },
+  "dusk_pistol": {
+    "name": "Dusk Pistol",
+    "slot": "offhand",
+    "rarity": "epic",
+    "icon": "🔫",
+    "level": 48,
+    "class": "mage",
+    "price": 480,
+    "weapon": {
+      "min": 66,
+      "max": 91,
+      "critDmg": 0.7
+    },
+    "bonus": {
+      "elemRate": 0.077
+    }
+  },
+  "dusk_plate": {
+    "name": "Dusk Plate",
+    "slot": "armor",
+    "rarity": "epic",
+    "icon": "🛡️",
+    "level": 48,
+    "price": 600,
+    "bonus": {
+      "armor": 64,
+      "hp": 516
+    }
+  },
+  "void_sword": {
+    "name": "Void Sword",
+    "slot": "weapon",
+    "rarity": "epic",
+    "icon": "⚔️",
+    "level": 56,
+    "class": "swordsman",
+    "price": 700,
+    "weapon": {
+      "min": 138,
+      "max": 184,
+      "critDmg": 0.95
+    }
+  },
+  "void_bow": {
+    "name": "Void Bow",
+    "slot": "weapon",
+    "rarity": "epic",
+    "icon": "🏹",
+    "level": 56,
+    "class": "archer",
+    "price": 700,
+    "weapon": {
+      "min": 117,
+      "max": 194,
+      "critDmg": 1.15
+    }
+  },
+  "void_staff": {
+    "name": "Void Staff",
+    "slot": "weapon",
+    "rarity": "epic",
+    "icon": "🪄",
+    "level": 56,
+    "class": "mage",
+    "price": 700,
+    "weapon": {
+      "min": 134,
+      "max": 180,
+      "critDmg": 0.75
+    },
+    "bonus": {
+      "elemRate": 0.22
+    }
+  },
+  "void_crossbow": {
+    "name": "Void Crossbow",
+    "slot": "offhand",
+    "rarity": "epic",
+    "icon": "🏹",
+    "level": 56,
+    "class": "swordsman",
+    "price": 560,
+    "weapon": {
+      "min": 76,
+      "max": 102,
+      "critDmg": 0.75
+    }
+  },
+  "void_dagger": {
+    "name": "Void Dagger",
+    "slot": "offhand",
+    "rarity": "epic",
+    "icon": "🗡️",
+    "level": 56,
+    "class": "archer",
+    "price": 560,
+    "weapon": {
+      "min": 78,
+      "max": 107,
+      "critDmg": 1.05
+    }
+  },
+  "void_pistol": {
+    "name": "Void Pistol",
+    "slot": "offhand",
+    "rarity": "epic",
+    "icon": "🔫",
+    "level": 56,
+    "class": "mage",
+    "price": 560,
+    "weapon": {
+      "min": 79,
+      "max": 109,
+      "critDmg": 0.7
+    },
+    "bonus": {
+      "elemRate": 0.085
+    }
+  },
+  "void_plate": {
+    "name": "Void Plate",
+    "slot": "armor",
+    "rarity": "epic",
+    "icon": "🛡️",
+    "level": 56,
+    "price": 700,
+    "bonus": {
+      "armor": 76,
+      "hp": 619
+    }
   }
 }

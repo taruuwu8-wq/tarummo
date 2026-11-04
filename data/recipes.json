@@ -760,6 +760,286 @@
       "gold": 11000,
       "cat": "อุปกรณ์",
       "level": 40
+    },
+    {
+      "id": "dusk_sword",
+      "out": "dusk_sword",
+      "qty": 1,
+      "inputs": [
+        [
+          "twilight_shard",
+          25
+        ],
+        [
+          "eclipse_core",
+          1
+        ],
+        [
+          "prism_core",
+          2
+        ]
+      ],
+      "gold": 15000,
+      "cat": "อุปกรณ์",
+      "level": 48
+    },
+    {
+      "id": "dusk_bow",
+      "out": "dusk_bow",
+      "qty": 1,
+      "inputs": [
+        [
+          "twilight_shard",
+          25
+        ],
+        [
+          "eclipse_core",
+          1
+        ],
+        [
+          "prism_core",
+          2
+        ]
+      ],
+      "gold": 15000,
+      "cat": "อุปกรณ์",
+      "level": 48
+    },
+    {
+      "id": "dusk_staff",
+      "out": "dusk_staff",
+      "qty": 1,
+      "inputs": [
+        [
+          "twilight_shard",
+          25
+        ],
+        [
+          "eclipse_core",
+          1
+        ],
+        [
+          "prism_core",
+          2
+        ]
+      ],
+      "gold": 15000,
+      "cat": "อุปกรณ์",
+      "level": 48
+    },
+    {
+      "id": "dusk_crossbow",
+      "out": "dusk_crossbow",
+      "qty": 1,
+      "inputs": [
+        [
+          "twilight_shard",
+          25
+        ],
+        [
+          "eclipse_core",
+          1
+        ],
+        [
+          "prism_core",
+          2
+        ]
+      ],
+      "gold": 15000,
+      "cat": "อุปกรณ์",
+      "level": 48
+    },
+    {
+      "id": "dusk_dagger",
+      "out": "dusk_dagger",
+      "qty": 1,
+      "inputs": [
+        [
+          "twilight_shard",
+          25
+        ],
+        [
+          "eclipse_core",
+          1
+        ],
+        [
+          "prism_core",
+          2
+        ]
+      ],
+      "gold": 15000,
+      "cat": "อุปกรณ์",
+      "level": 48
+    },
+    {
+      "id": "dusk_pistol",
+      "out": "dusk_pistol",
+      "qty": 1,
+      "inputs": [
+        [
+          "twilight_shard",
+          25
+        ],
+        [
+          "eclipse_core",
+          1
+        ],
+        [
+          "prism_core",
+          2
+        ]
+      ],
+      "gold": 15000,
+      "cat": "อุปกรณ์",
+      "level": 48
+    },
+    {
+      "id": "dusk_plate",
+      "out": "dusk_plate",
+      "qty": 1,
+      "inputs": [
+        [
+          "twilight_shard",
+          30
+        ],
+        [
+          "eclipse_core",
+          1
+        ],
+        [
+          "prism_core",
+          2
+        ]
+      ],
+      "gold": 15000,
+      "cat": "อุปกรณ์",
+      "level": 48
+    },
+    {
+      "id": "void_sword",
+      "out": "void_sword",
+      "qty": 1,
+      "inputs": [
+        [
+          "void_essence",
+          25
+        ],
+        [
+          "eclipse_core",
+          3
+        ]
+      ],
+      "gold": 20000,
+      "cat": "อุปกรณ์",
+      "level": 56
+    },
+    {
+      "id": "void_bow",
+      "out": "void_bow",
+      "qty": 1,
+      "inputs": [
+        [
+          "void_essence",
+          25
+        ],
+        [
+          "eclipse_core",
+          3
+        ]
+      ],
+      "gold": 20000,
+      "cat": "อุปกรณ์",
+      "level": 56
+    },
+    {
+      "id": "void_staff",
+      "out": "void_staff",
+      "qty": 1,
+      "inputs": [
+        [
+          "void_essence",
+          25
+        ],
+        [
+          "eclipse_core",
+          3
+        ]
+      ],
+      "gold": 20000,
+      "cat": "อุปกรณ์",
+      "level": 56
+    },
+    {
+      "id": "void_crossbow",
+      "out": "void_crossbow",
+      "qty": 1,
+      "inputs": [
+        [
+          "void_essence",
+          25
+        ],
+        [
+          "eclipse_core",
+          3
+        ]
+      ],
+      "gold": 20000,
+      "cat": "อุปกรณ์",
+      "level": 56
+    },
+    {
+      "id": "void_dagger",
+      "out": "void_dagger",
+      "qty": 1,
+      "inputs": [
+        [
+          "void_essence",
+          25
+        ],
+        [
+          "eclipse_core",
+          3
+        ]
+      ],
+      "gold": 20000,
+      "cat": "อุปกรณ์",
+      "level": 56
+    },
+    {
+      "id": "void_pistol",
+      "out": "void_pistol",
+      "qty": 1,
+      "inputs": [
+        [
+          "void_essence",
+          25
+        ],
+        [
+          "eclipse_core",
+          3
+        ]
+      ],
+      "gold": 20000,
+      "cat": "อุปกรณ์",
+      "level": 56
+    },
+    {
+      "id": "void_plate",
+      "out": "void_plate",
+      "qty": 1,
+      "inputs": [
+        [
+          "void_essence",
+          30
+        ],
+        [
+          "eclipse_core",
+          3
+        ]
+      ],
+      "gold": 20000,
+      "cat": "อุปกรณ์",
+      "level": 56
     }
   ]
 }

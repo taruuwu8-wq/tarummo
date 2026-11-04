@@ -1917,5 +1917,676 @@
       "ms": 2500,
       "power": 0
     }
+  },
+  "night_prowler": {
+    "name": "Night Prowler",
+    "sprite": "night_prowler",
+    "height": 66,
+    "speed": 2.0,
+    "wanderRadius": 3,
+    "level": 46,
+    "hp": 8686,
+    "xp": 314,
+    "attackType": "melee",
+    "range": 1.4,
+    "attackMs": 1700,
+    "atk": {
+      "min": 120,
+      "max": 158
+    },
+    "armor": {
+      "melee": 149,
+      "ranged": 149,
+      "magic": 149
+    },
+    "armorUpgrade": 4,
+    "acc": 199,
+    "eva": 73,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "shadow": 0.3,
+      "light": -0.2
+    },
+    "race": "animal",
+    "gold": [
+      11,
+      20
+    ],
+    "drops": [
+      [
+        "twilight_shard",
+        0.5
+      ],
+      [
+        "hp_potion_big",
+        0.1
+      ],
+      [
+        "dusk_sword",
+        0.004
+      ],
+      [
+        "dusk_bow",
+        0.004
+      ],
+      [
+        "dusk_dagger",
+        0.004
+      ]
+    ],
+    "aggro": 5,
+    "onHit": {
+      "type": "bleed",
+      "chance": 0.3,
+      "ms": 4000,
+      "power": 0.04
+    }
+  },
+  "fallen_paladin": {
+    "name": "Fallen Paladin",
+    "sprite": "fallen_paladin",
+    "height": 80,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 48,
+    "hp": 10729,
+    "xp": 342,
+    "attackType": "melee",
+    "range": 1.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 126,
+      "max": 164
+    },
+    "armor": {
+      "melee": 177,
+      "ranged": 177,
+      "magic": 177
+    },
+    "armorUpgrade": 4,
+    "acc": 208,
+    "eva": 77,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "shadow": 0.3,
+      "light": 0.1
+    },
+    "race": "angel",
+    "gold": [
+      12,
+      21
+    ],
+    "drops": [
+      [
+        "twilight_shard",
+        0.6
+      ],
+      [
+        "hp_potion_big",
+        0.1
+      ],
+      [
+        "dusk_plate",
+        0.005
+      ],
+      [
+        "dusk_crossbow",
+        0.004
+      ]
+    ],
+    "onHit": {
+      "type": "stun",
+      "chance": 0.15,
+      "ms": 1200,
+      "power": 0
+    }
+  },
+  "azure_wraith": {
+    "name": "Azure Wraith",
+    "sprite": "azure_wraith",
+    "height": 66,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 50,
+    "hp": 10941,
+    "xp": 371,
+    "attackType": "magic",
+    "range": 4.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 113,
+      "max": 147
+    },
+    "armor": {
+      "melee": 113,
+      "ranged": 130,
+      "magic": 195
+    },
+    "armorUpgrade": 5,
+    "acc": 217,
+    "eva": 81,
+    "critRate": 0.06,
+    "element": "water",
+    "res": {
+      "water": 0.4,
+      "fire": -0.2
+    },
+    "race": "spirit",
+    "gold": [
+      11,
+      19
+    ],
+    "drops": [
+      [
+        "twilight_shard",
+        0.5
+      ],
+      [
+        "mp_potion_big",
+        0.12
+      ],
+      [
+        "dusk_staff",
+        0.004
+      ],
+      [
+        "dusk_pistol",
+        0.004
+      ]
+    ],
+    "aggro": 5,
+    "onHit": {
+      "type": "freeze",
+      "chance": 0.2,
+      "ms": 1500,
+      "power": 0
+    }
+  },
+  "twilight_drake": {
+    "name": "Twilight Drake",
+    "sprite": "wyrm",
+    "height": 100,
+    "speed": 1.2,
+    "wanderRadius": 1,
+    "level": 53,
+    "hp": 80669,
+    "xp": 3931,
+    "attackType": "melee",
+    "range": 1.8,
+    "attackMs": 1700,
+    "atk": {
+      "min": 166,
+      "max": 218
+    },
+    "armor": {
+      "melee": 171,
+      "ranged": 171,
+      "magic": 171
+    },
+    "armorUpgrade": 5,
+    "acc": 228,
+    "eva": 85,
+    "critRate": 0.06,
+    "element": "fire",
+    "res": {
+      "fire": 0.4,
+      "water": -0.2
+    },
+    "race": "demon",
+    "gold": [
+      12,
+      22
+    ],
+    "drops": [
+      [
+        "twilight_shard",
+        1,
+        8
+      ],
+      [
+        "spirit_crystal",
+        0.7
+      ]
+    ],
+    "boss": true,
+    "loot": "miniBossLoot",
+    "blast": {
+      "mult": 2.2,
+      "radius": 2.6,
+      "everyMs": 7000,
+      "castMs": 1500,
+      "status": {
+        "type": "burn",
+        "chance": 0.8,
+        "ms": 5000,
+        "power": 0.15
+      }
+    },
+    "summon": {
+      "type": "night_prowler",
+      "count": 2,
+      "everyMs": 14000,
+      "max": 4
+    },
+    "tint": "0xff9a7a"
+  },
+  "void_siren": {
+    "name": "Void Siren",
+    "sprite": "void_siren",
+    "height": 66,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 54,
+    "hp": 10630,
+    "xp": 432,
+    "attackType": "magic",
+    "range": 4.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 122,
+      "max": 158
+    },
+    "armor": {
+      "melee": 123,
+      "ranged": 140,
+      "magic": 210
+    },
+    "armorUpgrade": 5,
+    "acc": 233,
+    "eva": 87,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "shadow": 0.3,
+      "light": -0.25
+    },
+    "race": "demon",
+    "gold": [
+      11,
+      21
+    ],
+    "drops": [
+      [
+        "void_essence",
+        0.5
+      ],
+      [
+        "mp_potion_big",
+        0.12
+      ],
+      [
+        "void_staff",
+        0.004
+      ],
+      [
+        "void_pistol",
+        0.004
+      ],
+      [
+        "void_bow",
+        0.004
+      ]
+    ],
+    "aggro": 6,
+    "onHit": {
+      "type": "slow",
+      "chance": 0.3,
+      "ms": 2500,
+      "power": 0
+    }
+  },
+  "void_wraith": {
+    "name": "Void Wraith",
+    "sprite": "wisp",
+    "height": 66,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 56,
+    "hp": 12750,
+    "xp": 464,
+    "attackType": "magic",
+    "range": 4.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 127,
+      "max": 165
+    },
+    "armor": {
+      "melee": 127,
+      "ranged": 146,
+      "magic": 219
+    },
+    "armorUpgrade": 5,
+    "acc": 243,
+    "eva": 90,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "shadow": 0.4,
+      "light": -0.25
+    },
+    "race": "spirit",
+    "gold": [
+      11,
+      20
+    ],
+    "drops": [
+      [
+        "void_essence",
+        0.5
+      ],
+      [
+        "hp_potion_big",
+        0.1
+      ],
+      [
+        "void_dagger",
+        0.004
+      ],
+      [
+        "void_crossbow",
+        0.004
+      ]
+    ],
+    "aggro": 6,
+    "onHit": {
+      "type": "burn",
+      "chance": 0.25,
+      "ms": 4000,
+      "power": 0.04
+    },
+    "tint": "0xc08aff"
+  },
+  "void_colossus": {
+    "name": "Void Colossus",
+    "sprite": "golem",
+    "height": 80,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 58,
+    "hp": 13851,
+    "xp": 498,
+    "attackType": "melee",
+    "range": 1.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 153,
+      "max": 200
+    },
+    "armor": {
+      "melee": 216,
+      "ranged": 216,
+      "magic": 216
+    },
+    "armorUpgrade": 5,
+    "acc": 251,
+    "eva": 93,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "shadow": 0.3
+    },
+    "race": "robot",
+    "gold": [
+      13,
+      23
+    ],
+    "drops": [
+      [
+        "void_essence",
+        0.6
+      ],
+      [
+        "hp_potion_big",
+        0.1
+      ],
+      [
+        "void_sword",
+        0.004
+      ],
+      [
+        "void_plate",
+        0.005
+      ]
+    ],
+    "onHit": {
+      "type": "stun",
+      "chance": 0.2,
+      "ms": 1300,
+      "power": 0
+    },
+    "tint": "0xb08cff"
+  },
+  "abyss_titan": {
+    "name": "Abyss Titan",
+    "sprite": "boss_magma",
+    "height": 100,
+    "speed": 1.2,
+    "wanderRadius": 1,
+    "level": 60,
+    "hp": 95376,
+    "xp": 5033,
+    "attackType": "melee",
+    "range": 1.8,
+    "attackMs": 1700,
+    "atk": {
+      "min": 189,
+      "max": 249
+    },
+    "armor": {
+      "melee": 195,
+      "ranged": 195,
+      "magic": 195
+    },
+    "armorUpgrade": 5,
+    "acc": 259,
+    "eva": 96,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "shadow": 0.4,
+      "light": -0.2
+    },
+    "race": "demon",
+    "gold": [
+      13,
+      23
+    ],
+    "drops": [
+      [
+        "void_essence",
+        1,
+        8
+      ],
+      [
+        "spirit_crystal",
+        0.8
+      ]
+    ],
+    "boss": true,
+    "loot": "miniBossLoot",
+    "blast": {
+      "mult": 2.2,
+      "radius": 2.6,
+      "everyMs": 7000,
+      "castMs": 1500,
+      "status": {
+        "type": "burn",
+        "chance": 0.8,
+        "ms": 5000,
+        "power": 0.15
+      }
+    },
+    "summon": {
+      "type": "void_wraith",
+      "count": 2,
+      "everyMs": 14000,
+      "max": 4
+    },
+    "tint": "0x9a7cff"
+  },
+  "eclipse_knight": {
+    "name": "Eclipse Knight",
+    "sprite": "fallen_paladin",
+    "height": 80,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 51,
+    "hp": 11644,
+    "xp": 386,
+    "attackType": "melee",
+    "range": 1.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 134,
+      "max": 175
+    },
+    "armor": {
+      "melee": 189,
+      "ranged": 189,
+      "magic": 189
+    },
+    "armorUpgrade": 5,
+    "acc": 221,
+    "eva": 82,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "fire": 0.35,
+      "water": -0.25
+    },
+    "race": "angel",
+    "gold": [
+      12,
+      22
+    ],
+    "drops": [
+      [
+        "twilight_shard",
+        0.5
+      ]
+    ],
+    "onHit": {
+      "type": "stun",
+      "chance": 0.15,
+      "ms": 1200,
+      "power": 0
+    },
+    "tint": "0xffc0a0"
+  },
+  "eclipse_wraith": {
+    "name": "Eclipse Wraith",
+    "sprite": "void_siren",
+    "height": 66,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 52,
+    "hp": 11536,
+    "xp": 401,
+    "attackType": "magic",
+    "range": 4.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 118,
+      "max": 153
+    },
+    "armor": {
+      "melee": 118,
+      "ranged": 135,
+      "magic": 203
+    },
+    "armorUpgrade": 5,
+    "acc": 225,
+    "eva": 84,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "water": 0.3,
+      "fire": -0.2
+    },
+    "race": "spirit",
+    "gold": [
+      11,
+      19
+    ],
+    "drops": [
+      [
+        "twilight_shard",
+        0.5
+      ]
+    ],
+    "aggro": 0,
+    "onHit": {
+      "type": "freeze",
+      "chance": 0.08,
+      "ms": 1500,
+      "power": 0
+    },
+    "tint": "0xffb070"
+  },
+  "eclipse_archfiend": {
+    "name": "Eclipse Archfiend",
+    "sprite": "eclipse_archfiend",
+    "height": 112,
+    "speed": 1.0,
+    "wanderRadius": 1,
+    "level": 55,
+    "hp": 120726,
+    "xp": 4232,
+    "attackType": "magic",
+    "range": 2.4,
+    "attackMs": 1700,
+    "atk": {
+      "min": 175,
+      "max": 228
+    },
+    "armor": {
+      "melee": 126,
+      "ranged": 143,
+      "magic": 215
+    },
+    "armorUpgrade": 5,
+    "acc": 238,
+    "eva": 88,
+    "critRate": 0.06,
+    "element": "fire",
+    "res": {
+      "fire": 0.4,
+      "water": -0.2
+    },
+    "race": "demon",
+    "gold": [
+      0,
+      0
+    ],
+    "drops": [],
+    "boss": true,
+    "loot": "bossLoot",
+    "blast": {
+      "mult": 2.2,
+      "radius": 2.8,
+      "everyMs": 7000,
+      "castMs": 1500,
+      "status": {
+        "type": "stun",
+        "chance": 0.5,
+        "ms": 1500,
+        "power": 0
+      }
+    },
+    "summon": {
+      "type": "eclipse_wraith",
+      "count": 2,
+      "everyMs": 15000,
+      "max": 4
+    },
+    "onHit": {
+      "type": "burn",
+      "chance": 0.3,
+      "ms": 4000,
+      "power": 0.05
+    }
   }
 }

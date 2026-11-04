@@ -19,13 +19,16 @@ import temple from '../data/maps/temple.json';
 import sky from '../data/maps/sky.json';
 import rift from '../data/maps/rift.json';
 import spire from '../data/maps/spire.json';
+import twilight from '../data/maps/twilight.json';
+import voidMap from '../data/maps/void.json';
+import eclipse from '../data/maps/eclipse.json';
 import statuses from '../data/statuses.json';
 import quests from '../data/quests.json';
 import recipes from '../data/recipes.json';
 import type { Defs, MapData } from './sim/world';
 
 export const loadDefs = () => structuredClone({ balance, classes, monsters, items, skills, cards, upgrade, npcs, options, rarity, statuses, quests, recipes, mapGraph: graph() }) as unknown as Defs;
-export const MAPS = { meadow, town, ruins, frostwood, canyon, marsh, temple, sky, rift, spire } as unknown as Record<string, MapData>;
+export const MAPS = { meadow, town, ruins, frostwood, canyon, marsh, temple, sky, rift, spire, twilight, void: voidMap, eclipse } as unknown as Record<string, MapData>;
 export const START_MAP = 'town';
 
 /** Portal links between maps, so Auto can route across several maps. */

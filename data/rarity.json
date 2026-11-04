@@ -279,6 +279,42 @@
         "infernal_pistol",
         "infernal_plate"
       ]
+    },
+    {
+      "min": 50,
+      "swordsman": [
+        "dusk_sword",
+        "dusk_crossbow",
+        "dusk_plate"
+      ],
+      "archer": [
+        "dusk_bow",
+        "dusk_dagger",
+        "dusk_plate"
+      ],
+      "mage": [
+        "dusk_staff",
+        "dusk_pistol",
+        "dusk_plate"
+      ]
+    },
+    {
+      "min": 58,
+      "swordsman": [
+        "void_sword",
+        "void_crossbow",
+        "void_plate"
+      ],
+      "archer": [
+        "void_bow",
+        "void_dagger",
+        "void_plate"
+      ],
+      "mage": [
+        "void_staff",
+        "void_pistol",
+        "void_plate"
+      ]
     }
   ]
 }

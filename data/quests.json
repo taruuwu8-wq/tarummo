@@ -496,6 +496,184 @@
           ]
         ]
       }
+    },
+    {
+      "id": "q_lv45",
+      "name": "สู่แดนสนธยา (Lv 45)",
+      "goal": {
+        "type": "level",
+        "level": 45
+      },
+      "map": "rift",
+      "reward": {
+        "gold": 1800,
+        "items": [
+          [
+            "mp_potion_big",
+            15
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_prowler",
+      "name": "นักล่ารัตติกาล",
+      "goal": {
+        "type": "kill",
+        "monster": "night_prowler",
+        "count": 20
+      },
+      "map": "twilight",
+      "reward": {
+        "gold": 2400,
+        "xp": 53000,
+        "items": [
+          [
+            "upgrade_scroll",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_paladin",
+      "name": "อัศวินผู้ร่วงหล่น",
+      "goal": {
+        "type": "kill",
+        "monster": "fallen_paladin",
+        "count": 15
+      },
+      "map": "twilight",
+      "reward": {
+        "gold": 2600,
+        "xp": 58000,
+        "items": [
+          [
+            "reroll_scroll",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_wraith",
+      "name": "วิญญาณสีคราม",
+      "goal": {
+        "type": "kill",
+        "monster": "azure_wraith",
+        "count": 12
+      },
+      "map": "twilight",
+      "reward": {
+        "gold": 2800,
+        "xp": 63000,
+        "items": [
+          [
+            "spirit_crystal",
+            4
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_eclipse",
+      "name": "วิหารสุริยคราส",
+      "goal": {
+        "type": "clear"
+      },
+      "map": "eclipse",
+      "reward": {
+        "gold": 3600,
+        "xp": 85000,
+        "items": [
+          [
+            "eclipse_core",
+            2
+          ],
+          [
+            "protect_scroll",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_lv52",
+      "name": "ห้วงความว่างเปล่า (Lv 52)",
+      "goal": {
+        "type": "level",
+        "level": 52
+      },
+      "map": "twilight",
+      "reward": {
+        "gold": 2400,
+        "items": [
+          [
+            "hp_potion_big",
+            15
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_siren",
+      "name": "ไซเรนแห่งความว่างเปล่า",
+      "goal": {
+        "type": "kill",
+        "monster": "void_siren",
+        "count": 15
+      },
+      "map": "void",
+      "reward": {
+        "gold": 3000,
+        "xp": 73000,
+        "items": [
+          [
+            "upgrade_scroll",
+            3
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_vwraith",
+      "name": "วิญญาณห้วงลึก",
+      "goal": {
+        "type": "kill",
+        "monster": "void_wraith",
+        "count": 12
+      },
+      "map": "void",
+      "reward": {
+        "gold": 3200,
+        "xp": 79000,
+        "items": [
+          [
+            "reroll_scroll",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_colossus",
+      "name": "ยักษ์ความว่างเปล่า",
+      "goal": {
+        "type": "kill",
+        "monster": "void_colossus",
+        "count": 10
+      },
+      "map": "void",
+      "reward": {
+        "gold": 3600,
+        "xp": 85000,
+        "items": [
+          [
+            "spirit_crystal",
+            5
+          ]
+        ]
+      }
     }
   ],
   "daily": {
@@ -630,6 +808,58 @@
       "reward": {
         "gold": 4800,
         "xp": 90000,
+        "items": [
+          [
+            "shell_weapon",
+            1
+          ],
+          [
+            "upgrade_scroll",
+            3
+          ]
+        ],
+        "shellSrc": "boss"
+      },
+      "group": true
+    },
+    {
+      "id": "q_drake",
+      "name": "มังกรสนธยา (ไปกับเพื่อน)",
+      "goal": {
+        "type": "kill",
+        "monster": "twilight_drake",
+        "count": 1
+      },
+      "map": "twilight",
+      "reward": {
+        "gold": 6000,
+        "xp": 130000,
+        "items": [
+          [
+            "shell_armor",
+            1
+          ],
+          [
+            "protect_scroll",
+            2
+          ]
+        ],
+        "shellSrc": "boss"
+      },
+      "group": true
+    },
+    {
+      "id": "q_titan",
+      "name": "ไททันแห่งห้วงลึก (ไปกับเพื่อน)",
+      "goal": {
+        "type": "kill",
+        "monster": "abyss_titan",
+        "count": 1
+      },
+      "map": "void",
+      "reward": {
+        "gold": 8000,
+        "xp": 180000,
         "items": [
           [
             "shell_weapon",

@@ -546,12 +546,13 @@ export class GameScene extends Phaser.Scene {
       const water = this.world.isWater(x, y);
       const n = ((x * 73856093) ^ (y * 19349663)) >>> 0;
       const GROUND: Record<string, [number[], number]> = { ash: [[0x8a6f5a, 0x826852, 0x927663], 0x6e5646], marsh: [[0x3f5a46, 0x3a5442, 0x44604b], 0x2f4637], temple: [[0x3d5a6e, 0x385468, 0x426074], 0x2c4556],
-        sky: [[0xc9dcf5, 0xc1d5f1, 0xd2e3f8], 0xa7bfe0], lava: [[0x5a2a24, 0x52261f, 0x632f28], 0x3f1b16], crystal: [[0x6a5a8e, 0x645486, 0x726296], 0x4e4270] };
+        sky: [[0xc9dcf5, 0xc1d5f1, 0xd2e3f8], 0xa7bfe0], lava: [[0x5a2a24, 0x52261f, 0x632f28], 0x3f1b16], crystal: [[0x6a5a8e, 0x645486, 0x726296], 0x4e4270],
+        twilight: [[0x5a5a7e, 0x545476, 0x626288], 0x434362], void: [[0x2e2440, 0x2a213b, 0x332848], 0x1d1729], eclipse: [[0x4a2f3a, 0x452b36, 0x523440], 0x321e27] };
       const gx = GROUND[map.ground];
       const stone = map.ground !== 'grass' && map.ground !== 'snow' && !gx, ruin = map.ground === 'ruin', snow = map.ground === 'snow';
       const base = water ? (map.ground === 'marsh' ? 0x2f5f55 : 0x8fd3f0) : gx ? gx[0][n % 3] : snow ? [0xe8f0f8, 0xdfe9f4, 0xf1f6fb][n % 3] : ruin ? [0x5b5466, 0x564f60, 0x605a6b][n % 3] : stone ? [0xc9c2b4, 0xc2bba9, 0xd0c9bb][n % 3] : [0x7cc56b, 0x76bf65, 0x82ca70][n % 3];
       this.diamond(g, sx, sy, base, water ? 0x3a8cc0 : gx ? gx[1] : snow ? 0xc5d4e4 : ruin ? 0x48425a : stone ? 0xa8a090 : 0x68ad58);
-      if (!water && !stone && n % 11 === 0) { g.fillStyle(0xf4e27a, 1).fillCircle(sx - 6, sy + 2, 2); g.fillStyle(0xffffff, 1).fillCircle(sx + 8, sy - 3, 1.6); }
+      if (!water && !stone && !gx && n % 11 === 0) { g.fillStyle(0xf4e27a, 1).fillCircle(sx - 6, sy + 2, 2); g.fillStyle(0xffffff, 1).fillCircle(sx + 8, sy - 3, 1.6); }
     }
     const key = `ground_${map.id}`;
     if (this.textures.exists(key)) this.textures.remove(key);
@@ -571,7 +572,21 @@ export class GameScene extends Phaser.Scene {
       r.fillStyle(0xa9aeba, 1).fillEllipse(-5, -9, 18, 10);
       r.generateTexture('rock', 44, 30); r.destroy();
     }
-    for (const [x, y] of map.trees) { const { sx, sy } = toScreen(x, y); this.add.image(sx, sy, 'tree').setOrigin(24 / 48, 58 / 70).setDepth(10 + sy); }
+    // per-map leaf colour (tinting can't turn green leaves purple, so bake a variant texture)
+    let treeKey = 'tree';
+    if (map.treeTint) {
+      treeKey = `tree_${map.treeTint}`;
+      if (!this.textures.exists(treeKey)) {
+        const leaf = Phaser.Display.Color.ValueToColor(parseInt(map.treeTint, 16)), hi = leaf.clone().lighten(15).color, lo = leaf.color;
+        const t = this.make.graphics({}, false); t.translateCanvas(24, 58);
+        t.fillStyle(0x000000, 0.25).fillEllipse(0, 4, 38, 12);
+        t.fillStyle(0x4a3a3a, 1).fillRect(-4, -22, 8, 24);
+        t.fillStyle(lo, 1).fillCircle(0, -34, 20);
+        t.fillStyle(hi, 1).fillCircle(-7, -40, 11);
+        t.generateTexture(treeKey, 48, 70); t.destroy();
+      }
+    }
+    for (const [x, y] of map.trees) { const { sx, sy } = toScreen(x, y); this.add.image(sx, sy, treeKey).setOrigin(24 / 48, 58 / 70).setDepth(10 + sy); }
     if (!this.textures.exists('wall')) {
       const w = this.make.graphics({}, false); w.translateCanvas(32, 44);
       w.fillStyle(0x3a3446, 1).fillPoints([{ x: -32, y: 0 }, { x: 0, y: 16 }, { x: 0, y: -12 }, { x: -32, y: -28 }], true);

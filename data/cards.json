@@ -1541,5 +1541,374 @@
         }
       }
     ]
+  },
+  "dusk_paladin": {
+    "name": "Dusk Paladin",
+    "class": "swordsman",
+    "role": "ทนทานมืด",
+    "sprite": "fallen_paladin",
+    "height": 70,
+    "icon": "🌒",
+    "rarity": "epic",
+    "aura": "0xb08cff",
+    "element": "shadow",
+    "weapon": "main",
+    "bonus": {
+      "hp": 375,
+      "armor": 30,
+      "elemRate": 0.188,
+      "dmgPct": 0.125
+    },
+    "skills": [
+      {
+        "id": "dusk_paladin_holy_thrust",
+        "name": "Holy Thrust",
+        "icon": "✝️",
+        "mp": 16,
+        "cooldownMs": 3000,
+        "mult": 2.2,
+        "flat": 25,
+        "element": "shadow",
+        "unlock": 1
+      },
+      {
+        "id": "dusk_paladin_aegis",
+        "name": "Aegis",
+        "icon": "🛡️",
+        "mp": 24,
+        "cooldownMs": 18000,
+        "heal": 0.4,
+        "unlock": 2
+      },
+      {
+        "id": "dusk_paladin_judgement",
+        "name": "Judgement",
+        "icon": "⚖️",
+        "mp": 28,
+        "cooldownMs": 8000,
+        "mult": 1.65,
+        "flat": 0,
+        "aoe": 2.2,
+        "self": true,
+        "element": "shadow",
+        "status": {
+          "type": "stun",
+          "chance": 0.3,
+          "ms": 1200,
+          "power": 0
+        },
+        "unlock": 4
+      },
+      {
+        "id": "dusk_paladin_sanctuary",
+        "name": "Sanctuary",
+        "icon": "🌟",
+        "mp": 30,
+        "cooldownMs": 20000,
+        "heal": 0.5,
+        "unlock": 6
+      },
+      {
+        "id": "dusk_paladin_radiant_lance",
+        "name": "Radiant Lance",
+        "icon": "🔱",
+        "mp": 38,
+        "cooldownMs": 13000,
+        "mult": 3.74,
+        "flat": 38,
+        "element": "shadow",
+        "unlock": 9
+      },
+      {
+        "id": "dusk_paladin_divine_wrath",
+        "name": "Divine Wrath",
+        "icon": "☀️",
+        "mp": 50,
+        "cooldownMs": 18000,
+        "mult": 2.64,
+        "flat": 25,
+        "aoe": 2.8,
+        "self": true,
+        "element": "shadow",
+        "unlock": 12
+      }
+    ],
+    "passives": [
+      {
+        "id": "dusk_paladin_blessed",
+        "name": "Blessed",
+        "icon": "😇",
+        "unlock": 5,
+        "type": "stat",
+        "desc": "DEF +30 · HP +200",
+        "bonus": {
+          "armor": 30,
+          "hp": 200
+        }
+      },
+      {
+        "id": "dusk_paladin_martyr",
+        "name": "Martyr",
+        "icon": "🕊️",
+        "unlock": 10,
+        "type": "lowhp",
+        "desc": "HP ต่ำกว่า 35% รับดาเมจลด 35%",
+        "threshold": 0.35,
+        "reduce": 0.35
+      }
+    ]
+  },
+  "shade_huntress": {
+    "name": "Shade Huntress",
+    "class": "archer",
+    "role": "ดาเมจมืด (อาวุธรอง)",
+    "sprite": "night_prowler",
+    "height": 70,
+    "icon": "🐾",
+    "rarity": "epic",
+    "aura": "0x9a7cff",
+    "element": "shadow",
+    "weapon": "offhand",
+    "bonus": {
+      "atk": 22,
+      "critRate": 0.15,
+      "eva": 25,
+      "dmgPct": 0.225
+    },
+    "skills": [
+      {
+        "id": "shade_huntress_crescent_cut",
+        "name": "Crescent Cut",
+        "icon": "🌙",
+        "mp": 14,
+        "cooldownMs": 2500,
+        "mult": 2.2,
+        "flat": 19,
+        "element": "shadow",
+        "unlock": 1
+      },
+      {
+        "id": "shade_huntress_lunar_dance",
+        "name": "Lunar Dance",
+        "icon": "💃",
+        "mp": 22,
+        "cooldownMs": 7000,
+        "mult": 1.1,
+        "flat": 0,
+        "hits": 4,
+        "element": "shadow",
+        "status": {
+          "type": "bleed",
+          "chance": 0.4,
+          "ms": 4000,
+          "power": 0.15
+        },
+        "unlock": 2
+      },
+      {
+        "id": "shade_huntress_eclipse_veil",
+        "name": "Eclipse Veil",
+        "icon": "🌑",
+        "mp": 22,
+        "cooldownMs": 18000,
+        "heal": 0.3,
+        "unlock": 4
+      },
+      {
+        "id": "shade_huntress_night_fang",
+        "name": "Night Fang",
+        "icon": "🐺",
+        "mp": 28,
+        "cooldownMs": 9000,
+        "mult": 1.65,
+        "flat": 0,
+        "aoe": 2.0,
+        "self": true,
+        "element": "shadow",
+        "unlock": 6
+      },
+      {
+        "id": "shade_huntress_blood_moon",
+        "name": "Blood Moon",
+        "icon": "🩸",
+        "mp": 40,
+        "cooldownMs": 13000,
+        "mult": 4.18,
+        "flat": 38,
+        "element": "shadow",
+        "status": {
+          "type": "bleed",
+          "chance": 0.7,
+          "ms": 5000,
+          "power": 0.2
+        },
+        "unlock": 9
+      },
+      {
+        "id": "shade_huntress_new_moon",
+        "name": "New Moon",
+        "icon": "🌚",
+        "mp": 52,
+        "cooldownMs": 18000,
+        "mult": 2.64,
+        "flat": 25,
+        "aoe": 2.6,
+        "self": true,
+        "element": "shadow",
+        "unlock": 12
+      }
+    ],
+    "passives": [
+      {
+        "id": "shade_huntress_moonlit",
+        "name": "Moonlit",
+        "icon": "🌕",
+        "unlock": 5,
+        "type": "stat",
+        "desc": "CRIT +10% · EVA +20",
+        "bonus": {
+          "critRate": 0.1,
+          "eva": 20
+        }
+      },
+      {
+        "id": "shade_huntress_predator",
+        "name": "Predator",
+        "icon": "🐾",
+        "unlock": 10,
+        "type": "lifesteal",
+        "desc": "ดูดเลือด 7%",
+        "pct": 0.07
+      }
+    ]
+  },
+  "abyss_siren": {
+    "name": "Abyss Siren",
+    "class": "mage",
+    "role": "เวทมืดวงกว้าง",
+    "sprite": "void_siren",
+    "height": 70,
+    "icon": "🎧",
+    "rarity": "epic",
+    "aura": "0xff8ad8",
+    "element": "shadow",
+    "weapon": "main",
+    "bonus": {
+      "atk": 20,
+      "elemRate": 0.275,
+      "dmgPct": 0.25
+    },
+    "skills": [
+      {
+        "id": "abyss_siren_star_bolt",
+        "name": "Star Bolt",
+        "icon": "⭐",
+        "mp": 14,
+        "cooldownMs": 2500,
+        "mult": 2.09,
+        "flat": 19,
+        "element": "shadow",
+        "unlock": 1
+      },
+      {
+        "id": "abyss_siren_comet",
+        "name": "Comet",
+        "icon": "☄️",
+        "mp": 26,
+        "cooldownMs": 7000,
+        "mult": 1.65,
+        "flat": 12,
+        "aoe": 2.2,
+        "element": "shadow",
+        "status": {
+          "type": "burn",
+          "chance": 0.4,
+          "ms": 4000,
+          "power": 0.15
+        },
+        "unlock": 2
+      },
+      {
+        "id": "abyss_siren_astral_ward",
+        "name": "Astral Ward",
+        "icon": "🔮",
+        "mp": 24,
+        "cooldownMs": 18000,
+        "heal": 0.35,
+        "unlock": 4
+      },
+      {
+        "id": "abyss_siren_starfall",
+        "name": "Starfall",
+        "icon": "🌠",
+        "mp": 34,
+        "cooldownMs": 9000,
+        "mult": 1.43,
+        "flat": 0,
+        "hits": 3,
+        "aoe": 2.0,
+        "element": "shadow",
+        "unlock": 6
+      },
+      {
+        "id": "abyss_siren_supernova",
+        "name": "Supernova",
+        "icon": "💥",
+        "mp": 46,
+        "cooldownMs": 14000,
+        "mult": 2.86,
+        "flat": 31,
+        "aoe": 2.6,
+        "self": true,
+        "element": "shadow",
+        "status": {
+          "type": "stun",
+          "chance": 0.3,
+          "ms": 1500,
+          "power": 0
+        },
+        "unlock": 9
+      },
+      {
+        "id": "abyss_siren_galaxy",
+        "name": "Galaxy",
+        "icon": "🌌",
+        "mp": 56,
+        "cooldownMs": 18000,
+        "mult": 3.3,
+        "flat": 38,
+        "aoe": 3.0,
+        "element": "shadow",
+        "unlock": 12
+      }
+    ],
+    "passives": [
+      {
+        "id": "abyss_siren_astral",
+        "name": "Astral",
+        "icon": "✨",
+        "unlock": 5,
+        "type": "stat",
+        "desc": "ธาตุ +12% · ดาเมจ +8%",
+        "bonus": {
+          "elemRate": 0.12,
+          "dmgPct": 0.08
+        }
+      },
+      {
+        "id": "abyss_siren_stardust",
+        "name": "Stardust",
+        "icon": "🌟",
+        "unlock": 10,
+        "type": "onHit",
+        "desc": "ทุกการโจมตีมีโอกาส 15% ติดไหม้",
+        "status": {
+          "type": "burn",
+          "chance": 0.15,
+          "ms": 3000,
+          "power": 0.15
+        }
+      }
+    ]
   }
 }

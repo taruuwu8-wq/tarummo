@@ -307,5 +307,6 @@
       "minLevel": 35
     }
   ],
-  "npcs": []
+  "npcs": [],
+  "treeTint": "0xf0c8e0"
 }
