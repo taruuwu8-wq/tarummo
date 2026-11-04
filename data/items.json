@@ -536,7 +536,7 @@
     "icon": "⚔️",
     "level": 18,
     "class": "swordsman",
-    "price": 450,
+    "price": 225,
     "weapon": {
       "min": 48,
       "max": 64,
@@ -550,7 +550,7 @@
     "icon": "🏹",
     "level": 18,
     "class": "archer",
-    "price": 450,
+    "price": 225,
     "weapon": {
       "min": 40,
       "max": 66,
@@ -564,7 +564,7 @@
     "icon": "🪄",
     "level": 18,
     "class": "mage",
-    "price": 450,
+    "price": 225,
     "weapon": {
       "min": 46,
       "max": 62,
@@ -581,7 +581,7 @@
     "icon": "⚔️",
     "level": 25,
     "class": "swordsman",
-    "price": 625,
+    "price": 312,
     "weapon": {
       "min": 62,
       "max": 82,
@@ -595,7 +595,7 @@
     "icon": "🏹",
     "level": 25,
     "class": "archer",
-    "price": 625,
+    "price": 312,
     "weapon": {
       "min": 52,
       "max": 86,
@@ -609,7 +609,7 @@
     "icon": "🪄",
     "level": 25,
     "class": "mage",
-    "price": 625,
+    "price": 312,
     "weapon": {
       "min": 60,
       "max": 80,
@@ -626,7 +626,7 @@
     "icon": "🏹",
     "level": 18,
     "class": "swordsman",
-    "price": 360,
+    "price": 180,
     "weapon": {
       "min": 26,
       "max": 36,
@@ -640,7 +640,7 @@
     "icon": "🗡️",
     "level": 18,
     "class": "archer",
-    "price": 360,
+    "price": 180,
     "weapon": {
       "min": 27,
       "max": 37,
@@ -654,7 +654,7 @@
     "icon": "🔫",
     "level": 18,
     "class": "mage",
-    "price": 360,
+    "price": 180,
     "weapon": {
       "min": 28,
       "max": 38,
@@ -671,7 +671,7 @@
     "icon": "🏹",
     "level": 25,
     "class": "swordsman",
-    "price": 500,
+    "price": 250,
     "weapon": {
       "min": 34,
       "max": 46,
@@ -685,7 +685,7 @@
     "icon": "🗡️",
     "level": 25,
     "class": "archer",
-    "price": 500,
+    "price": 250,
     "weapon": {
       "min": 35,
       "max": 48,
@@ -699,7 +699,7 @@
     "icon": "🔫",
     "level": 25,
     "class": "mage",
-    "price": 500,
+    "price": 250,
     "weapon": {
       "min": 36,
       "max": 50,
@@ -715,7 +715,7 @@
     "rarity": "rare",
     "icon": "🛡️",
     "level": 18,
-    "price": 420,
+    "price": 210,
     "bonus": {
       "armor": 26,
       "hp": 180
@@ -727,7 +727,7 @@
     "rarity": "rare",
     "icon": "🛡️",
     "level": 25,
-    "price": 600,
+    "price": 300,
     "bonus": {
       "armor": 34,
       "hp": 260
@@ -755,6 +755,234 @@
     "rarity": "rare",
     "icon": "🔵",
     "price": 40,
+    "tab": "mat"
+  },
+  "celestial_sword": {
+    "name": "Celestial Sword",
+    "slot": "weapon",
+    "rarity": "epic",
+    "icon": "⚔️",
+    "level": 32,
+    "class": "swordsman",
+    "price": 400,
+    "weapon": {
+      "min": 78,
+      "max": 104,
+      "critDmg": 0.95
+    }
+  },
+  "celestial_bow": {
+    "name": "Celestial Bow",
+    "slot": "weapon",
+    "rarity": "epic",
+    "icon": "🏹",
+    "level": 32,
+    "class": "archer",
+    "price": 400,
+    "weapon": {
+      "min": 66,
+      "max": 110,
+      "critDmg": 1.15
+    }
+  },
+  "celestial_staff": {
+    "name": "Celestial Staff",
+    "slot": "weapon",
+    "rarity": "epic",
+    "icon": "🪄",
+    "level": 32,
+    "class": "mage",
+    "price": 400,
+    "weapon": {
+      "min": 76,
+      "max": 102,
+      "critDmg": 0.75
+    },
+    "bonus": {
+      "elemRate": 0.15
+    }
+  },
+  "celestial_crossbow": {
+    "name": "Celestial Crossbow",
+    "slot": "offhand",
+    "rarity": "epic",
+    "icon": "🏹",
+    "level": 32,
+    "class": "swordsman",
+    "price": 320,
+    "weapon": {
+      "min": 43,
+      "max": 58,
+      "critDmg": 0.75
+    }
+  },
+  "celestial_dagger": {
+    "name": "Celestial Dagger",
+    "slot": "offhand",
+    "rarity": "epic",
+    "icon": "🗡️",
+    "level": 32,
+    "class": "archer",
+    "price": 320,
+    "weapon": {
+      "min": 44,
+      "max": 60,
+      "critDmg": 1.05
+    }
+  },
+  "celestial_pistol": {
+    "name": "Celestial Pistol",
+    "slot": "offhand",
+    "rarity": "epic",
+    "icon": "🔫",
+    "level": 32,
+    "class": "mage",
+    "price": 320,
+    "weapon": {
+      "min": 45,
+      "max": 62,
+      "critDmg": 0.7
+    },
+    "bonus": {
+      "elemRate": 0.06
+    }
+  },
+  "celestial_mail": {
+    "name": "Celestial Mail",
+    "slot": "armor",
+    "rarity": "epic",
+    "icon": "🛡️",
+    "level": 32,
+    "price": 400,
+    "bonus": {
+      "armor": 43,
+      "hp": 350
+    }
+  },
+  "infernal_sword": {
+    "name": "Infernal Sword",
+    "slot": "weapon",
+    "rarity": "epic",
+    "icon": "⚔️",
+    "level": 40,
+    "class": "swordsman",
+    "price": 500,
+    "weapon": {
+      "min": 96,
+      "max": 128,
+      "critDmg": 0.95
+    }
+  },
+  "infernal_bow": {
+    "name": "Infernal Bow",
+    "slot": "weapon",
+    "rarity": "epic",
+    "icon": "🏹",
+    "level": 40,
+    "class": "archer",
+    "price": 500,
+    "weapon": {
+      "min": 81,
+      "max": 135,
+      "critDmg": 1.15
+    }
+  },
+  "infernal_staff": {
+    "name": "Infernal Staff",
+    "slot": "weapon",
+    "rarity": "epic",
+    "icon": "🪄",
+    "level": 40,
+    "class": "mage",
+    "price": 500,
+    "weapon": {
+      "min": 93,
+      "max": 125,
+      "critDmg": 0.75
+    },
+    "bonus": {
+      "elemRate": 0.18
+    }
+  },
+  "infernal_crossbow": {
+    "name": "Infernal Crossbow",
+    "slot": "offhand",
+    "rarity": "epic",
+    "icon": "🏹",
+    "level": 40,
+    "class": "swordsman",
+    "price": 400,
+    "weapon": {
+      "min": 53,
+      "max": 71,
+      "critDmg": 0.75
+    }
+  },
+  "infernal_dagger": {
+    "name": "Infernal Dagger",
+    "slot": "offhand",
+    "rarity": "epic",
+    "icon": "🗡️",
+    "level": 40,
+    "class": "archer",
+    "price": 400,
+    "weapon": {
+      "min": 54,
+      "max": 74,
+      "critDmg": 1.05
+    }
+  },
+  "infernal_pistol": {
+    "name": "Infernal Pistol",
+    "slot": "offhand",
+    "rarity": "epic",
+    "icon": "🔫",
+    "level": 40,
+    "class": "mage",
+    "price": 400,
+    "weapon": {
+      "min": 55,
+      "max": 76,
+      "critDmg": 0.7
+    },
+    "bonus": {
+      "elemRate": 0.07
+    }
+  },
+  "infernal_plate": {
+    "name": "Infernal Plate",
+    "slot": "armor",
+    "rarity": "epic",
+    "icon": "🛡️",
+    "level": 40,
+    "price": 500,
+    "bonus": {
+      "armor": 53,
+      "hp": 430
+    }
+  },
+  "sky_feather": {
+    "name": "Sky Feather",
+    "slot": "mat",
+    "rarity": "uncommon",
+    "icon": "🪶",
+    "price": 12,
+    "tab": "drop"
+  },
+  "rift_cinder": {
+    "name": "Rift Cinder",
+    "slot": "mat",
+    "rarity": "uncommon",
+    "icon": "🔥",
+    "price": 15,
+    "tab": "drop"
+  },
+  "prism_core": {
+    "name": "Prism Core",
+    "slot": "mat",
+    "rarity": "rare",
+    "icon": "💠",
+    "price": 60,
     "tab": "mat"
   }
 }

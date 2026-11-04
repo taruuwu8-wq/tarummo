@@ -1172,5 +1172,374 @@
         "reduce": 0.3
       }
     ]
+  },
+  "holy_lancer": {
+    "name": "Holy Lancer",
+    "class": "swordsman",
+    "role": "ทนทานแสง",
+    "sprite": "card_lancer",
+    "height": 70,
+    "icon": "✝️",
+    "rarity": "epic",
+    "aura": "0xfff1a8",
+    "element": "light",
+    "weapon": "main",
+    "bonus": {
+      "hp": 300,
+      "armor": 24,
+      "elemRate": 0.15,
+      "dmgPct": 0.1
+    },
+    "skills": [
+      {
+        "id": "holy_thrust",
+        "name": "Holy Thrust",
+        "icon": "✝️",
+        "mp": 16,
+        "cooldownMs": 3000,
+        "mult": 2.0,
+        "flat": 20,
+        "element": "light",
+        "unlock": 1
+      },
+      {
+        "id": "aegis",
+        "name": "Aegis",
+        "icon": "🛡️",
+        "mp": 24,
+        "cooldownMs": 18000,
+        "heal": 0.4,
+        "unlock": 2
+      },
+      {
+        "id": "judgement",
+        "name": "Judgement",
+        "icon": "⚖️",
+        "mp": 28,
+        "cooldownMs": 8000,
+        "mult": 1.5,
+        "flat": 0,
+        "aoe": 2.2,
+        "self": true,
+        "element": "light",
+        "status": {
+          "type": "stun",
+          "chance": 0.3,
+          "ms": 1200,
+          "power": 0
+        },
+        "unlock": 4
+      },
+      {
+        "id": "sanctuary",
+        "name": "Sanctuary",
+        "icon": "🌟",
+        "mp": 30,
+        "cooldownMs": 20000,
+        "heal": 0.5,
+        "unlock": 6
+      },
+      {
+        "id": "radiant_lance",
+        "name": "Radiant Lance",
+        "icon": "🔱",
+        "mp": 38,
+        "cooldownMs": 13000,
+        "mult": 3.4,
+        "flat": 30,
+        "element": "light",
+        "unlock": 9
+      },
+      {
+        "id": "divine_wrath",
+        "name": "Divine Wrath",
+        "icon": "☀️",
+        "mp": 50,
+        "cooldownMs": 18000,
+        "mult": 2.4,
+        "flat": 20,
+        "aoe": 2.8,
+        "self": true,
+        "element": "light",
+        "unlock": 12
+      }
+    ],
+    "passives": [
+      {
+        "id": "blessed",
+        "name": "Blessed",
+        "icon": "😇",
+        "unlock": 5,
+        "type": "stat",
+        "desc": "DEF +30 · HP +200",
+        "bonus": {
+          "armor": 30,
+          "hp": 200
+        }
+      },
+      {
+        "id": "martyr",
+        "name": "Martyr",
+        "icon": "🕊️",
+        "unlock": 10,
+        "type": "lowhp",
+        "desc": "HP ต่ำกว่า 35% รับดาเมจลด 35%",
+        "threshold": 0.35,
+        "reduce": 0.35
+      }
+    ]
+  },
+  "moon_ranger": {
+    "name": "Moon Ranger",
+    "class": "archer",
+    "role": "โจมตีจันทรา",
+    "sprite": "card_moon",
+    "height": 70,
+    "icon": "🌙",
+    "rarity": "epic",
+    "aura": "0xc9b8ff",
+    "element": "shadow",
+    "weapon": "offhand",
+    "bonus": {
+      "atk": 18,
+      "critRate": 0.12,
+      "eva": 20,
+      "dmgPct": 0.18
+    },
+    "skills": [
+      {
+        "id": "crescent_cut",
+        "name": "Crescent Cut",
+        "icon": "🌙",
+        "mp": 14,
+        "cooldownMs": 2500,
+        "mult": 2.0,
+        "flat": 15,
+        "element": "shadow",
+        "unlock": 1
+      },
+      {
+        "id": "lunar_dance",
+        "name": "Lunar Dance",
+        "icon": "💃",
+        "mp": 22,
+        "cooldownMs": 7000,
+        "mult": 1.0,
+        "flat": 0,
+        "hits": 4,
+        "element": "shadow",
+        "status": {
+          "type": "bleed",
+          "chance": 0.4,
+          "ms": 4000,
+          "power": 0.15
+        },
+        "unlock": 2
+      },
+      {
+        "id": "eclipse_veil",
+        "name": "Eclipse Veil",
+        "icon": "🌑",
+        "mp": 22,
+        "cooldownMs": 18000,
+        "heal": 0.3,
+        "unlock": 4
+      },
+      {
+        "id": "night_fang",
+        "name": "Night Fang",
+        "icon": "🐺",
+        "mp": 28,
+        "cooldownMs": 9000,
+        "mult": 1.5,
+        "flat": 0,
+        "aoe": 2.0,
+        "self": true,
+        "element": "shadow",
+        "unlock": 6
+      },
+      {
+        "id": "blood_moon",
+        "name": "Blood Moon",
+        "icon": "🩸",
+        "mp": 40,
+        "cooldownMs": 13000,
+        "mult": 3.8,
+        "flat": 30,
+        "element": "shadow",
+        "status": {
+          "type": "bleed",
+          "chance": 0.7,
+          "ms": 5000,
+          "power": 0.2
+        },
+        "unlock": 9
+      },
+      {
+        "id": "new_moon",
+        "name": "New Moon",
+        "icon": "🌚",
+        "mp": 52,
+        "cooldownMs": 18000,
+        "mult": 2.4,
+        "flat": 20,
+        "aoe": 2.6,
+        "self": true,
+        "element": "shadow",
+        "unlock": 12
+      }
+    ],
+    "passives": [
+      {
+        "id": "moonlit",
+        "name": "Moonlit",
+        "icon": "🌕",
+        "unlock": 5,
+        "type": "stat",
+        "desc": "CRIT +10% · EVA +20",
+        "bonus": {
+          "critRate": 0.1,
+          "eva": 20
+        }
+      },
+      {
+        "id": "predator",
+        "name": "Predator",
+        "icon": "🐾",
+        "unlock": 10,
+        "type": "lifesteal",
+        "desc": "ดูดเลือด 7%",
+        "pct": 0.07
+      }
+    ]
+  },
+  "star_sage": {
+    "name": "Star Sage",
+    "class": "mage",
+    "role": "โจมตีดวงดาว",
+    "sprite": "card_star",
+    "height": 70,
+    "icon": "⭐",
+    "rarity": "epic",
+    "aura": "0xffd23f",
+    "element": "light",
+    "weapon": "main",
+    "bonus": {
+      "atk": 16,
+      "elemRate": 0.22,
+      "dmgPct": 0.2
+    },
+    "skills": [
+      {
+        "id": "star_bolt",
+        "name": "Star Bolt",
+        "icon": "⭐",
+        "mp": 14,
+        "cooldownMs": 2500,
+        "mult": 1.9,
+        "flat": 15,
+        "element": "light",
+        "unlock": 1
+      },
+      {
+        "id": "comet",
+        "name": "Comet",
+        "icon": "☄️",
+        "mp": 26,
+        "cooldownMs": 7000,
+        "mult": 1.5,
+        "flat": 10,
+        "aoe": 2.2,
+        "element": "light",
+        "status": {
+          "type": "burn",
+          "chance": 0.4,
+          "ms": 4000,
+          "power": 0.15
+        },
+        "unlock": 2
+      },
+      {
+        "id": "astral_ward",
+        "name": "Astral Ward",
+        "icon": "🔮",
+        "mp": 24,
+        "cooldownMs": 18000,
+        "heal": 0.35,
+        "unlock": 4
+      },
+      {
+        "id": "starfall",
+        "name": "Starfall",
+        "icon": "🌠",
+        "mp": 34,
+        "cooldownMs": 9000,
+        "mult": 1.3,
+        "flat": 0,
+        "hits": 3,
+        "aoe": 2.0,
+        "element": "light",
+        "unlock": 6
+      },
+      {
+        "id": "supernova",
+        "name": "Supernova",
+        "icon": "💥",
+        "mp": 46,
+        "cooldownMs": 14000,
+        "mult": 2.6,
+        "flat": 25,
+        "aoe": 2.6,
+        "self": true,
+        "element": "light",
+        "status": {
+          "type": "stun",
+          "chance": 0.3,
+          "ms": 1500,
+          "power": 0
+        },
+        "unlock": 9
+      },
+      {
+        "id": "galaxy",
+        "name": "Galaxy",
+        "icon": "🌌",
+        "mp": 56,
+        "cooldownMs": 18000,
+        "mult": 3.0,
+        "flat": 30,
+        "aoe": 3.0,
+        "element": "light",
+        "unlock": 12
+      }
+    ],
+    "passives": [
+      {
+        "id": "astral",
+        "name": "Astral",
+        "icon": "✨",
+        "unlock": 5,
+        "type": "stat",
+        "desc": "ธาตุ +12% · ดาเมจ +8%",
+        "bonus": {
+          "elemRate": 0.12,
+          "dmgPct": 0.08
+        }
+      },
+      {
+        "id": "stardust",
+        "name": "Stardust",
+        "icon": "🌟",
+        "unlock": 10,
+        "type": "onHit",
+        "desc": "ทุกการโจมตีมีโอกาส 15% ติดไหม้",
+        "status": {
+          "type": "burn",
+          "chance": 0.15,
+          "ms": 3000,
+          "power": 0.15
+        }
+      }
+    ]
   }
 }

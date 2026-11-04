@@ -480,6 +480,286 @@
       "gold": 4500,
       "cat": "อุปกรณ์",
       "level": 25
+    },
+    {
+      "id": "celestial_sword",
+      "out": "celestial_sword",
+      "qty": 1,
+      "inputs": [
+        [
+          "sky_feather",
+          25
+        ],
+        [
+          "prism_core",
+          1
+        ],
+        [
+          "abyss_pearl",
+          2
+        ]
+      ],
+      "gold": 7000,
+      "cat": "อุปกรณ์",
+      "level": 32
+    },
+    {
+      "id": "celestial_bow",
+      "out": "celestial_bow",
+      "qty": 1,
+      "inputs": [
+        [
+          "sky_feather",
+          25
+        ],
+        [
+          "prism_core",
+          1
+        ],
+        [
+          "abyss_pearl",
+          2
+        ]
+      ],
+      "gold": 7000,
+      "cat": "อุปกรณ์",
+      "level": 32
+    },
+    {
+      "id": "celestial_staff",
+      "out": "celestial_staff",
+      "qty": 1,
+      "inputs": [
+        [
+          "sky_feather",
+          25
+        ],
+        [
+          "prism_core",
+          1
+        ],
+        [
+          "abyss_pearl",
+          2
+        ]
+      ],
+      "gold": 7000,
+      "cat": "อุปกรณ์",
+      "level": 32
+    },
+    {
+      "id": "celestial_crossbow",
+      "out": "celestial_crossbow",
+      "qty": 1,
+      "inputs": [
+        [
+          "sky_feather",
+          25
+        ],
+        [
+          "prism_core",
+          1
+        ],
+        [
+          "abyss_pearl",
+          2
+        ]
+      ],
+      "gold": 7000,
+      "cat": "อุปกรณ์",
+      "level": 32
+    },
+    {
+      "id": "celestial_dagger",
+      "out": "celestial_dagger",
+      "qty": 1,
+      "inputs": [
+        [
+          "sky_feather",
+          25
+        ],
+        [
+          "prism_core",
+          1
+        ],
+        [
+          "abyss_pearl",
+          2
+        ]
+      ],
+      "gold": 7000,
+      "cat": "อุปกรณ์",
+      "level": 32
+    },
+    {
+      "id": "celestial_pistol",
+      "out": "celestial_pistol",
+      "qty": 1,
+      "inputs": [
+        [
+          "sky_feather",
+          25
+        ],
+        [
+          "prism_core",
+          1
+        ],
+        [
+          "abyss_pearl",
+          2
+        ]
+      ],
+      "gold": 7000,
+      "cat": "อุปกรณ์",
+      "level": 32
+    },
+    {
+      "id": "celestial_armor",
+      "out": "celestial_mail",
+      "qty": 1,
+      "inputs": [
+        [
+          "sky_feather",
+          30
+        ],
+        [
+          "prism_core",
+          1
+        ],
+        [
+          "abyss_pearl",
+          2
+        ]
+      ],
+      "gold": 7000,
+      "cat": "อุปกรณ์",
+      "level": 32
+    },
+    {
+      "id": "infernal_sword",
+      "out": "infernal_sword",
+      "qty": 1,
+      "inputs": [
+        [
+          "rift_cinder",
+          25
+        ],
+        [
+          "prism_core",
+          3
+        ]
+      ],
+      "gold": 11000,
+      "cat": "อุปกรณ์",
+      "level": 40
+    },
+    {
+      "id": "infernal_bow",
+      "out": "infernal_bow",
+      "qty": 1,
+      "inputs": [
+        [
+          "rift_cinder",
+          25
+        ],
+        [
+          "prism_core",
+          3
+        ]
+      ],
+      "gold": 11000,
+      "cat": "อุปกรณ์",
+      "level": 40
+    },
+    {
+      "id": "infernal_staff",
+      "out": "infernal_staff",
+      "qty": 1,
+      "inputs": [
+        [
+          "rift_cinder",
+          25
+        ],
+        [
+          "prism_core",
+          3
+        ]
+      ],
+      "gold": 11000,
+      "cat": "อุปกรณ์",
+      "level": 40
+    },
+    {
+      "id": "infernal_crossbow",
+      "out": "infernal_crossbow",
+      "qty": 1,
+      "inputs": [
+        [
+          "rift_cinder",
+          25
+        ],
+        [
+          "prism_core",
+          3
+        ]
+      ],
+      "gold": 11000,
+      "cat": "อุปกรณ์",
+      "level": 40
+    },
+    {
+      "id": "infernal_dagger",
+      "out": "infernal_dagger",
+      "qty": 1,
+      "inputs": [
+        [
+          "rift_cinder",
+          25
+        ],
+        [
+          "prism_core",
+          3
+        ]
+      ],
+      "gold": 11000,
+      "cat": "อุปกรณ์",
+      "level": 40
+    },
+    {
+      "id": "infernal_pistol",
+      "out": "infernal_pistol",
+      "qty": 1,
+      "inputs": [
+        [
+          "rift_cinder",
+          25
+        ],
+        [
+          "prism_core",
+          3
+        ]
+      ],
+      "gold": 11000,
+      "cat": "อุปกรณ์",
+      "level": 40
+    },
+    {
+      "id": "infernal_armor",
+      "out": "infernal_plate",
+      "qty": 1,
+      "inputs": [
+        [
+          "rift_cinder",
+          30
+        ],
+        [
+          "prism_core",
+          3
+        ]
+      ],
+      "gold": 11000,
+      "cat": "อุปกรณ์",
+      "level": 40
     }
   ]
 }

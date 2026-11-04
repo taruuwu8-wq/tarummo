@@ -44,6 +44,7 @@ export class Hud {
         <button type="button" class="sb" id="tf-btn" title="แปลงร่าง (T)"><span class="ic">✨</span><span class="key">T</span><i class="cd"></i></button>
         <button type="button" class="sb" id="mountbtn" title="ขี่พาหนะ (R)"><span class="ic">🐎</span><span class="key">R</span></button>
         <button type="button" class="sb" id="autocfgbtn" title="ตั้งค่า Auto"><span class="ic">⚙️</span></button>
+        <button type="button" class="sb" id="recallbtn" title="วาร์ปกลับเมือง"><span class="ic">🏠</span></button>
         <button type="button" class="sb mobile-only" id="chatbtn" title="แชท"><span class="ic">💬</span></button>
         <button type="button" class="sb wide" id="auto">AUTO<br>OFF</button>
       </div>
@@ -79,6 +80,7 @@ export class Hud {
     this.$('auto').addEventListener('click', () => this.toggleAuto());
     this.autoPanel = new AutoPanel(this.el, world, p, items, send);
     this.$('autocfgbtn').addEventListener('click', () => this.autoPanel.toggle());
+    this.$('recallbtn').addEventListener('click', () => send({ kind: 'recall', id: p.id }));
     this.$('qauto').addEventListener('click', () => send({ kind: 'autoQuest', id: p.id, on: !p.autoQuest }));
     this.el.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(b => b.addEventListener('click', () => { this.tab = b.dataset.tab as Tab; this.sel = null; this.invSig = ''; }));
     const chatIn = this.$('chatin') as HTMLInputElement;

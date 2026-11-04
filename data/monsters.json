@@ -1251,5 +1251,671 @@
       "ms": 2500,
       "power": 0
     }
+  },
+  "sky_rabbit": {
+    "name": "Sky Rabbit",
+    "sprite": "sky_rabbit",
+    "height": 66,
+    "speed": 2.0,
+    "wanderRadius": 3,
+    "level": 31,
+    "hp": 5439,
+    "xp": 199,
+    "attackType": "melee",
+    "range": 1.3,
+    "attackMs": 1700,
+    "atk": {
+      "min": 81,
+      "max": 105
+    },
+    "armor": {
+      "melee": 99,
+      "ranged": 99,
+      "magic": 99
+    },
+    "armorUpgrade": 3,
+    "acc": 135,
+    "eva": 50,
+    "critRate": 0.06,
+    "element": "light",
+    "res": {
+      "light": 0.2
+    },
+    "race": "animal",
+    "gold": [
+      8,
+      14
+    ],
+    "drops": [
+      [
+        "sky_feather",
+        0.5
+      ],
+      [
+        "hp_potion_big",
+        0.1
+      ],
+      [
+        "celestial_sword",
+        0.005
+      ],
+      [
+        "celestial_crossbow",
+        0.005
+      ]
+    ],
+    "onHit": {
+      "type": "bleed",
+      "chance": 0.15,
+      "ms": 3000,
+      "power": 0.12
+    }
+  },
+  "angel_knight": {
+    "name": "Angel Knight",
+    "sprite": "angel_knight",
+    "height": 66,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 33,
+    "hp": 5817,
+    "xp": 225,
+    "attackType": "magic",
+    "range": 4.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 73,
+      "max": 95
+    },
+    "armor": {
+      "melee": 74,
+      "ranged": 85,
+      "magic": 127
+    },
+    "armorUpgrade": 3,
+    "acc": 144,
+    "eva": 53,
+    "critRate": 0.06,
+    "element": "light",
+    "res": {
+      "light": 0.3,
+      "shadow": -0.2
+    },
+    "race": "angel",
+    "gold": [
+      8,
+      15
+    ],
+    "drops": [
+      [
+        "sky_feather",
+        0.5
+      ],
+      [
+        "mp_potion_big",
+        0.1
+      ],
+      [
+        "celestial_bow",
+        0.005
+      ],
+      [
+        "celestial_dagger",
+        0.005
+      ]
+    ],
+    "onHit": {
+      "type": "slow",
+      "chance": 0.25,
+      "ms": 2500,
+      "power": 0
+    }
+  },
+  "crystal_seraph": {
+    "name": "Crystal Seraph",
+    "sprite": "crystal_seraph",
+    "height": 66,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 36,
+    "hp": 7022,
+    "xp": 308,
+    "attackType": "magic",
+    "range": 4.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 80,
+      "max": 104
+    },
+    "armor": {
+      "melee": 80,
+      "ranged": 92,
+      "magic": 138
+    },
+    "armorUpgrade": 3,
+    "acc": 156,
+    "eva": 58,
+    "critRate": 0.06,
+    "element": "water",
+    "res": {
+      "water": 0.3,
+      "fire": -0.2
+    },
+    "race": "angel",
+    "gold": [
+      9,
+      16
+    ],
+    "drops": [
+      [
+        "sky_feather",
+        0.6
+      ],
+      [
+        "celestial_staff",
+        0.005
+      ],
+      [
+        "celestial_pistol",
+        0.005
+      ],
+      [
+        "celestial_mail",
+        0.006
+      ],
+      [
+        "spirit_crystal",
+        0.03
+      ]
+    ],
+    "aggro": 5,
+    "onHit": {
+      "type": "freeze",
+      "chance": 0.08,
+      "ms": 1500,
+      "power": 0
+    }
+  },
+  "star_oracle": {
+    "name": "Star Oracle",
+    "sprite": "star_oracle",
+    "height": 100,
+    "speed": 1.1,
+    "wanderRadius": 1,
+    "level": 38,
+    "hp": 50715,
+    "xp": 2979,
+    "attackType": "magic",
+    "range": 2.4,
+    "attackMs": 1700,
+    "atk": {
+      "min": 119,
+      "max": 155
+    },
+    "armor": {
+      "melee": 85,
+      "ranged": 98,
+      "magic": 146
+    },
+    "armorUpgrade": 4,
+    "acc": 165,
+    "eva": 61,
+    "critRate": 0.06,
+    "element": "light",
+    "res": {
+      "light": 0.4,
+      "shadow": -0.2
+    },
+    "race": "angel",
+    "gold": [
+      10,
+      17
+    ],
+    "drops": [
+      [
+        "sky_feather",
+        1,
+        6
+      ],
+      [
+        "spirit_crystal",
+        0.6
+      ]
+    ],
+    "boss": true,
+    "loot": "miniBossLoot",
+    "blast": {
+      "mult": 2.0,
+      "radius": 2.6,
+      "everyMs": 7500,
+      "castMs": 1500,
+      "status": {
+        "type": "stun",
+        "chance": 0.5,
+        "ms": 1500,
+        "power": 0
+      }
+    },
+    "summon": {
+      "type": "angel_knight",
+      "count": 2,
+      "everyMs": 14000,
+      "max": 4
+    }
+  },
+  "berserker": {
+    "name": "Rift Berserker",
+    "sprite": "berserker",
+    "height": 66,
+    "speed": 1.8,
+    "wanderRadius": 3,
+    "level": 39,
+    "hp": 6951,
+    "xp": 314,
+    "attackType": "melee",
+    "range": 1.4,
+    "attackMs": 1700,
+    "atk": {
+      "min": 101,
+      "max": 133
+    },
+    "armor": {
+      "melee": 125,
+      "ranged": 125,
+      "magic": 125
+    },
+    "armorUpgrade": 4,
+    "acc": 169,
+    "eva": 62,
+    "critRate": 0.06,
+    "element": "fire",
+    "res": {
+      "fire": 0.25,
+      "water": -0.2
+    },
+    "race": "demon",
+    "gold": [
+      10,
+      18
+    ],
+    "drops": [
+      [
+        "rift_cinder",
+        0.5
+      ],
+      [
+        "hp_potion_big",
+        0.1
+      ],
+      [
+        "infernal_sword",
+        0.005
+      ],
+      [
+        "infernal_crossbow",
+        0.005
+      ]
+    ],
+    "aggro": 5,
+    "onHit": {
+      "type": "bleed",
+      "chance": 0.3,
+      "ms": 4000,
+      "power": 0.15
+    }
+  },
+  "succubus": {
+    "name": "Succubus",
+    "sprite": "succubus",
+    "height": 66,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 41,
+    "hp": 7329,
+    "xp": 346,
+    "attackType": "magic",
+    "range": 4.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 91,
+      "max": 118
+    },
+    "armor": {
+      "melee": 92,
+      "ranged": 105,
+      "magic": 157
+    },
+    "armorUpgrade": 4,
+    "acc": 177,
+    "eva": 66,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "shadow": 0.3,
+      "light": -0.25
+    },
+    "race": "demon",
+    "gold": [
+      10,
+      18
+    ],
+    "drops": [
+      [
+        "rift_cinder",
+        0.5
+      ],
+      [
+        "mp_potion_big",
+        0.1
+      ],
+      [
+        "infernal_bow",
+        0.005
+      ],
+      [
+        "infernal_dagger",
+        0.005
+      ]
+    ],
+    "aggro": 6,
+    "onHit": {
+      "type": "burn",
+      "chance": 0.3,
+      "ms": 3000,
+      "power": 0.15
+    }
+  },
+  "lava_bear": {
+    "name": "Lava Bear",
+    "sprite": "lava_bear",
+    "height": 80,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 43,
+    "hp": 9248,
+    "xp": 438,
+    "attackType": "melee",
+    "range": 1.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 112,
+      "max": 146
+    },
+    "armor": {
+      "melee": 158,
+      "ranged": 158,
+      "magic": 158
+    },
+    "armorUpgrade": 4,
+    "acc": 186,
+    "eva": 69,
+    "critRate": 0.06,
+    "element": "fire",
+    "res": {
+      "fire": 0.35,
+      "water": -0.25
+    },
+    "race": "animal",
+    "gold": [
+      11,
+      20
+    ],
+    "drops": [
+      [
+        "rift_cinder",
+        0.6
+      ],
+      [
+        "infernal_staff",
+        0.005
+      ],
+      [
+        "infernal_pistol",
+        0.005
+      ],
+      [
+        "infernal_plate",
+        0.006
+      ],
+      [
+        "spirit_crystal",
+        0.04
+      ]
+    ],
+    "onHit": {
+      "type": "stun",
+      "chance": 0.1,
+      "ms": 1200,
+      "power": 0
+    }
+  },
+  "abyss_duke": {
+    "name": "Abyss Duke",
+    "sprite": "abyss_duke",
+    "height": 100,
+    "speed": 1.2,
+    "wanderRadius": 1,
+    "level": 45,
+    "hp": 64680,
+    "xp": 4171,
+    "attackType": "melee",
+    "range": 1.8,
+    "attackMs": 1700,
+    "atk": {
+      "min": 140,
+      "max": 184
+    },
+    "armor": {
+      "melee": 144,
+      "ranged": 144,
+      "magic": 144
+    },
+    "armorUpgrade": 4,
+    "acc": 194,
+    "eva": 72,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "shadow": 0.4,
+      "light": -0.2
+    },
+    "race": "demon",
+    "gold": [
+      11,
+      20
+    ],
+    "drops": [
+      [
+        "rift_cinder",
+        1,
+        6
+      ],
+      [
+        "spirit_crystal",
+        0.7
+      ]
+    ],
+    "boss": true,
+    "loot": "miniBossLoot",
+    "blast": {
+      "mult": 2.2,
+      "radius": 2.6,
+      "everyMs": 7000,
+      "castMs": 1500,
+      "status": {
+        "type": "burn",
+        "chance": 0.8,
+        "ms": 5000,
+        "power": 0.15
+      }
+    },
+    "summon": {
+      "type": "berserker",
+      "count": 2,
+      "everyMs": 13000,
+      "max": 4
+    }
+  },
+  "spire_seraph": {
+    "name": "Spire Seraph",
+    "sprite": "crystal_seraph",
+    "height": 66,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 35,
+    "hp": 5970,
+    "xp": 337,
+    "attackType": "magic",
+    "range": 4.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 80,
+      "max": 104
+    },
+    "armor": {
+      "melee": 80,
+      "ranged": 92,
+      "magic": 138
+    },
+    "armorUpgrade": 3,
+    "acc": 156,
+    "eva": 58,
+    "critRate": 0.06,
+    "element": "water",
+    "res": {
+      "water": 0.3,
+      "fire": -0.2
+    },
+    "race": "angel",
+    "gold": [
+      9,
+      16
+    ],
+    "drops": [
+      [
+        "sky_feather",
+        0.5
+      ]
+    ],
+    "aggro": 0,
+    "onHit": {
+      "type": "freeze",
+      "chance": 0.08,
+      "ms": 1500,
+      "power": 0
+    },
+    "tint": "0xffd6f5"
+  },
+  "spire_knight": {
+    "name": "Spire Knight",
+    "sprite": "angel_knight",
+    "height": 66,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 37,
+    "hp": 6398,
+    "xp": 377,
+    "attackType": "magic",
+    "range": 4.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 73,
+      "max": 95
+    },
+    "armor": {
+      "melee": 74,
+      "ranged": 85,
+      "magic": 127
+    },
+    "armorUpgrade": 3,
+    "acc": 144,
+    "eva": 53,
+    "critRate": 0.06,
+    "element": "light",
+    "res": {
+      "light": 0.3,
+      "shadow": -0.2
+    },
+    "race": "angel",
+    "gold": [
+      8,
+      15
+    ],
+    "drops": [
+      [
+        "sky_feather",
+        0.5
+      ]
+    ],
+    "onHit": {
+      "type": "slow",
+      "chance": 0.25,
+      "ms": 2500,
+      "power": 0
+    },
+    "tint": "0xfff1a8"
+  },
+  "prism_empress": {
+    "name": "Prism Empress",
+    "sprite": "prism_empress",
+    "height": 112,
+    "speed": 1.0,
+    "wanderRadius": 1,
+    "level": 40,
+    "hp": 78540,
+    "xp": 3959,
+    "attackType": "magic",
+    "range": 2.4,
+    "attackMs": 1700,
+    "atk": {
+      "min": 125,
+      "max": 163
+    },
+    "armor": {
+      "melee": 90,
+      "ranged": 102,
+      "magic": 154
+    },
+    "armorUpgrade": 4,
+    "acc": 173,
+    "eva": 64,
+    "critRate": 0.06,
+    "element": "light",
+    "res": {
+      "light": 0.4,
+      "shadow": -0.2
+    },
+    "race": "angel",
+    "gold": [
+      0,
+      0
+    ],
+    "drops": [],
+    "boss": true,
+    "loot": "bossLoot",
+    "blast": {
+      "mult": 2.2,
+      "radius": 2.8,
+      "everyMs": 7000,
+      "castMs": 1500,
+      "status": {
+        "type": "stun",
+        "chance": 0.5,
+        "ms": 1500,
+        "power": 0
+      }
+    },
+    "summon": {
+      "type": "spire_seraph",
+      "count": 2,
+      "everyMs": 15000,
+      "max": 4
+    },
+    "onHit": {
+      "type": "slow",
+      "chance": 0.3,
+      "ms": 2500,
+      "power": 0
+    }
   }
 }

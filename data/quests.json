@@ -131,7 +131,7 @@
       },
       "map": "frostwood",
       "reward": {
-        "gold": 800,
+        "gold": 400,
         "xp": 1500,
         "items": [
           [
@@ -150,7 +150,7 @@
       },
       "map": "frostwood",
       "reward": {
-        "gold": 600,
+        "gold": 300,
         "items": [
           [
             "hp_potion_big",
@@ -169,7 +169,7 @@
       },
       "map": "canyon",
       "reward": {
-        "gold": 800,
+        "gold": 400,
         "xp": 4000,
         "items": [
           [
@@ -189,7 +189,7 @@
       },
       "map": "canyon",
       "reward": {
-        "gold": 900,
+        "gold": 450,
         "xp": 5000,
         "items": [
           [
@@ -209,7 +209,7 @@
       },
       "map": "canyon",
       "reward": {
-        "gold": 1200,
+        "gold": 600,
         "xp": 7000,
         "items": [
           [
@@ -228,7 +228,7 @@
       },
       "map": "canyon",
       "reward": {
-        "gold": 1000,
+        "gold": 500,
         "items": [
           [
             "mp_potion_big",
@@ -247,7 +247,7 @@
       },
       "map": "marsh",
       "reward": {
-        "gold": 1500,
+        "gold": 750,
         "xp": 12000,
         "items": [
           [
@@ -265,7 +265,7 @@
       },
       "map": "temple",
       "reward": {
-        "gold": 2500,
+        "gold": 1250,
         "xp": 15000,
         "items": [
           [
@@ -289,7 +289,7 @@
       },
       "map": "marsh",
       "reward": {
-        "gold": 2000,
+        "gold": 1000,
         "xp": 16000,
         "items": [
           [
@@ -309,12 +309,190 @@
       },
       "map": "marsh",
       "reward": {
-        "gold": 2500,
+        "gold": 1250,
         "xp": 20000,
         "items": [
           [
             "spirit_crystal",
             3
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_lv30",
+      "name": "สู่เกาะลอยฟ้า (Lv 30)",
+      "goal": {
+        "type": "level",
+        "level": 30
+      },
+      "map": "marsh",
+      "reward": {
+        "gold": 1200,
+        "items": [
+          [
+            "hp_potion_big",
+            15
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_rabbit",
+      "name": "กระต่ายฟ้าคะนอง",
+      "goal": {
+        "type": "kill",
+        "monster": "sky_rabbit",
+        "count": 20
+      },
+      "map": "sky",
+      "reward": {
+        "gold": 1200,
+        "xp": 25000,
+        "items": [
+          [
+            "upgrade_scroll",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_angel",
+      "name": "อัศวินแห่งฟ้า",
+      "goal": {
+        "type": "kill",
+        "monster": "angel_knight",
+        "count": 15
+      },
+      "map": "sky",
+      "reward": {
+        "gold": 1400,
+        "xp": 30000,
+        "items": [
+          [
+            "reroll_scroll",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_seraph",
+      "name": "เทวดาคริสตัล",
+      "goal": {
+        "type": "kill",
+        "monster": "crystal_seraph",
+        "count": 12
+      },
+      "map": "sky",
+      "reward": {
+        "gold": 1600,
+        "xp": 36000,
+        "items": [
+          [
+            "spirit_crystal",
+            3
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_spire",
+      "name": "หอคริสตัล",
+      "goal": {
+        "type": "clear"
+      },
+      "map": "spire",
+      "reward": {
+        "gold": 2400,
+        "xp": 45000,
+        "items": [
+          [
+            "prism_core",
+            2
+          ],
+          [
+            "protect_scroll",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_lv38",
+      "name": "รอยแยกนรก (Lv 38)",
+      "goal": {
+        "type": "level",
+        "level": 38
+      },
+      "map": "sky",
+      "reward": {
+        "gold": 1600,
+        "items": [
+          [
+            "mp_potion_big",
+            15
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_berserk",
+      "name": "นักรบคลั่ง",
+      "goal": {
+        "type": "kill",
+        "monster": "berserker",
+        "count": 15
+      },
+      "map": "rift",
+      "reward": {
+        "gold": 2000,
+        "xp": 50000,
+        "items": [
+          [
+            "upgrade_scroll",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_succubus",
+      "name": "ปีศาจยั่วยวน",
+      "goal": {
+        "type": "kill",
+        "monster": "succubus",
+        "count": 12
+      },
+      "map": "rift",
+      "reward": {
+        "gold": 2200,
+        "xp": 56000,
+        "items": [
+          [
+            "reroll_scroll",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_bear",
+      "name": "หมีลาวา",
+      "goal": {
+        "type": "kill",
+        "monster": "lava_bear",
+        "count": 10
+      },
+      "map": "rift",
+      "reward": {
+        "gold": 2600,
+        "xp": 64000,
+        "items": [
+          [
+            "spirit_crystal",
+            4
           ]
         ]
       }
@@ -350,7 +528,7 @@
       },
       "map": "frostwood",
       "reward": {
-        "gold": 1500,
+        "gold": 750,
         "xp": 2500,
         "items": [
           [
@@ -376,7 +554,7 @@
       },
       "map": "canyon",
       "reward": {
-        "gold": 2500,
+        "gold": 1250,
         "xp": 12000,
         "items": [
           [
@@ -398,7 +576,7 @@
       },
       "map": "marsh",
       "reward": {
-        "gold": 5000,
+        "gold": 2000,
         "xp": 30000,
         "items": [
           [
@@ -408,6 +586,58 @@
           [
             "protect_scroll",
             2
+          ]
+        ],
+        "shellSrc": "boss"
+      },
+      "group": true
+    },
+    {
+      "id": "q_oracle",
+      "name": "นักพยากรณ์ดวงดาว (ไปกับเพื่อน)",
+      "goal": {
+        "type": "kill",
+        "monster": "star_oracle",
+        "count": 1
+      },
+      "map": "sky",
+      "reward": {
+        "gold": 3200,
+        "xp": 60000,
+        "items": [
+          [
+            "shell_offhand",
+            1
+          ],
+          [
+            "protect_scroll",
+            2
+          ]
+        ],
+        "shellSrc": "boss"
+      },
+      "group": true
+    },
+    {
+      "id": "q_duke",
+      "name": "ดยุกแห่งห้วงลึก (ไปกับเพื่อน)",
+      "goal": {
+        "type": "kill",
+        "monster": "abyss_duke",
+        "count": 1
+      },
+      "map": "rift",
+      "reward": {
+        "gold": 4800,
+        "xp": 90000,
+        "items": [
+          [
+            "shell_weapon",
+            1
+          ],
+          [
+            "upgrade_scroll",
+            3
           ]
         ],
         "shellSrc": "boss"

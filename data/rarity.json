@@ -243,6 +243,42 @@
         "abyssal_pistol",
         "abyssal_plate"
       ]
+    },
+    {
+      "min": 34,
+      "swordsman": [
+        "celestial_sword",
+        "celestial_crossbow",
+        "celestial_mail"
+      ],
+      "archer": [
+        "celestial_bow",
+        "celestial_dagger",
+        "celestial_mail"
+      ],
+      "mage": [
+        "celestial_staff",
+        "celestial_pistol",
+        "celestial_mail"
+      ]
+    },
+    {
+      "min": 42,
+      "swordsman": [
+        "infernal_sword",
+        "infernal_crossbow",
+        "infernal_plate"
+      ],
+      "archer": [
+        "infernal_bow",
+        "infernal_dagger",
+        "infernal_plate"
+      ],
+      "mage": [
+        "infernal_staff",
+        "infernal_pistol",
+        "infernal_plate"
+      ]
     }
   ]
 }

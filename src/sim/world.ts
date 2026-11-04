@@ -17,7 +17,7 @@ export interface DungeonDef {
 }
 export interface DungeonState { active: boolean; startedAt: number; room: number; openDoors: number[]; cleared: boolean; rank: 'S' | 'A' | 'B' | null; timeMs: number }
 export interface MapData {
-  id: string; name: string; ground: 'grass' | 'stone' | 'ruin' | 'snow' | 'ash' | 'marsh' | 'temple'; safe: boolean; width: number; height: number; spawn: Tile;
+  id: string; name: string; ground: 'grass' | 'stone' | 'ruin' | 'snow' | 'ash' | 'marsh' | 'temple' | 'sky' | 'lava' | 'crystal'; safe: boolean; width: number; height: number; spawn: Tile;
   rocks: Tile[]; water: Tile[]; trees: Tile[]; walls?: Tile[]; monsters: { type: string; count: number }[];
   portals: Portal[]; npcs: { id: string; x: number; y: number }[]; dungeon?: DungeonDef;
 }
@@ -37,7 +37,8 @@ export type BarRef = string | null;
 export const BAR_SIZE = 10;
 /** Renamed ids: old saves are migrated on load. */
 const RENAMED: Record<string, string> = { glass_orb: 'spell_gun', star_orb: 'arcane_pistol', orb_bolt: 'arcane_shot', orb_frost: 'frost_bullet' };
-const FORM_CD_MS = 10000, COMBAT_MS = 5000;
+const FORM_CD_MS = 10000, COMBAT_MS = 5000, RECALL_MS = 2000;
+const TOWN_SPAWN: Tile = [9, 12];
 
 export type LootAct = 'keep' | 'sell' | 'drop';
 export interface AutoCfg {
@@ -141,6 +142,8 @@ export interface Entity {
   bagFullAck?: boolean;
   /** world time when Auto last had something to do; used to roam to a new spot */
   autoBusyAt?: number;
+  /** manual 'go to town' button: channels then warps */
+  recallTown?: boolean;
   quest: QuestState; autoQuest: boolean;
   autoCfg: AutoCfg; autoAnchor: Tile | null; autoTrip: AutoTrip | null; autoStats: AutoStats;
   mounted: boolean; aggro: number; noRespawn: boolean; nextBlast: number; room?: number;
@@ -178,6 +181,7 @@ export type Intent =
   | { kind: 'sellMany'; id: number; indices: number[] }
   | { kind: 'autoQuest'; id: number; on: boolean }
   | { kind: 'craft'; id: number; recipe: string; times: number }
+  | { kind: 'recall'; id: number }
   | { kind: 'applyShell'; id: number; shell: number; ref: number | Slot }
   | { kind: 'reroll'; id: number; ref: number | Slot };
 
@@ -896,6 +900,7 @@ export class World {
     else if (intent.kind === 'rarify') { if (this.nearNpc(e, 'rarer')) this.rarify(e, intent.ref, intent.protect); else this.events.push({ t: 'msg', id: e.id, text: 'สุ่ม Rare ได้ที่ Rina ในเมือง' }); }
     else if (intent.kind === 'applyShell') this.applyShell(e, intent.shell, intent.ref);
     else if (intent.kind === 'sellMany') this.sellMany(e, intent.indices);
+    else if (intent.kind === 'recall') { if (this.map.id !== 'town' && !this.map.dungeon && !this.inCombat(e)) e.recallTown = true; else if (this.inCombat(e)) this.events.push({ t: 'msg', id: e.id, text: 'อยู่ในการต่อสู้ วาร์ปไม่ได้' }); }
     else if (intent.kind === 'craft') { if (this.nearNpc(e, 'craft')) this.craft(e, intent.recipe, intent.times); }
     else if (intent.kind === 'autoQuest') {
       e.autoQuest = intent.on && !!this.questOf(e);
@@ -983,7 +988,7 @@ export class World {
       if (e.dead) continue;
       if (!this.canAct(e)) continue;
       if (e.kind === 'monster') this.monsterAi(e);
-      else { this.playerAi(e); this.walkToNpc(e); }
+      else { if (e.recallTown) { if (e.lastHurt > this.now - 300) { e.recallTown = false; delete e.cooldowns['recall']; this.events.push({ t: 'msg', id: e.id, text: 'โดนโจมตี วาร์ปถูกยกเลิก' }); } else this.recall(e, 'town', TOWN_SPAWN); if (!e.cooldowns['recall'] && this.map.id === 'town') e.recallTown = false; } this.playerAi(e); this.walkToNpc(e); }
       this.combat(e);
       // out-of-combat regen for players
       if (e.kind === 'player') {
@@ -1289,10 +1294,15 @@ export class World {
 
     // Auto quest: go to the quest's map first (route over portals), then hunt only the quest monster
     // group quests (bosses) are not done by Auto alone: hunt normally instead
-    const q0 = e.autoQuest ? this.questOf(e) : undefined, q = q0?.group ? undefined : q0;
-    if (q?.map && q.map !== this.map.id) {
-      const hop = this.nextHop(e, q.map);
-      if (!hop) { e.autoQuest = false; this.events.push({ t: 'msg', id: e.id, text: 'Auto เควสต์: ยังเข้าแมพเป้าหมายไม่ได้ (เลเวลไม่ถึง)' }); return; }
+    const q0 = e.autoQuest ? this.questOf(e) : undefined;
+    let q = q0?.group ? undefined : q0;
+    const hop = q?.map && q.map !== this.map.id ? this.nextHop(e, q.map) : undefined;
+    if (q?.map && q.map !== this.map.id && !hop) {
+      // target map still locked by level: keep Auto quest on and hunt here until it opens
+      if ((e.cooldowns['questLock'] ?? 0) <= this.now) { e.cooldowns['questLock'] = this.now + 60000; this.events.push({ t: 'msg', id: e.id, text: 'Auto เควสต์: เลเวลยังไม่ถึงแมพเป้าหมาย ล่าที่นี่ไปก่อน' }); }
+      q = undefined;
+    }
+    if (q?.map && q.map !== this.map.id && hop) {
       e.target = null;
       if (e.equip.mount && !e.mounted) e.mounted = true;
       if (!e.path.length && this.now >= e.repathAt) { e.repathAt = this.now + 800; this.pathTo(e, hop); }
@@ -1344,15 +1354,25 @@ export class World {
     const portalTo = (to: string) => { const h = this.nextHop(e, to); return h ? { x: h[0], y: h[1] } : undefined; };
     if (trip.phase === 'toTown') {
       if (this.map.id === 'town') { trip.phase = 'shop'; e.talkTo = 'shop'; e.repathAt = 0; return; }
-      const pt = portalTo('town'); if (pt) walkTo([pt.x, pt.y]);
+      this.recall(e, 'town', TOWN_SPAWN);
     } else if (trip.phase === 'shop') {
       if (!e.talkTo) e.talkTo = 'shop';          // walkToNpc does the walking; autoShop runs on arrival
     } else {
-      if (this.map.id !== trip.home) { const pt = portalTo(trip.home); if (pt) walkTo([pt.x, pt.y]); return; }
+      if (this.map.id !== trip.home) { this.recall(e, trip.home, trip.spot); return; }
       if (Math.hypot(e.x - trip.spot[0], e.y - trip.spot[1]) <= 1.5) { e.autoTrip = null; e.autoAnchor = trip.spot; e.mounted = false; return; }
       walkTo(trip.spot);
     }
     if (e.equip.mount && !e.mounted) e.mounted = true;   // ride while travelling
+  }
+
+  /** Warp after a short channel (Auto trips and the town button). Fires a portal event like walking through one. */
+  recall(e: Entity, to: string, spawn: Tile) {
+    if (e.dead) return;
+    const at = e.cooldowns['recall'] ?? 0;
+    if (!at) { e.cooldowns['recall'] = this.now + RECALL_MS; e.path = []; e.target = null; this.events.push({ t: 'msg', id: e.id, text: to === 'town' ? 'กำลังวาร์ปกลับเมือง…' : 'กำลังวาร์ปกลับจุดล่า…' }); return; }
+    if (this.now < at) return;
+    delete e.cooldowns['recall'];
+    this.events.push({ t: 'portal', id: e.id, to, spawn });
   }
 
   /** At the shop during an Auto trip: sell what the filter says to sell, then restock potions. */

@@ -22,8 +22,15 @@ function autoEquip(w: World, e: Entity) {
 }
 
 for (const cls of Object.keys(defs.classes)) {
-  let world = new World(structuredClone(MAPS[START_MAP]), defs, 7);
-  let e = world.spawnPlayer(cls);
+  // START=30 → begin at that level on the right map with the previous gear tier (skips replaying early game)
+  const START = Number(process.env.START ?? 0);
+  const tierOf = (lv: number) => lv >= 25 ? 'abyssal' : lv >= 18 ? 'ashen' : '';
+  const T = tierOf(START), K = { swordsman: ['sword', 'crossbow'], archer: ['bow', 'dagger'], mage: ['staff', 'pistol'] }[cls]!;
+  const startSave = START ? { cls, level: START, xp: 0, gold: 20000, autoSell: false, map: START >= 30 ? 'marsh' : 'canyon', inv: [{ item: 'hp_potion_big', qty: 40 }, { item: 'mp_potion_big', qty: 40 }],
+    equip: { weapon: { item: `${T}_${K[0]}`, qty: 1, up: 5, rare: 3 }, offhand: { item: `${T}_${K[1]}`, qty: 1, up: 3, rare: 2 }, armor: { item: T === 'abyssal' ? 'abyssal_plate' : 'ashen_mail', qty: 1, up: 5, rare: 3 } },
+    quest: { main: defs.quests.main.findIndex(q => q.id === `q_lv${START}`), prog: 0, daily: { day: '', prog: 0, done: false } } } as SaveData : undefined;
+  let world = new World(structuredClone(MAPS[startSave?.map ?? START_MAP]), defs, 7);
+  let e = world.spawnPlayer(cls, startSave);
   world.apply({ kind: 'autoQuest', id: e.id, on: true });
   const total = (HOURS * 3600 * 1000) / TICK_MS;
   const marks: Record<number, number> = {}, log: string[] = [];
@@ -64,7 +71,7 @@ for (const cls of Object.keys(defs.classes)) {
   }
   const m = (lv: number) => marks[lv] ? `${Math.round(marks[lv] * TICK_MS / 60000)}m` : '-';
   console.log(`\n== ${cls}: Lv${e.level} after ${HOURS}h · deaths ${deaths} · town trips ${trips} · gold ${e.gold} · map ${world.map.id} · quest ${e.quest.main}/8`);
-  console.log(`   Lv3 ${m(3)} · Lv5 ${m(5)} · Lv8 ${m(8)} · Lv10 ${m(10)} · Lv12 ${m(12)} · Lv15 ${m(15)}`);
+  console.log(`   ${[3, 5, 8, 10, 12, 15, 20, 25, 30, 33, 36, 40, 45].filter(l => l > START).map(l => `Lv${l} ${m(l)}`).join(' · ')}`);
   console.log(`   gear: ${GEAR.map(s => e.equip[s] ? `${e.equip[s]!.item}${e.equip[s]!.rare ? ' R' + e.equip[s]!.rare : ''}` : '-').join(', ')}`);
   console.log('   crafted: ' + crafted.join(', '));
   for (const l of log.slice(0, 14)) console.log('   ' + l);
