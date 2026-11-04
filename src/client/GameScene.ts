@@ -695,9 +695,10 @@ export class GameScene extends Phaser.Scene {
       if (out <= 0.2 || nearHouse(jx, jy)) continue;
       const back = jx < -0.5 || jy < -0.5, front = jx > W - 0.5 || jy > H - 0.5, k = h(jx, jy, 16);
       if (back && !front) {
-        if (k < 0.62) tree(jx, jy, out > 1.5);
-        else if (k < 0.72) rocks(jx, jy);
-        else if (k < 0.78 && !town) prop(pickOf(S.spires, jx, jy, 17), jx, jy, { scale: 0.9 });
+        const [bt, br, bs] = S.back ?? [0.62, 0.72, 0.78];
+        if (k < bt) tree(jx, jy, out > 1.5);
+        else if (k < br) rocks(jx, jy);
+        else if (k < bs && !town) prop(pickOf(S.spires, jx, jy, 17), jx, jy, { scale: (S.spireScale ?? 0.9) * (0.85 + h(jx, jy, 18) * 0.3), tint: out > 1.5 ? S.farTint : undefined });
         else if (k < 0.9) flowers(jx, jy);
         else grass(jx, jy);
       } else {
@@ -720,7 +721,12 @@ export class GameScene extends Phaser.Scene {
     const c0 = toScreen(0, H), c1 = toScreen(W, 0), c2 = toScreen(W, H);
     this.bounds = { x0: c0.sx, x1: c1.sx, y0: 0, y1: c2.sy };
     for (let i = 0; i < 3; i++) this.clouds.push(this.add.image(c0.sx + (c1.sx - c0.sx) * (i / 3), c2.sy * (0.2 + i * 0.3), 'm_cloud').setScale(9, 7).setAlpha(0.08).setDepth(1));
-    if (map.ground === 'snow') this.add.particles(0, 0, 'dust', {   // snowfall instead of floating motes
+    if (map.ground === 'ash') this.add.particles(0, 0, 'dust', {   // ash drifting on the wind
+      x: { min: c0.sx - 300, max: c1.sx }, y: { min: -200, max: c2.sy }, lifespan: 8000, frequency: 110, quantity: 1,
+      speedX: { min: 18, max: 40 }, speedY: { min: -4, max: 10 }, scale: { min: 0.15, max: 0.35 }, tint: [0x9a9088, 0xb8aea2, 0x6e6660],
+      alpha: { onUpdate: (_p: unknown, _k: string, t: number) => Math.min(1, t * 5, (1 - t) * 4) * 0.7 },
+    }).setDepth(9000);
+    else     if (map.ground === 'snow') this.add.particles(0, 0, 'dust', {   // snowfall instead of floating motes
       x: { min: c0.sx - 200, max: c1.sx + 100 }, y: { min: -300, max: c2.sy }, lifespan: 9000, frequency: 70, quantity: 1,
       speedX: { min: -14, max: 2 }, speedY: { min: 16, max: 34 }, scale: { min: 0.22, max: 0.5 }, tint: 0xffffff,
       alpha: { onUpdate: (_p: unknown, _k: string, t: number) => Math.min(1, t * 6, (1 - t) * 4) * 0.85 },

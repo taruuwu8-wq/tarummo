@@ -43,10 +43,18 @@ const SNOW: Theme = {
   cliff: [0x6b7686, 0x5c6676, 0x4d5664, 0x3e4552],
   flowers: [], flowerRate: 0,
 };
-export const THEMES: Record<string, Theme> = { grass: MEADOW, stone: TOWN, snow: SNOW };
+const ASH: Theme = {
+  grass: [0xa48562, 0xae8f6a, 0xb89972, 0xc1a37b, 0xcaad85],   // dusty sand, muted
+  dirt: [0x80634a, 0x8c6e52, 0x98795b, 0xa38464],              // packed earth trail
+  sand: 0xc9b08a, water: [0x4c6f86, 0x5a7f96, 0x6b90a6, 0x9fbfcf],
+  cliff: [0x93593a, 0x7d4b30, 0x673e27, 0x52311f],              // red rock strata
+  flowers: [], flowerRate: 0,
+};
+export const THEMES: Record<string, Theme> = { grass: MEADOW, stone: TOWN, snow: SNOW, ash: ASH };
 
 /** Which sheet props a theme scatters (ids from data/props.json). */
-export interface PropSet { trees: string[]; bushes: string[]; rocks: string[]; rockSmall: string; spires: string[]; ground: string[]; patches: string[]; extras: string[]; groundSway: boolean; farTint: number }
+/** back: cumulative chances for the back margin [tree, rock cluster, spire] (rest: patches/ground); spireScale for those */
+export interface PropSet { trees: string[]; bushes: string[]; rocks: string[]; rockSmall: string; spires: string[]; ground: string[]; patches: string[]; extras: string[]; groundSway: boolean; farTint: number; back?: [number, number, number]; spireScale?: number }
 const GREEN: PropSet = {
   trees: ['oak_a', 'oak_b', 'oak_a', 'pine'], bushes: ['bush_white', 'bush_pink'], rocks: ['rock_big', 'rock_mid'], rockSmall: 'rock_small', spires: ['rock_spire'],
   ground: ['grass_a', 'grass_b', 'grass_c', 'grass_fl1', 'grass_fl2'], patches: ['fl_white', 'fl_pink', 'fl_purple', 'fl_yellow', 'fb_white', 'fb_pink', 'fb_blue', 'fb_mix'],
@@ -58,7 +66,14 @@ const SNOWY: PropSet = {
   ground: ['ice_sprig', 'snow_patch', 'snow_drift'], patches: ['snow_berry_small', 'snow_bush', 'ice_crystal_small', 'ice_shard', 'bush_snowy'],
   extras: ['ice_crystal_small', 'ice_shard', 'ice_crystal_small', 'ice_shard', 'ice_crystal_small', 'snowman'], groundSway: false, farTint: 0xb8c4d4,   // snowman: rare
 };
-export const PROP_SETS: Record<string, PropSet> = { grass: GREEN, stone: GREEN, snow: SNOWY };
+const DESERT: PropSet = {
+  trees: ['dead_tree', 'dead_tree', 'cactus_tall', 'cactus', 'cactus_group'], bushes: ['agave', 'desert_grass', 'cactus_barrel', 'cactus_round'],
+  rocks: ['sand_rocks', 'sand_rock_big'], rockSmall: 'sand_rock_small', spires: ['sand_tower', 'sand_arch', 'sand_pillar', 'cactus_rock'],
+  ground: ['dry_grass', 'dry_grass_b', 'dry_grass_c', 'sand_stone_small'], patches: ['agave', 'desert_grass', 'dry_grass_b', 'agave'],
+  extras: ['cactus_small', 'cactus_round', 'skull', 'sand_stone_small', 'dune', 'sand_slab', 'dune_b'], groundSway: true, farTint: 0xc4b6a6,
+  back: [0.3, 0.5, 0.82], spireScale: 1.35,   // canyon walls: mostly rock towers behind
+};
+export const PROP_SETS: Record<string, PropSet> = { grass: GREEN, stone: GREEN, snow: SNOWY, ash: DESERT };
 export const TOWN_PROPS = ['house_tree', 'house_blue', 'house_vine', 'house_mill', 'lamp', 'flower_bush', 'bench', 'signpost', 'banner', 'sign_board', 'stall_red', 'stall_blue', 'tent', 'stump_axe', 'hay_crates', 'barrel_stone', 'cart', 'crate', 'pot_stand'];
 /** Prop textures a v2 map needs (preload only these). */
 export function propsFor(map: MapData) {
