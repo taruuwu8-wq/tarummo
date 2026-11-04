@@ -587,5 +587,669 @@
       "everyMs": 14000,
       "max": 4
     }
+  },
+  "ash_bandit": {
+    "name": "Ash Bandit",
+    "sprite": "ash_bandit",
+    "height": 66,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 16,
+    "hp": 1860,
+    "xp": 76,
+    "attackType": "melee",
+    "range": 1.4,
+    "attackMs": 1700,
+    "atk": {
+      "min": 42,
+      "max": 54
+    },
+    "armor": {
+      "melee": 51,
+      "ranged": 51,
+      "magic": 51
+    },
+    "armorUpgrade": 2,
+    "acc": 72,
+    "eva": 26,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "shadow": 0.2
+    },
+    "race": "spirit",
+    "gold": [
+      8,
+      14
+    ],
+    "drops": [
+      [
+        "ash_ore",
+        0.5
+      ],
+      [
+        "hp_potion_big",
+        0.08
+      ],
+      [
+        "ashen_sword",
+        0.006
+      ],
+      [
+        "ashen_bow",
+        0.006
+      ],
+      [
+        "ashen_staff",
+        0.006
+      ]
+    ],
+    "onHit": {
+      "type": "bleed",
+      "chance": 0.2,
+      "ms": 4000,
+      "power": 0.12
+    }
+  },
+  "fire_fox": {
+    "name": "Fire Fox",
+    "sprite": "fire_fox",
+    "height": 66,
+    "speed": 1.9,
+    "wanderRadius": 3,
+    "level": 18,
+    "hp": 1810,
+    "xp": 97,
+    "attackType": "ranged",
+    "range": 4.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 47,
+      "max": 61
+    },
+    "armor": {
+      "melee": 58,
+      "ranged": 58,
+      "magic": 58
+    },
+    "armorUpgrade": 2,
+    "acc": 81,
+    "eva": 29,
+    "critRate": 0.06,
+    "element": "fire",
+    "res": {
+      "fire": 0.3,
+      "water": -0.2
+    },
+    "race": "animal",
+    "gold": [
+      9,
+      16
+    ],
+    "drops": [
+      [
+        "ash_ore",
+        0.4
+      ],
+      [
+        "mp_potion_big",
+        0.08
+      ],
+      [
+        "ashen_crossbow",
+        0.006
+      ],
+      [
+        "ashen_dagger",
+        0.006
+      ],
+      [
+        "ashen_pistol",
+        0.006
+      ]
+    ],
+    "onHit": {
+      "type": "burn",
+      "chance": 0.25,
+      "ms": 3000,
+      "power": 0.12
+    }
+  },
+  "crimson_samurai": {
+    "name": "Crimson Samurai",
+    "sprite": "crimson_samurai",
+    "height": 74,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 21,
+    "hp": 2692,
+    "xp": 158,
+    "attackType": "melee",
+    "range": 1.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 55,
+      "max": 71
+    },
+    "armor": {
+      "melee": 81,
+      "ranged": 81,
+      "magic": 81
+    },
+    "armorUpgrade": 2,
+    "acc": 93,
+    "eva": 34,
+    "critRate": 0.06,
+    "element": "fire",
+    "res": {
+      "fire": 0.25
+    },
+    "race": "demon",
+    "gold": [
+      10,
+      19
+    ],
+    "drops": [
+      [
+        "ash_ore",
+        0.6
+      ],
+      [
+        "ashen_mail",
+        0.008
+      ],
+      [
+        "spirit_crystal",
+        0.02
+      ]
+    ],
+    "aggro": 5,
+    "onHit": {
+      "type": "stun",
+      "chance": 0.08,
+      "ms": 1200,
+      "power": 0
+    }
+  },
+  "raven_queen": {
+    "name": "Raven Queen",
+    "sprite": "raven_queen",
+    "height": 110,
+    "speed": 1.1,
+    "wanderRadius": 1,
+    "level": 23,
+    "hp": 21038,
+    "xp": 1569,
+    "attackType": "magic",
+    "range": 2.4,
+    "attackMs": 1700,
+    "atk": {
+      "min": 78,
+      "max": 102
+    },
+    "armor": {
+      "melee": 52,
+      "ranged": 59,
+      "magic": 89
+    },
+    "armorUpgrade": 3,
+    "acc": 102,
+    "eva": 37,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "shadow": 0.4,
+      "light": -0.2
+    },
+    "race": "demon",
+    "gold": [
+      12,
+      20
+    ],
+    "drops": [
+      [
+        "ash_ore",
+        1,
+        5
+      ],
+      [
+        "spirit_crystal",
+        0.5
+      ]
+    ],
+    "boss": true,
+    "loot": "miniBossLoot",
+    "blast": {
+      "mult": 2.0,
+      "radius": 2.4,
+      "everyMs": 8000,
+      "castMs": 1500,
+      "status": {
+        "type": "bleed",
+        "chance": 0.7,
+        "ms": 5000,
+        "power": 0.15
+      }
+    },
+    "summon": {
+      "type": "ash_bandit",
+      "count": 2,
+      "everyMs": 14000,
+      "max": 4
+    }
+  },
+  "marsh_ghost": {
+    "name": "Marsh Ghost",
+    "sprite": "marsh_ghost",
+    "height": 66,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 24,
+    "hp": 2499,
+    "xp": 171,
+    "attackType": "magic",
+    "range": 4.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 53,
+      "max": 70
+    },
+    "armor": {
+      "melee": 54,
+      "ranged": 62,
+      "magic": 92
+    },
+    "armorUpgrade": 3,
+    "acc": 106,
+    "eva": 38,
+    "critRate": 0.06,
+    "element": "water",
+    "res": {
+      "water": 0.3,
+      "fire": -0.1
+    },
+    "race": "spirit",
+    "gold": [
+      12,
+      22
+    ],
+    "drops": [
+      [
+        "marsh_essence",
+        0.5
+      ],
+      [
+        "mp_potion_big",
+        0.1
+      ],
+      [
+        "abyssal_staff",
+        0.005
+      ],
+      [
+        "abyssal_pistol",
+        0.005
+      ]
+    ],
+    "onHit": {
+      "type": "slow",
+      "chance": 0.25,
+      "ms": 2500,
+      "power": 0
+    }
+  },
+  "dark_witch": {
+    "name": "Dark Witch",
+    "sprite": "dark_witch",
+    "height": 66,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 26,
+    "hp": 3210,
+    "xp": 200,
+    "attackType": "magic",
+    "range": 4.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 58,
+      "max": 75
+    },
+    "armor": {
+      "melee": 58,
+      "ranged": 66,
+      "magic": 100
+    },
+    "armorUpgrade": 3,
+    "acc": 114,
+    "eva": 42,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "shadow": 0.3,
+      "light": -0.25
+    },
+    "race": "demon",
+    "gold": [
+      13,
+      24
+    ],
+    "drops": [
+      [
+        "marsh_essence",
+        0.5
+      ],
+      [
+        "hp_potion_big",
+        0.1
+      ],
+      [
+        "abyssal_bow",
+        0.005
+      ],
+      [
+        "abyssal_dagger",
+        0.005
+      ]
+    ],
+    "aggro": 6,
+    "onHit": {
+      "type": "burn",
+      "chance": 0.25,
+      "ms": 3000,
+      "power": 0.15
+    }
+  },
+  "stalker": {
+    "name": "Hooded Stalker",
+    "sprite": "stalker",
+    "height": 66,
+    "speed": 1.8,
+    "wanderRadius": 3,
+    "level": 28,
+    "hp": 3340,
+    "xp": 267,
+    "attackType": "melee",
+    "range": 1.4,
+    "attackMs": 1700,
+    "atk": {
+      "min": 62,
+      "max": 81
+    },
+    "armor": {
+      "melee": 90,
+      "ranged": 90,
+      "magic": 90
+    },
+    "armorUpgrade": 3,
+    "acc": 123,
+    "eva": 45,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "shadow": 0.25
+    },
+    "race": "spirit",
+    "gold": [
+      14,
+      25
+    ],
+    "drops": [
+      [
+        "marsh_essence",
+        0.6
+      ],
+      [
+        "abyssal_sword",
+        0.005
+      ],
+      [
+        "abyssal_crossbow",
+        0.005
+      ],
+      [
+        "abyssal_plate",
+        0.006
+      ],
+      [
+        "spirit_crystal",
+        0.03
+      ]
+    ],
+    "aggro": 5,
+    "onHit": {
+      "type": "bleed",
+      "chance": 0.3,
+      "ms": 4000,
+      "power": 0.15
+    }
+  },
+  "void_sorceress": {
+    "name": "Void Sorceress",
+    "sprite": "void_sorceress",
+    "height": 96,
+    "speed": 1.1,
+    "wanderRadius": 1,
+    "level": 30,
+    "hp": 30000,
+    "xp": 2660,
+    "attackType": "magic",
+    "range": 2.4,
+    "attackMs": 1700,
+    "atk": {
+      "min": 86,
+      "max": 113
+    },
+    "armor": {
+      "melee": 67,
+      "ranged": 77,
+      "magic": 115
+    },
+    "armorUpgrade": 3,
+    "acc": 131,
+    "eva": 48,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "shadow": 0.4,
+      "light": -0.2
+    },
+    "race": "demon",
+    "gold": [
+      15,
+      27
+    ],
+    "drops": [
+      [
+        "marsh_essence",
+        1,
+        6
+      ],
+      [
+        "spirit_crystal",
+        0.6
+      ]
+    ],
+    "boss": true,
+    "loot": "miniBossLoot",
+    "blast": {
+      "mult": 2.1,
+      "radius": 2.6,
+      "everyMs": 7500,
+      "castMs": 1500,
+      "status": {
+        "type": "freeze",
+        "chance": 0.5,
+        "ms": 1500,
+        "power": 0
+      }
+    },
+    "summon": {
+      "type": "marsh_ghost",
+      "count": 2,
+      "everyMs": 13000,
+      "max": 4
+    }
+  },
+  "temple_ghost": {
+    "name": "Temple Wraith",
+    "sprite": "marsh_ghost",
+    "height": 66,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 22,
+    "hp": 2400,
+    "xp": 192,
+    "attackType": "magic",
+    "range": 4.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 53,
+      "max": 70
+    },
+    "armor": {
+      "melee": 54,
+      "ranged": 62,
+      "magic": 92
+    },
+    "armorUpgrade": 3,
+    "acc": 106,
+    "eva": 38,
+    "critRate": 0.06,
+    "element": "water",
+    "res": {
+      "water": 0.3,
+      "fire": -0.1
+    },
+    "race": "spirit",
+    "gold": [
+      12,
+      22
+    ],
+    "drops": [
+      [
+        "marsh_essence",
+        0.5
+      ]
+    ],
+    "onHit": {
+      "type": "slow",
+      "chance": 0.25,
+      "ms": 2500,
+      "power": 0
+    },
+    "tint": "0x9cc8ff"
+  },
+  "temple_witch": {
+    "name": "Temple Witch",
+    "sprite": "dark_witch",
+    "height": 66,
+    "speed": 1.4,
+    "wanderRadius": 3,
+    "level": 24,
+    "hp": 3000,
+    "xp": 227,
+    "attackType": "magic",
+    "range": 4.5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 58,
+      "max": 75
+    },
+    "armor": {
+      "melee": 58,
+      "ranged": 66,
+      "magic": 100
+    },
+    "armorUpgrade": 3,
+    "acc": 114,
+    "eva": 42,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "shadow": 0.3,
+      "light": -0.25
+    },
+    "race": "demon",
+    "gold": [
+      13,
+      24
+    ],
+    "drops": [
+      [
+        "marsh_essence",
+        0.5
+      ]
+    ],
+    "aggro": 6,
+    "onHit": {
+      "type": "burn",
+      "chance": 0.25,
+      "ms": 3000,
+      "power": 0.15
+    },
+    "tint": "0xd29cff"
+  },
+  "tide_priestess": {
+    "name": "Tide Priestess",
+    "sprite": "tide_priestess",
+    "height": 112,
+    "speed": 1.0,
+    "wanderRadius": 1,
+    "level": 27,
+    "hp": 36795,
+    "xp": 2589,
+    "attackType": "magic",
+    "range": 2.4,
+    "attackMs": 1700,
+    "atk": {
+      "min": 88,
+      "max": 115
+    },
+    "armor": {
+      "melee": 60,
+      "ranged": 69,
+      "magic": 103
+    },
+    "armorUpgrade": 3,
+    "acc": 118,
+    "eva": 43,
+    "critRate": 0.06,
+    "element": "water",
+    "res": {
+      "water": 0.4,
+      "fire": -0.2
+    },
+    "race": "angel",
+    "gold": [
+      1,
+      1
+    ],
+    "drops": [],
+    "boss": true,
+    "loot": "bossLoot",
+    "blast": {
+      "mult": 2.2,
+      "radius": 2.6,
+      "everyMs": 7000,
+      "castMs": 1500,
+      "status": {
+        "type": "freeze",
+        "chance": 0.6,
+        "ms": 1500,
+        "power": 0
+      }
+    },
+    "summon": {
+      "type": "temple_ghost",
+      "count": 2,
+      "everyMs": 15000,
+      "max": 4
+    },
+    "onHit": {
+      "type": "slow",
+      "chance": 0.3,
+      "ms": 2500,
+      "power": 0
+    }
   }
 }

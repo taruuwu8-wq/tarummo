@@ -6,7 +6,7 @@
     "speed": 3.5,
     "attackType": "melee",
     "range": 1.3,
-    "attackMs": 720,
+    "attackMs": 680,
     "base": {
       "hp": 220,
       "mp": 60,
@@ -23,7 +23,7 @@
     "growth": {
       "hp": 30,
       "mp": 6,
-      "atk": 3.0,
+      "atk": 3.3,
       "armor": {
         "melee": 2.0,
         "ranged": 1.6,

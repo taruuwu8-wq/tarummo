@@ -228,6 +228,258 @@
       "gold": 900,
       "cat": "อุปกรณ์",
       "level": 9
+    },
+    {
+      "id": "ashen_sword",
+      "out": "ashen_sword",
+      "qty": 1,
+      "inputs": [
+        [
+          "ash_ore",
+          20
+        ],
+        [
+          "golem_shard",
+          6
+        ]
+      ],
+      "gold": 2500,
+      "cat": "อุปกรณ์",
+      "level": 18
+    },
+    {
+      "id": "ashen_bow",
+      "out": "ashen_bow",
+      "qty": 1,
+      "inputs": [
+        [
+          "ash_ore",
+          20
+        ],
+        [
+          "golem_shard",
+          6
+        ]
+      ],
+      "gold": 2500,
+      "cat": "อุปกรณ์",
+      "level": 18
+    },
+    {
+      "id": "ashen_staff",
+      "out": "ashen_staff",
+      "qty": 1,
+      "inputs": [
+        [
+          "ash_ore",
+          20
+        ],
+        [
+          "golem_shard",
+          6
+        ]
+      ],
+      "gold": 2500,
+      "cat": "อุปกรณ์",
+      "level": 18
+    },
+    {
+      "id": "ashen_crossbow",
+      "out": "ashen_crossbow",
+      "qty": 1,
+      "inputs": [
+        [
+          "ash_ore",
+          20
+        ],
+        [
+          "golem_shard",
+          6
+        ]
+      ],
+      "gold": 2500,
+      "cat": "อุปกรณ์",
+      "level": 18
+    },
+    {
+      "id": "ashen_dagger",
+      "out": "ashen_dagger",
+      "qty": 1,
+      "inputs": [
+        [
+          "ash_ore",
+          20
+        ],
+        [
+          "golem_shard",
+          6
+        ]
+      ],
+      "gold": 2500,
+      "cat": "อุปกรณ์",
+      "level": 18
+    },
+    {
+      "id": "ashen_pistol",
+      "out": "ashen_pistol",
+      "qty": 1,
+      "inputs": [
+        [
+          "ash_ore",
+          20
+        ],
+        [
+          "golem_shard",
+          6
+        ]
+      ],
+      "gold": 2500,
+      "cat": "อุปกรณ์",
+      "level": 18
+    },
+    {
+      "id": "ashen_armor",
+      "out": "ashen_mail",
+      "qty": 1,
+      "inputs": [
+        [
+          "ash_ore",
+          25
+        ],
+        [
+          "golem_shard",
+          6
+        ]
+      ],
+      "gold": 2500,
+      "cat": "อุปกรณ์",
+      "level": 18
+    },
+    {
+      "id": "abyssal_sword",
+      "out": "abyssal_sword",
+      "qty": 1,
+      "inputs": [
+        [
+          "marsh_essence",
+          20
+        ],
+        [
+          "abyss_pearl",
+          2
+        ]
+      ],
+      "gold": 4500,
+      "cat": "อุปกรณ์",
+      "level": 25
+    },
+    {
+      "id": "abyssal_bow",
+      "out": "abyssal_bow",
+      "qty": 1,
+      "inputs": [
+        [
+          "marsh_essence",
+          20
+        ],
+        [
+          "abyss_pearl",
+          2
+        ]
+      ],
+      "gold": 4500,
+      "cat": "อุปกรณ์",
+      "level": 25
+    },
+    {
+      "id": "abyssal_staff",
+      "out": "abyssal_staff",
+      "qty": 1,
+      "inputs": [
+        [
+          "marsh_essence",
+          20
+        ],
+        [
+          "abyss_pearl",
+          2
+        ]
+      ],
+      "gold": 4500,
+      "cat": "อุปกรณ์",
+      "level": 25
+    },
+    {
+      "id": "abyssal_crossbow",
+      "out": "abyssal_crossbow",
+      "qty": 1,
+      "inputs": [
+        [
+          "marsh_essence",
+          20
+        ],
+        [
+          "abyss_pearl",
+          2
+        ]
+      ],
+      "gold": 4500,
+      "cat": "อุปกรณ์",
+      "level": 25
+    },
+    {
+      "id": "abyssal_dagger",
+      "out": "abyssal_dagger",
+      "qty": 1,
+      "inputs": [
+        [
+          "marsh_essence",
+          20
+        ],
+        [
+          "abyss_pearl",
+          2
+        ]
+      ],
+      "gold": 4500,
+      "cat": "อุปกรณ์",
+      "level": 25
+    },
+    {
+      "id": "abyssal_pistol",
+      "out": "abyssal_pistol",
+      "qty": 1,
+      "inputs": [
+        [
+          "marsh_essence",
+          20
+        ],
+        [
+          "abyss_pearl",
+          2
+        ]
+      ],
+      "gold": 4500,
+      "cat": "อุปกรณ์",
+      "level": 25
+    },
+    {
+      "id": "abyssal_armor",
+      "out": "abyssal_plate",
+      "qty": 1,
+      "inputs": [
+        [
+          "marsh_essence",
+          25
+        ],
+        [
+          "abyss_pearl",
+          2
+        ]
+      ],
+      "gold": 4500,
+      "cat": "อุปกรณ์",
+      "level": 25
     }
   ]
 }

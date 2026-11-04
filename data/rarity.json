@@ -206,5 +206,43 @@
       60
     ]
   },
-  "_fxNote": "Rare visuals use the highest rare among weapon/offhand/armor: sparks per second, outline glow strength, light pillar for R7."
+  "_fxNote": "Rare visuals use the highest rare among weapon/offhand/armor: sparks per second, outline glow strength, light pillar for R7.",
+  "classGearByLevel": [
+    {
+      "min": 20,
+      "swordsman": [
+        "ashen_sword",
+        "ashen_crossbow",
+        "ashen_mail"
+      ],
+      "archer": [
+        "ashen_bow",
+        "ashen_dagger",
+        "ashen_mail"
+      ],
+      "mage": [
+        "ashen_staff",
+        "ashen_pistol",
+        "ashen_mail"
+      ]
+    },
+    {
+      "min": 26,
+      "swordsman": [
+        "abyssal_sword",
+        "abyssal_crossbow",
+        "abyssal_plate"
+      ],
+      "archer": [
+        "abyssal_bow",
+        "abyssal_dagger",
+        "abyssal_plate"
+      ],
+      "mage": [
+        "abyssal_staff",
+        "abyssal_pistol",
+        "abyssal_plate"
+      ]
+    }
+  ]
 }

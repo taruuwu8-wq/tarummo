@@ -57,7 +57,7 @@ export class Hud {
         <div class="detail" id="detail"></div>
         <small class="muted">ตั้งค่าขาย/ทิ้งของอัตโนมัติได้ที่ ⚙ ข้างปุ่ม AUTO</small>
       </div>
-      <div id="quest"><div id="qmain"></div><div id="qdaily"></div><button type="button" id="qauto">▶ Auto ทำเควสต์</button></div>
+      <div id="quest"><div id="qmain"></div><div id="qdaily"></div><div id="qboss"></div><button type="button" id="qauto">▶ Auto ทำเควสต์</button></div>
       <div id="npc" hidden></div>
       <div id="dg" hidden></div>
       <div id="chat"><div id="chatlog"></div><input id="chatin" maxlength="120" placeholder="Enter เพื่อพิมพ์แชท" autocomplete="off"></div>
@@ -271,6 +271,8 @@ export class Hud {
     this.txt('qmain', q ? `📜 ${q.name} · ${prog}` : '📜 ทำเควสต์หลักครบแล้ว');
     const today = new Date().toISOString().slice(0, 10), dprog = dq.day === today ? dq.prog : 0, ddone = dq.day === today && dq.done;
     this.txt('qdaily', `📅 ${dd.name} ${ddone ? '✔' : `${Math.min(dprog, dd.goal.count ?? 0)}/${dd.goal.count}`}`);
+    const nextBoss = (this.world.defs.quests.bosses ?? []).find(b => !(p.quest.bossDone ?? []).includes(b.id) && (!b.map || b.map === this.world.map.id));
+    this.txt('qboss', nextBoss ? `⭐ บอสกลุ่ม: ${nextBoss.name.replace(/ \(ไปกับเพื่อน\)/, '')}` : '');
     const qa = this.$('qauto'); qa.hidden = !q || !!q.group;
     if (qa.classList.contains('on') !== p.autoQuest) { qa.classList.toggle('on', p.autoQuest); qa.textContent = p.autoQuest ? '■ หยุด Auto เควสต์' : '▶ Auto ทำเควสต์'; }
     if (this.autoShown !== p.auto) { this.autoShown = p.auto; const btn = this.$('auto'); btn.innerHTML = `AUTO<br>${p.auto ? 'ON' : 'OFF'}`; btn.classList.toggle('on', p.auto); }

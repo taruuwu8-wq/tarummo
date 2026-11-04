@@ -27,6 +27,7 @@ for (const cls of Object.keys(defs.classes)) {
   world.apply({ kind: 'autoQuest', id: e.id, on: true });
   const total = (HOURS * 3600 * 1000) / TICK_MS;
   const marks: Record<number, number> = {}, log: string[] = [];
+  const crafted: string[] = [];
   let deaths = 0, trips = 0, dungeonStart = 0, lastQuest = 0;
   for (let t = 0; t < total; t++) {
     world.tick();
@@ -46,6 +47,13 @@ for (const cls of Object.keys(defs.classes)) {
     }
     if (e.quest.main !== lastQuest) { log.push(`quest ${lastQuest + 1} done at ${Math.round(t * TICK_MS / 60000)}m Lv${e.level}`); lastQuest = e.quest.main; }
     if (t % 600 === 0) {
+      // like a player: craft the best gear recipe for this class when materials allow (NPC walk skipped)
+      const recs = world.defs.recipes.recipes.filter(r => { const d = world.defs.items[r.out]; return ['weapon', 'offhand', 'armor'].includes(d.slot) && (!d.class || d.class === e.type) && r.level <= e.level; });
+      for (const r of recs.sort((a, b) => b.level - a.level)) {
+        const d = world.defs.items[r.out], cur = e.equip[d.slot as 'weapon'];
+        if (cur && (world.defs.items[cur.item].level ?? 1) >= r.level) continue;
+        if (world.craftable(e, r) > 0) { (world as unknown as { craft(p: Entity, id: string, n: number): void }).craft(e, r.id, 1); crafted.push(`${r.out}@Lv${e.level}`); }
+      }
       autoEquip(world, e);
       // like a player: sell spare gear that is worse than what is worn
       const junk = e.inv.map((st, i) => ({ st, i })).filter(({ st }) => { const sl = world.defs.items[st.item].slot as typeof GEAR[number]; const cur = e.equip[sl];
@@ -58,5 +66,6 @@ for (const cls of Object.keys(defs.classes)) {
   console.log(`\n== ${cls}: Lv${e.level} after ${HOURS}h · deaths ${deaths} · town trips ${trips} · gold ${e.gold} · map ${world.map.id} · quest ${e.quest.main}/8`);
   console.log(`   Lv3 ${m(3)} · Lv5 ${m(5)} · Lv8 ${m(8)} · Lv10 ${m(10)} · Lv12 ${m(12)} · Lv15 ${m(15)}`);
   console.log(`   gear: ${GEAR.map(s => e.equip[s] ? `${e.equip[s]!.item}${e.equip[s]!.rare ? ' R' + e.equip[s]!.rare : ''}` : '-').join(', ')}`);
+  console.log('   crafted: ' + crafted.join(', '));
   for (const l of log.slice(0, 14)) console.log('   ' + l);
 }

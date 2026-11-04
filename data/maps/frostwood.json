@@ -324,6 +324,17 @@
         4
       ],
       "label": "ทุ่งหญ้า"
+    },
+    {
+      "x": 23,
+      "y": 22,
+      "to": "canyon",
+      "spawn": [
+        3,
+        3
+      ],
+      "label": "หุบเขาเถ้า Ashen Canyon · Lv 15+",
+      "minLevel": 15
     }
   ],
   "npcs": []

@@ -542,9 +542,11 @@ export class GameScene extends Phaser.Scene {
       const { sx, sy } = toScreen(x, y);
       const water = this.world.isWater(x, y);
       const n = ((x * 73856093) ^ (y * 19349663)) >>> 0;
-      const stone = map.ground !== 'grass' && map.ground !== 'snow', ruin = map.ground === 'ruin', snow = map.ground === 'snow';
-      const base = water ? 0x8fd3f0 : snow ? [0xe8f0f8, 0xdfe9f4, 0xf1f6fb][n % 3] : ruin ? [0x5b5466, 0x564f60, 0x605a6b][n % 3] : stone ? [0xc9c2b4, 0xc2bba9, 0xd0c9bb][n % 3] : [0x7cc56b, 0x76bf65, 0x82ca70][n % 3];
-      this.diamond(g, sx, sy, base, water ? 0x3a8cc0 : snow ? 0xc5d4e4 : ruin ? 0x48425a : stone ? 0xa8a090 : 0x68ad58);
+      const GROUND: Record<string, [number[], number]> = { ash: [[0x8a6f5a, 0x826852, 0x927663], 0x6e5646], marsh: [[0x3f5a46, 0x3a5442, 0x44604b], 0x2f4637], temple: [[0x3d5a6e, 0x385468, 0x426074], 0x2c4556] };
+      const gx = GROUND[map.ground];
+      const stone = map.ground !== 'grass' && map.ground !== 'snow' && !gx, ruin = map.ground === 'ruin', snow = map.ground === 'snow';
+      const base = water ? (map.ground === 'marsh' ? 0x2f5f55 : 0x8fd3f0) : gx ? gx[0][n % 3] : snow ? [0xe8f0f8, 0xdfe9f4, 0xf1f6fb][n % 3] : ruin ? [0x5b5466, 0x564f60, 0x605a6b][n % 3] : stone ? [0xc9c2b4, 0xc2bba9, 0xd0c9bb][n % 3] : [0x7cc56b, 0x76bf65, 0x82ca70][n % 3];
+      this.diamond(g, sx, sy, base, water ? 0x3a8cc0 : gx ? gx[1] : snow ? 0xc5d4e4 : ruin ? 0x48425a : stone ? 0xa8a090 : 0x68ad58);
       if (!water && !stone && n % 11 === 0) { g.fillStyle(0xf4e27a, 1).fillCircle(sx - 6, sy + 2, 2); g.fillStyle(0xffffff, 1).fillCircle(sx + 8, sy - 3, 1.6); }
     }
     const key = `ground_${map.id}`;

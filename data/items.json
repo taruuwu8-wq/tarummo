@@ -528,5 +528,233 @@
       "armor": 18,
       "hp": 110
     }
+  },
+  "ashen_sword": {
+    "name": "Ashen Sword",
+    "slot": "weapon",
+    "rarity": "rare",
+    "icon": "⚔️",
+    "level": 18,
+    "class": "swordsman",
+    "price": 450,
+    "weapon": {
+      "min": 48,
+      "max": 64,
+      "critDmg": 0.85
+    }
+  },
+  "ashen_bow": {
+    "name": "Ashen Bow",
+    "slot": "weapon",
+    "rarity": "rare",
+    "icon": "🏹",
+    "level": 18,
+    "class": "archer",
+    "price": 450,
+    "weapon": {
+      "min": 40,
+      "max": 66,
+      "critDmg": 1.05
+    }
+  },
+  "ashen_staff": {
+    "name": "Ashen Staff",
+    "slot": "weapon",
+    "rarity": "rare",
+    "icon": "🪄",
+    "level": 18,
+    "class": "mage",
+    "price": 450,
+    "weapon": {
+      "min": 46,
+      "max": 62,
+      "critDmg": 0.65
+    },
+    "bonus": {
+      "elemRate": 0.08
+    }
+  },
+  "abyssal_sword": {
+    "name": "Abyssal Sword",
+    "slot": "weapon",
+    "rarity": "rare",
+    "icon": "⚔️",
+    "level": 25,
+    "class": "swordsman",
+    "price": 625,
+    "weapon": {
+      "min": 62,
+      "max": 82,
+      "critDmg": 0.9
+    }
+  },
+  "abyssal_bow": {
+    "name": "Abyssal Bow",
+    "slot": "weapon",
+    "rarity": "rare",
+    "icon": "🏹",
+    "level": 25,
+    "class": "archer",
+    "price": 625,
+    "weapon": {
+      "min": 52,
+      "max": 86,
+      "critDmg": 1.1
+    }
+  },
+  "abyssal_staff": {
+    "name": "Abyssal Staff",
+    "slot": "weapon",
+    "rarity": "rare",
+    "icon": "🪄",
+    "level": 25,
+    "class": "mage",
+    "price": 625,
+    "weapon": {
+      "min": 60,
+      "max": 80,
+      "critDmg": 0.7
+    },
+    "bonus": {
+      "elemRate": 0.12
+    }
+  },
+  "ashen_crossbow": {
+    "name": "Ashen Crossbow",
+    "slot": "offhand",
+    "rarity": "rare",
+    "icon": "🏹",
+    "level": 18,
+    "class": "swordsman",
+    "price": 360,
+    "weapon": {
+      "min": 26,
+      "max": 36,
+      "critDmg": 0.65
+    }
+  },
+  "ashen_dagger": {
+    "name": "Ashen Dagger",
+    "slot": "offhand",
+    "rarity": "rare",
+    "icon": "🗡️",
+    "level": 18,
+    "class": "archer",
+    "price": 360,
+    "weapon": {
+      "min": 27,
+      "max": 37,
+      "critDmg": 0.95
+    }
+  },
+  "ashen_pistol": {
+    "name": "Ashen Pistol",
+    "slot": "offhand",
+    "rarity": "rare",
+    "icon": "🔫",
+    "level": 18,
+    "class": "mage",
+    "price": 360,
+    "weapon": {
+      "min": 28,
+      "max": 38,
+      "critDmg": 0.6
+    },
+    "bonus": {
+      "elemRate": 0.04
+    }
+  },
+  "abyssal_crossbow": {
+    "name": "Abyssal Crossbow",
+    "slot": "offhand",
+    "rarity": "rare",
+    "icon": "🏹",
+    "level": 25,
+    "class": "swordsman",
+    "price": 500,
+    "weapon": {
+      "min": 34,
+      "max": 46,
+      "critDmg": 0.7
+    }
+  },
+  "abyssal_dagger": {
+    "name": "Abyssal Dagger",
+    "slot": "offhand",
+    "rarity": "rare",
+    "icon": "🗡️",
+    "level": 25,
+    "class": "archer",
+    "price": 500,
+    "weapon": {
+      "min": 35,
+      "max": 48,
+      "critDmg": 1.0
+    }
+  },
+  "abyssal_pistol": {
+    "name": "Abyssal Pistol",
+    "slot": "offhand",
+    "rarity": "rare",
+    "icon": "🔫",
+    "level": 25,
+    "class": "mage",
+    "price": 500,
+    "weapon": {
+      "min": 36,
+      "max": 50,
+      "critDmg": 0.65
+    },
+    "bonus": {
+      "elemRate": 0.05
+    }
+  },
+  "ashen_mail": {
+    "name": "Ashen Mail",
+    "slot": "armor",
+    "rarity": "rare",
+    "icon": "🛡️",
+    "level": 18,
+    "price": 420,
+    "bonus": {
+      "armor": 26,
+      "hp": 180
+    }
+  },
+  "abyssal_plate": {
+    "name": "Abyssal Plate",
+    "slot": "armor",
+    "rarity": "rare",
+    "icon": "🛡️",
+    "level": 25,
+    "price": 600,
+    "bonus": {
+      "armor": 34,
+      "hp": 260
+    }
+  },
+  "ash_ore": {
+    "name": "Ash Ore",
+    "slot": "mat",
+    "rarity": "common",
+    "icon": "🪨",
+    "price": 6,
+    "tab": "drop"
+  },
+  "marsh_essence": {
+    "name": "Marsh Essence",
+    "slot": "mat",
+    "rarity": "uncommon",
+    "icon": "🫧",
+    "price": 9,
+    "tab": "drop"
+  },
+  "abyss_pearl": {
+    "name": "Abyss Pearl",
+    "slot": "mat",
+    "rarity": "rare",
+    "icon": "🔵",
+    "price": 40,
+    "tab": "mat"
   }
 }

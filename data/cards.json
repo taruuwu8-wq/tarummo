@@ -793,5 +793,384 @@
       }
     ],
     "weapon": "offhand"
+  },
+  "shadow_blade": {
+    "name": "Shadow Blade",
+    "class": "swordsman",
+    "role": "โจมตีเงา",
+    "sprite": "card_shadow",
+    "height": 70,
+    "icon": "🌑",
+    "rarity": "epic",
+    "aura": "0x8a5cff",
+    "element": "shadow",
+    "weapon": "main",
+    "bonus": {
+      "atk": 14,
+      "critRate": 0.08,
+      "elemRate": 0.18,
+      "dmgPct": 0.18
+    },
+    "skills": [
+      {
+        "id": "night_slash",
+        "name": "Night Slash",
+        "icon": "🌑",
+        "mp": 14,
+        "cooldownMs": 3000,
+        "mult": 2.0,
+        "flat": 15,
+        "element": "shadow",
+        "unlock": 1
+      },
+      {
+        "id": "shade_step",
+        "name": "Shade Step",
+        "icon": "👣",
+        "mp": 16,
+        "cooldownMs": 6000,
+        "mult": 1.4,
+        "flat": 5,
+        "hits": 2,
+        "element": "shadow",
+        "status": {
+          "type": "bleed",
+          "chance": 0.4,
+          "ms": 4000,
+          "power": 0.15
+        },
+        "unlock": 2
+      },
+      {
+        "id": "eclipse",
+        "name": "Eclipse",
+        "icon": "🌘",
+        "mp": 26,
+        "cooldownMs": 9000,
+        "mult": 1.4,
+        "flat": 0,
+        "aoe": 2.2,
+        "self": true,
+        "element": "shadow",
+        "unlock": 4
+      },
+      {
+        "id": "dark_mend",
+        "name": "Dark Mend",
+        "icon": "🖤",
+        "mp": 22,
+        "cooldownMs": 18000,
+        "heal": 0.35,
+        "unlock": 6
+      },
+      {
+        "id": "void_cleave",
+        "name": "Void Cleave",
+        "icon": "🗡️",
+        "mp": 34,
+        "cooldownMs": 13000,
+        "mult": 3.2,
+        "flat": 25,
+        "element": "shadow",
+        "status": {
+          "type": "stun",
+          "chance": 0.3,
+          "ms": 1500,
+          "power": 0
+        },
+        "unlock": 9
+      },
+      {
+        "id": "abyss_storm",
+        "name": "Abyss Storm",
+        "icon": "🌀",
+        "mp": 46,
+        "cooldownMs": 18000,
+        "mult": 2.2,
+        "flat": 15,
+        "aoe": 2.6,
+        "self": true,
+        "element": "shadow",
+        "unlock": 12
+      }
+    ],
+    "passives": [
+      {
+        "id": "dusk_edge",
+        "name": "Dusk Edge",
+        "icon": "🌒",
+        "unlock": 5,
+        "type": "stat",
+        "desc": "CRIT +8% · ดาเมจ +8%",
+        "bonus": {
+          "critRate": 0.08,
+          "dmgPct": 0.08
+        }
+      },
+      {
+        "id": "soul_drain",
+        "name": "Soul Drain",
+        "icon": "🩸",
+        "unlock": 10,
+        "type": "lifesteal",
+        "desc": "ดูดเลือด 6%",
+        "pct": 0.06
+      }
+    ]
+  },
+  "storm_hunter": {
+    "name": "Storm Hunter",
+    "class": "archer",
+    "role": "โจมตีสายฟ้า",
+    "sprite": "card_storm",
+    "height": 70,
+    "icon": "⚡",
+    "rarity": "epic",
+    "aura": "0x7fd6ff",
+    "element": "light",
+    "weapon": "main",
+    "bonus": {
+      "atk": 12,
+      "critRate": 0.1,
+      "eva": 15,
+      "elemRate": 0.15,
+      "dmgPct": 0.15
+    },
+    "skills": [
+      {
+        "id": "spark_arrow",
+        "name": "Spark Arrow",
+        "icon": "⚡",
+        "mp": 12,
+        "cooldownMs": 3000,
+        "mult": 2.0,
+        "flat": 10,
+        "element": "light",
+        "unlock": 1
+      },
+      {
+        "id": "chain_bolt",
+        "name": "Chain Bolt",
+        "icon": "🌩️",
+        "mp": 18,
+        "cooldownMs": 6000,
+        "mult": 1.3,
+        "flat": 0,
+        "aoe": 1.8,
+        "element": "light",
+        "status": {
+          "type": "stun",
+          "chance": 0.15,
+          "ms": 1000,
+          "power": 0
+        },
+        "unlock": 2
+      },
+      {
+        "id": "volley",
+        "name": "Storm Volley",
+        "icon": "🎯",
+        "mp": 20,
+        "cooldownMs": 7000,
+        "mult": 1.0,
+        "flat": 0,
+        "hits": 4,
+        "element": "light",
+        "unlock": 4
+      },
+      {
+        "id": "wind_shield",
+        "name": "Wind Shield",
+        "icon": "🌬️",
+        "mp": 20,
+        "cooldownMs": 18000,
+        "heal": 0.3,
+        "unlock": 6
+      },
+      {
+        "id": "thunder_spear",
+        "name": "Thunder Spear",
+        "icon": "🔱",
+        "mp": 34,
+        "cooldownMs": 13000,
+        "mult": 3.6,
+        "flat": 25,
+        "element": "light",
+        "status": {
+          "type": "bleed",
+          "chance": 0.5,
+          "ms": 4000,
+          "power": 0.18
+        },
+        "unlock": 9
+      },
+      {
+        "id": "tempest",
+        "name": "Tempest",
+        "icon": "⛈️",
+        "mp": 46,
+        "cooldownMs": 18000,
+        "mult": 2.1,
+        "flat": 15,
+        "aoe": 2.8,
+        "element": "light",
+        "unlock": 12
+      }
+    ],
+    "passives": [
+      {
+        "id": "static",
+        "name": "Static",
+        "icon": "⚡",
+        "unlock": 5,
+        "type": "onHit",
+        "desc": "ทุกการโจมตีมีโอกาส 10% ทำให้มึน",
+        "status": {
+          "type": "stun",
+          "chance": 0.1,
+          "ms": 800,
+          "power": 0
+        }
+      },
+      {
+        "id": "eagle_sight",
+        "name": "Eagle Sight",
+        "icon": "🦅",
+        "unlock": 10,
+        "type": "stat",
+        "desc": "ดาเมจ +15%",
+        "bonus": {
+          "dmgPct": 0.15
+        }
+      }
+    ]
+  },
+  "tide_caller": {
+    "name": "Tide Caller",
+    "class": "mage",
+    "role": "ซัพพอร์ตน้ำ",
+    "sprite": "card_tide",
+    "height": 70,
+    "icon": "🌊",
+    "rarity": "epic",
+    "aura": "0x4fd6c8",
+    "element": "water",
+    "weapon": "main",
+    "bonus": {
+      "hp": 180,
+      "mp": 150,
+      "armor": 14,
+      "elemRate": 0.15
+    },
+    "skills": [
+      {
+        "id": "tide_bolt",
+        "name": "Tide Bolt",
+        "icon": "🌊",
+        "mp": 12,
+        "cooldownMs": 3000,
+        "mult": 1.8,
+        "flat": 10,
+        "element": "water",
+        "status": {
+          "type": "slow",
+          "chance": 0.4,
+          "ms": 2500,
+          "power": 0
+        },
+        "unlock": 1
+      },
+      {
+        "id": "healing_rain",
+        "name": "Healing Rain",
+        "icon": "💧",
+        "mp": 24,
+        "cooldownMs": 14000,
+        "heal": 0.45,
+        "unlock": 2
+      },
+      {
+        "id": "whirlpool",
+        "name": "Whirlpool",
+        "icon": "🌀",
+        "mp": 24,
+        "cooldownMs": 8000,
+        "mult": 1.3,
+        "flat": 0,
+        "aoe": 2.2,
+        "element": "water",
+        "status": {
+          "type": "slow",
+          "chance": 0.6,
+          "ms": 3000,
+          "power": 0
+        },
+        "unlock": 4
+      },
+      {
+        "id": "coral_wall",
+        "name": "Coral Wall",
+        "icon": "🪸",
+        "mp": 20,
+        "cooldownMs": 18000,
+        "heal": 0.3,
+        "unlock": 6
+      },
+      {
+        "id": "tsunami",
+        "name": "Tsunami",
+        "icon": "🌊",
+        "mp": 40,
+        "cooldownMs": 14000,
+        "mult": 2.0,
+        "flat": 15,
+        "aoe": 2.6,
+        "self": true,
+        "element": "water",
+        "unlock": 9
+      },
+      {
+        "id": "deep_freeze",
+        "name": "Deep Freeze",
+        "icon": "🧊",
+        "mp": 44,
+        "cooldownMs": 18000,
+        "mult": 2.8,
+        "flat": 20,
+        "aoe": 2.2,
+        "element": "water",
+        "status": {
+          "type": "freeze",
+          "chance": 0.6,
+          "ms": 2500,
+          "power": 0
+        },
+        "unlock": 12
+      }
+    ],
+    "passives": [
+      {
+        "id": "ocean_heart",
+        "name": "Ocean Heart",
+        "icon": "💙",
+        "unlock": 5,
+        "type": "stat",
+        "desc": "HP +200 · MP +120",
+        "bonus": {
+          "hp": 200,
+          "mp": 120
+        }
+      },
+      {
+        "id": "undertow",
+        "name": "Undertow",
+        "icon": "🫧",
+        "unlock": 10,
+        "type": "lowhp",
+        "desc": "HP ต่ำกว่า 35% รับดาเมจลด 30%",
+        "threshold": 0.35,
+        "reduce": 0.3
+      }
+    ]
   }
 }

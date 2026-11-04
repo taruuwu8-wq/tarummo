@@ -17,7 +17,7 @@ export interface DungeonDef {
 }
 export interface DungeonState { active: boolean; startedAt: number; room: number; openDoors: number[]; cleared: boolean; rank: 'S' | 'A' | 'B' | null; timeMs: number }
 export interface MapData {
-  id: string; name: string; ground: 'grass' | 'stone' | 'ruin' | 'snow'; safe: boolean; width: number; height: number; spawn: Tile;
+  id: string; name: string; ground: 'grass' | 'stone' | 'ruin' | 'snow' | 'ash' | 'marsh' | 'temple'; safe: boolean; width: number; height: number; spawn: Tile;
   rocks: Tile[]; water: Tile[]; trees: Tile[]; walls?: Tile[]; monsters: { type: string; count: number }[];
   portals: Portal[]; npcs: { id: string; x: number; y: number }[]; dungeon?: DungeonDef;
 }
@@ -63,7 +63,7 @@ export interface Defs {
   items: Record<string, ItemDef>; skills: Record<string, SkillDef[]>;
   cards: Record<string, CardDef>; upgrade: UpgradeCfg; npcs: Record<string, NpcDef>;
   options: { options: OptDef[] }; rarity: RarityCfg; statuses: Record<StatusType, StatusDef>;
-  quests: { main: QuestDef[]; daily: QuestDef & { reward: { goldPerLevel: number; xpPctOfLevel: number; items: [string, number][] } } };
+  quests: { main: QuestDef[]; bosses?: QuestDef[]; daily: QuestDef & { reward: { goldPerLevel: number; xpPctOfLevel: number; items: [string, number][] } } };
   recipes: { recipes: RecipeDef[] };
   mapGraph: Record<string, { to: string; x: number; y: number; minLevel?: number; when?: string }[]>;
 }
@@ -74,7 +74,7 @@ export interface QuestDef {
   reward: { gold?: number; xp?: number; items?: [string, number][]; shellSrc?: 'boss' | 'normal' };
 }
 /** main: index into the chain + progress; daily: per-day kill counter */
-export interface QuestState { main: number; prog: number; daily: { day: string; prog: number; done: boolean } }
+export interface QuestState { main: number; prog: number; daily: { day: string; prog: number; done: boolean }; bossDone?: string[] }
 export type StatusType = 'burn' | 'bleed' | 'slow' | 'stun' | 'freeze';
 export interface StatusDef { name: string; icon: string; tint: string; tick?: boolean; maxHpCap?: number; moveMul?: number; attackMul?: number; noAct?: boolean; breakOnHit?: boolean }
 /** chance 0..1, ms duration, power = DoT per second as a fraction of the triggering hit */
@@ -88,6 +88,8 @@ export interface RarityCfg {
   rarify: { weights: number[]; breakChance: number; goldBase: number; goldPerLevel: number; protectItem: string };
   rerollItem: string; shell: { lineWeights: number[]; gradeWeights: { normal: number[]; boss: number[] } };
   gearSlots: string[]; classGear: Record<string, string[]>;
+  /** higher-tier class gear for boss loot once the player reaches `min` */
+  classGearByLevel?: ({ min: number } & Record<string, string[] | number>)[];
   bossLoot: LootCfg; miniBossLoot: LootCfg;
   fx: { min: number; color: string; sparks: number; glow: number; pillar: boolean }[];
   gm: { shellLines: number; shellGrades: number[] };
@@ -137,6 +139,8 @@ export interface Entity {
   rested: number;
   /** set when a town trip could not free the bag; Auto stops re-triggering trips until space frees up */
   bagFullAck?: boolean;
+  /** world time when Auto last had something to do; used to roam to a new spot */
+  autoBusyAt?: number;
   quest: QuestState; autoQuest: boolean;
   autoCfg: AutoCfg; autoAnchor: Tile | null; autoTrip: AutoTrip | null; autoStats: AutoStats;
   mounted: boolean; aggro: number; noRespawn: boolean; nextBlast: number; room?: number;
@@ -508,7 +512,8 @@ export class World {
   /** Extra boss / mini-boss loot: class gear with high rare, shells, scrolls. */
   private bossLoot(p: Entity, lc: LootCfg, src: 'normal' | 'boss') {
     const r = this.defs.rarity;
-    if (this.rng() < lc.classGear) { const list = r.classGear[p.type] ?? []; if (list.length) this.grantItem(p, list[Math.floor(this.rng() * list.length)], 1, { src }); }
+    const tier = (r.classGearByLevel ?? []).filter(t => p.level >= t.min).pop();
+    if (this.rng() < lc.classGear) { const list = (tier?.[p.type] as string[] | undefined) ?? r.classGear[p.type] ?? []; if (list.length) this.grantItem(p, list[Math.floor(this.rng() * list.length)], 1, { src }); }
     if (this.rng() < lc.shell) this.grantItem(p, ['shell_weapon', 'shell_armor', 'shell_offhand'][Math.floor(this.rng() * 3)], 1, { src });
     if (this.rng() < lc.reroll) this.grantItem(p, r.rerollItem, 1);
     if (this.rng() < lc.protect) this.grantItem(p, r.rarify.protectItem, 1);
@@ -768,6 +773,17 @@ export class World {
       else if (kind === 'level') p.quest.prog = p.level >= (q.goal.level ?? 1) ? 1 : 0;
       const need = q.goal.type === 'kill' ? q.goal.count ?? 1 : 1;
       if (p.quest.prog >= need) this.finishQuest(p, q);
+    }
+    if (kind === 'kill') for (const bq of this.defs.quests.bosses ?? []) {
+      const done = (p.quest.bossDone ??= []);
+      if (!done.includes(bq.id) && bq.goal.monster === monster && (!bq.map || bq.map === this.map.id)) {
+        done.push(bq.id);
+        const r = bq.reward;
+        if (r.gold) { p.gold += r.gold; this.events.push({ t: 'gold', id: p.id, amount: r.gold }); }
+        for (const [it, n] of r.items ?? []) this.grantItem(p, it, n, { filter: false, src: this.defs.items[it]?.slot === 'shell' ? r.shellSrc : undefined });
+        if (r.xp) this.grantXp(p, r.xp, false);
+        this.events.push({ t: 'quest', id: p.id, name: bq.name, done: true });
+      }
     }
     if (kind === 'kill') {
       const d = this.defs.quests.daily, dq = p.quest.daily, day = this.today();
@@ -1298,10 +1314,19 @@ export class World {
           : !c.skip.includes(o.type) && (!o.boss || c.bosses) && o.level <= e.level + c.levelAbove && Math.hypot(o.x - ax, o.y - ay) <= c.range))
           .sort((p, q) => this.dist(e, p) - this.dist(e, q))[0];
         if (!m && Math.hypot(e.x - ax, e.y - ay) > 1.5) this.pathTo(e, [Math.round(ax), Math.round(ay)]);
+        // nothing to hit around the spot for a while: roam to the nearest valid monster anywhere on the map
+        if (!m && !e.path.length && this.now - (e.autoBusyAt ?? this.now) > 4000) {
+          const far = [...this.entities.values()].filter(o => o.kind === 'monster' && !o.dead && (qm ? o.type === qm
+            : !c.skip.includes(o.type) && (!o.boss || c.bosses) && o.level <= e.level + c.levelAbove)).sort((p, q) => this.dist(e, p) - this.dist(e, q))[0];
+          if (far) { e.autoAnchor = [Math.round(far.x), Math.round(far.y)]; m = far; }
+          e.autoBusyAt = this.now;
+        }
       }
       if (m) { e.target = m.id; e.repathAt = 0; }
+      if (m || e.path.length) e.autoBusyAt = this.now;
     }
     // skills in bar order (minus the ones switched off); heal only when hurt; self-AoE only when the target is close
+    if (e.target != null) e.autoBusyAt = this.now;
     if (e.target != null && !e.pendingSkill) {
       const t = this.entities.get(e.target);
       for (const sk of this.barSkills(e)) {
@@ -1315,7 +1340,8 @@ export class World {
 
   private autoTripStep(e: Entity, trip: AutoTrip) {
     const walkTo = (t: Tile) => { if (!e.path.length && this.now >= e.repathAt) { e.repathAt = this.now + 800; this.pathTo(e, t); } };
-    const portalTo = (to: string) => this.map.portals.find(p => p.to === to && !p.when) ?? this.map.portals.find(p => !p.when);
+    // multi-map route (BFS over the portal graph); a direct-link lookup ping-ponged between maps
+    const portalTo = (to: string) => { const h = this.nextHop(e, to); return h ? { x: h[0], y: h[1] } : undefined; };
     if (trip.phase === 'toTown') {
       if (this.map.id === 'town') { trip.phase = 'shop'; e.talkTo = 'shop'; e.repathAt = 0; return; }
       const pt = portalTo('town'); if (pt) walkTo([pt.x, pt.y]);

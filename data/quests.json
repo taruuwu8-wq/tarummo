@@ -1,5 +1,5 @@
 {
-  "_note": "Minimal quest chain (auto-accepted, rewards on completion). goal: kill {monster,count} | level {level} | clear {} (dungeon on map) | visit {}. map = where Auto quest goes.",
+  "_note": "Minimal quest chain (auto-accepted, rewards on completion). goal: kill {monster,count} | level {level} | clear {} (dungeon on map) | visit {}. map = where Auto quest goes. bosses = group boss quests: optional, never block the main chain, rewarded once.",
   "main": [
     {
       "id": "q_slime",
@@ -142,6 +142,205 @@
       }
     },
     {
+      "id": "q_lv15",
+      "name": "ออกเดินทางสู่หุบเขาเถ้า (Lv 15)",
+      "goal": {
+        "type": "level",
+        "level": 15
+      },
+      "map": "frostwood",
+      "reward": {
+        "gold": 600,
+        "items": [
+          [
+            "hp_potion_big",
+            10
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_bandit",
+      "name": "โจรเถ้าถ่าน",
+      "goal": {
+        "type": "kill",
+        "monster": "ash_bandit",
+        "count": 15
+      },
+      "map": "canyon",
+      "reward": {
+        "gold": 800,
+        "xp": 4000,
+        "items": [
+          [
+            "upgrade_scroll",
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_fox",
+      "name": "จิ้งจอกเพลิง",
+      "goal": {
+        "type": "kill",
+        "monster": "fire_fox",
+        "count": 12
+      },
+      "map": "canyon",
+      "reward": {
+        "gold": 900,
+        "xp": 5000,
+        "items": [
+          [
+            "reroll_scroll",
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_samurai",
+      "name": "ซามูไรเลือด",
+      "goal": {
+        "type": "kill",
+        "monster": "crimson_samurai",
+        "count": 10
+      },
+      "map": "canyon",
+      "reward": {
+        "gold": 1200,
+        "xp": 7000,
+        "items": [
+          [
+            "spirit_crystal",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_lv22",
+      "name": "เข้าสู่บึงเงา (Lv 22)",
+      "goal": {
+        "type": "level",
+        "level": 22
+      },
+      "map": "canyon",
+      "reward": {
+        "gold": 1000,
+        "items": [
+          [
+            "mp_potion_big",
+            10
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_ghost",
+      "name": "วิญญาณในบึง",
+      "goal": {
+        "type": "kill",
+        "monster": "marsh_ghost",
+        "count": 15
+      },
+      "map": "marsh",
+      "reward": {
+        "gold": 1500,
+        "xp": 12000,
+        "items": [
+          [
+            "protect_scroll",
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_temple",
+      "name": "วิหารใต้น้ำ",
+      "goal": {
+        "type": "clear"
+      },
+      "map": "temple",
+      "reward": {
+        "gold": 2500,
+        "xp": 15000,
+        "items": [
+          [
+            "abyss_pearl",
+            2
+          ],
+          [
+            "upgrade_scroll",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_witch",
+      "name": "แม่มดแห่งความมืด",
+      "goal": {
+        "type": "kill",
+        "monster": "dark_witch",
+        "count": 12
+      },
+      "map": "marsh",
+      "reward": {
+        "gold": 2000,
+        "xp": 16000,
+        "items": [
+          [
+            "reroll_scroll",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_stalker",
+      "name": "เงาที่คอยตาม",
+      "goal": {
+        "type": "kill",
+        "monster": "stalker",
+        "count": 10
+      },
+      "map": "marsh",
+      "reward": {
+        "gold": 2500,
+        "xp": 20000,
+        "items": [
+          [
+            "spirit_crystal",
+            3
+          ]
+        ]
+      }
+    }
+  ],
+  "daily": {
+    "id": "daily_hunt",
+    "name": "ล่ามอนประจำวัน",
+    "goal": {
+      "type": "kill",
+      "monster": "*",
+      "count": 50
+    },
+    "reward": {
+      "goldPerLevel": 40,
+      "xpPctOfLevel": 0.25,
+      "items": [
+        [
+          "hp_potion",
+          5
+        ]
+      ]
+    }
+  },
+  "bosses": [
+    {
       "id": "q_wyrm",
       "name": "มังกรแห่ง Frostwood (ไปกับเพื่อน)",
       "goal": {
@@ -166,25 +365,54 @@
         "shellSrc": "boss"
       },
       "group": true
-    }
-  ],
-  "daily": {
-    "id": "daily_hunt",
-    "name": "ล่ามอนประจำวัน",
-    "goal": {
-      "type": "kill",
-      "monster": "*",
-      "count": 50
     },
-    "reward": {
-      "goldPerLevel": 40,
-      "xpPctOfLevel": 0.25,
-      "items": [
-        [
-          "hp_potion",
-          5
-        ]
-      ]
+    {
+      "id": "q_raven",
+      "name": "ราชินีอีกา (ไปกับเพื่อน)",
+      "goal": {
+        "type": "kill",
+        "monster": "raven_queen",
+        "count": 1
+      },
+      "map": "canyon",
+      "reward": {
+        "gold": 2500,
+        "xp": 12000,
+        "items": [
+          [
+            "shell_armor",
+            1
+          ]
+        ],
+        "shellSrc": "boss"
+      },
+      "group": true
+    },
+    {
+      "id": "q_void",
+      "name": "จอมเวทแห่งความว่างเปล่า (ไปกับเพื่อน)",
+      "goal": {
+        "type": "kill",
+        "monster": "void_sorceress",
+        "count": 1
+      },
+      "map": "marsh",
+      "reward": {
+        "gold": 5000,
+        "xp": 30000,
+        "items": [
+          [
+            "shell_weapon",
+            1
+          ],
+          [
+            "protect_scroll",
+            2
+          ]
+        ],
+        "shellSrc": "boss"
+      },
+      "group": true
     }
-  }
+  ]
 }
