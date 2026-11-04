@@ -412,5 +412,19 @@
     "rarity": "epic",
     "icon": "🛡️",
     "price": 200
+  },
+  "frost_shard": {
+    "name": "Frost Shard",
+    "slot": "mat",
+    "rarity": "uncommon",
+    "icon": "❄️",
+    "price": 8
+  },
+  "treant_bark": {
+    "name": "Treant Bark",
+    "slot": "mat",
+    "rarity": "common",
+    "icon": "🪵",
+    "price": 4
   }
 }

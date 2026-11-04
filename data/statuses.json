@@ -1,0 +1,36 @@
+{
+  "_note": "Status effects. burn/bleed tick every second for power x the triggering hit (bleed capped by % max HP). slow: move x0.6 and attack interval x1.3. stun/freeze: cannot move or act (freeze breaks early on damage).",
+  "burn": {
+    "name": "ไหม้",
+    "icon": "🔥",
+    "tint": "0xff8a3d",
+    "tick": true
+  },
+  "bleed": {
+    "name": "เลือดออก",
+    "icon": "🩸",
+    "tint": "0xff4d6d",
+    "tick": true,
+    "maxHpCap": 0.02
+  },
+  "slow": {
+    "name": "ช้า",
+    "icon": "🐌",
+    "tint": "0x8fb3ff",
+    "moveMul": 0.6,
+    "attackMul": 1.3
+  },
+  "stun": {
+    "name": "มึน",
+    "icon": "💫",
+    "tint": "0xfff1a8",
+    "noAct": true
+  },
+  "freeze": {
+    "name": "แช่แข็ง",
+    "icon": "🧊",
+    "tint": "0x9fe8ff",
+    "noAct": true,
+    "breakOnHit": true
+  }
+}

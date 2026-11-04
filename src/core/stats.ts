@@ -24,7 +24,9 @@ export interface MonsterDef {
   atk: { min: number; max: number }; armor: Armor; armorUpgrade: number;
   acc: number; eva: number; critRate: number; element: Element; res: CombatStats['res']; boss?: boolean;
   gold: [number, number]; drops: [string, number, number?][]; cardChance?: number; tint?: string; race?: string; loot?: string;
-  blast?: { mult: number; radius: number; everyMs: number; castMs: number };
+  blast?: { mult: number; radius: number; everyMs: number; castMs: number; status?: { type: 'burn' | 'bleed' | 'slow' | 'stun' | 'freeze'; chance: number; ms: number; power: number } };
+  onHit?: { type: 'burn' | 'bleed' | 'slow' | 'stun' | 'freeze'; chance: number; ms: number; power: number };
+  aggro?: number; summon?: { type: string; count: number; everyMs: number; max: number };
 }
 
 const FISTS = { min: 4, max: 6, critDmg: 0.3 };

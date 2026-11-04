@@ -322,9 +322,270 @@
       "mult": 2.2,
       "radius": 2.2,
       "everyMs": 7000,
-      "castMs": 1500
+      "castMs": 1500,
+      "status": {
+        "type": "stun",
+        "chance": 0.6,
+        "ms": 1500,
+        "power": 0
+      }
     },
     "race": "demon",
-    "loot": "bossLoot"
+    "loot": "bossLoot",
+    "onHit": {
+      "type": "burn",
+      "chance": 0.25,
+      "ms": 4000,
+      "power": 0.1
+    }
+  },
+  "treant": {
+    "name": "Old Treant",
+    "sprite": "treant",
+    "height": 80,
+    "speed": 0.9,
+    "wanderRadius": 2,
+    "level": 9,
+    "hp": 1100,
+    "xp": 70,
+    "attackType": "melee",
+    "range": 1.4,
+    "attackMs": 1800,
+    "atk": {
+      "min": 30,
+      "max": 40
+    },
+    "armor": {
+      "melee": 32,
+      "ranged": 30,
+      "magic": 20
+    },
+    "armorUpgrade": 1,
+    "acc": 50,
+    "eva": 10,
+    "critRate": 0.04,
+    "element": "light",
+    "res": {
+      "light": 0.2,
+      "fire": -0.3
+    },
+    "race": "plant",
+    "gold": [
+      18,
+      30
+    ],
+    "drops": [
+      [
+        "treant_bark",
+        0.5
+      ],
+      [
+        "hp_potion",
+        0.15
+      ],
+      [
+        "leather_armor",
+        0.03
+      ],
+      [
+        "stone_plate",
+        0.01
+      ]
+    ],
+    "onHit": {
+      "type": "slow",
+      "chance": 0.25,
+      "ms": 2500,
+      "power": 0
+    }
+  },
+  "blue_wisp": {
+    "name": "Blue Wisp",
+    "sprite": "wisp",
+    "height": 62,
+    "speed": 1.6,
+    "wanderRadius": 3,
+    "level": 10,
+    "hp": 700,
+    "xp": 75,
+    "attackType": "magic",
+    "range": 5,
+    "attackMs": 1700,
+    "atk": {
+      "min": 28,
+      "max": 36
+    },
+    "armor": {
+      "melee": 18,
+      "ranged": 20,
+      "magic": 34
+    },
+    "armorUpgrade": 1,
+    "acc": 56,
+    "eva": 30,
+    "critRate": 0.06,
+    "element": "shadow",
+    "res": {
+      "shadow": 0.25,
+      "light": -0.25
+    },
+    "race": "spirit",
+    "gold": [
+      20,
+      32
+    ],
+    "drops": [
+      [
+        "mp_potion",
+        0.2
+      ],
+      [
+        "frost_shard",
+        0.25
+      ],
+      [
+        "arcane_pistol",
+        0.01
+      ]
+    ],
+    "onHit": {
+      "type": "burn",
+      "chance": 0.2,
+      "ms": 3000,
+      "power": 0.12
+    }
+  },
+  "ice_golem": {
+    "name": "Ice Golem",
+    "sprite": "ice_golem",
+    "height": 84,
+    "speed": 1.1,
+    "wanderRadius": 2,
+    "level": 12,
+    "hp": 1400,
+    "xp": 120,
+    "attackType": "melee",
+    "range": 1.5,
+    "attackMs": 2000,
+    "atk": {
+      "min": 40,
+      "max": 52
+    },
+    "armor": {
+      "melee": 46,
+      "ranged": 42,
+      "magic": 28
+    },
+    "armorUpgrade": 2,
+    "acc": 58,
+    "eva": 8,
+    "critRate": 0.05,
+    "element": "water",
+    "res": {
+      "water": 0.3,
+      "fire": -0.2
+    },
+    "race": "robot",
+    "gold": [
+      30,
+      48
+    ],
+    "drops": [
+      [
+        "frost_shard",
+        0.6
+      ],
+      [
+        "golem_shard",
+        0.3
+      ],
+      [
+        "hp_potion",
+        0.15
+      ],
+      [
+        "steel_crossbow",
+        0.01
+      ],
+      [
+        "shadow_dagger",
+        0.01
+      ]
+    ],
+    "aggro": 5,
+    "onHit": {
+      "type": "freeze",
+      "chance": 0.1,
+      "ms": 1500,
+      "power": 0
+    }
+  },
+  "frost_wyrm": {
+    "name": "Frost Wyrm",
+    "sprite": "wyrm",
+    "height": 110,
+    "speed": 1.2,
+    "wanderRadius": 1,
+    "level": 14,
+    "hp": 9000,
+    "xp": 900,
+    "attackType": "magic",
+    "range": 2.2,
+    "attackMs": 2200,
+    "atk": {
+      "min": 50,
+      "max": 66
+    },
+    "armor": {
+      "melee": 44,
+      "ranged": 44,
+      "magic": 40
+    },
+    "armorUpgrade": 2,
+    "acc": 62,
+    "eva": 12,
+    "critRate": 0.06,
+    "element": "water",
+    "res": {
+      "water": 0.4,
+      "fire": -0.2
+    },
+    "race": "demon",
+    "boss": true,
+    "gold": [
+      150,
+      220
+    ],
+    "drops": [
+      [
+        "frost_shard",
+        1,
+        4
+      ],
+      [
+        "spirit_crystal",
+        0.3
+      ]
+    ],
+    "loot": "miniBossLoot",
+    "cardChance": 0.1,
+    "blast": {
+      "mult": 2.0,
+      "radius": 2.4,
+      "everyMs": 8000,
+      "castMs": 1500,
+      "status": {
+        "type": "freeze",
+        "chance": 0.5,
+        "ms": 1500,
+        "power": 0
+      }
+    },
+    "summon": {
+      "type": "blue_wisp",
+      "count": 2,
+      "everyMs": 14000,
+      "max": 4
+    }
   }
 }

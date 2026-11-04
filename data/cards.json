@@ -26,7 +26,13 @@
         "mult": 1.9,
         "flat": 10,
         "element": "fire",
-        "unlock": 1
+        "unlock": 1,
+        "status": {
+          "type": "burn",
+          "chance": 0.4,
+          "ms": 4000,
+          "power": 0.15
+        }
       },
       {
         "id": "blazing_spin",
@@ -39,7 +45,13 @@
         "aoe": 2.0,
         "self": true,
         "element": "fire",
-        "unlock": 2
+        "unlock": 2,
+        "status": {
+          "type": "burn",
+          "chance": 0.3,
+          "ms": 3000,
+          "power": 0.12
+        }
       },
       {
         "id": "inferno_strike",
@@ -50,7 +62,13 @@
         "mult": 3.0,
         "flat": 20,
         "element": "fire",
-        "unlock": 4
+        "unlock": 4,
+        "status": {
+          "type": "burn",
+          "chance": 0.8,
+          "ms": 5000,
+          "power": 0.2
+        }
       },
       {
         "id": "ember_rush",
@@ -62,7 +80,13 @@
         "mult": 1.6,
         "flat": 10,
         "element": "fire",
-        "hits": 2
+        "hits": 2,
+        "status": {
+          "type": "burn",
+          "chance": 0.4,
+          "ms": 4000,
+          "power": 0.15
+        }
       },
       {
         "id": "flame_guard",
@@ -134,7 +158,13 @@
         "cooldownMs": 4000,
         "mult": 1.5,
         "flat": 10,
-        "unlock": 1
+        "unlock": 1,
+        "status": {
+          "type": "stun",
+          "chance": 0.5,
+          "ms": 1500,
+          "power": 0
+        }
       },
       {
         "id": "quake_wave",
@@ -146,7 +176,13 @@
         "flat": 0,
         "aoe": 2.2,
         "self": true,
-        "unlock": 2
+        "unlock": 2,
+        "status": {
+          "type": "stun",
+          "chance": 0.3,
+          "ms": 1200,
+          "power": 0
+        }
       },
       {
         "id": "fortify",
@@ -187,7 +223,13 @@
         "mult": 1.8,
         "flat": 10,
         "aoe": 2.4,
-        "self": true
+        "self": true,
+        "status": {
+          "type": "stun",
+          "chance": 0.4,
+          "ms": 1800,
+          "power": 0
+        }
       }
     ],
     "passives": [
@@ -241,7 +283,13 @@
         "cooldownMs": 3500,
         "mult": 2.2,
         "flat": 5,
-        "unlock": 1
+        "unlock": 1,
+        "status": {
+          "type": "bleed",
+          "chance": 0.3,
+          "ms": 4000,
+          "power": 0.15
+        }
       },
       {
         "id": "triple_arrow",
@@ -252,7 +300,13 @@
         "mult": 0.9,
         "flat": 0,
         "hits": 3,
-        "unlock": 2
+        "unlock": 2,
+        "status": {
+          "type": "bleed",
+          "chance": 0.25,
+          "ms": 4000,
+          "power": 0.12
+        }
       },
       {
         "id": "storm_rain",
@@ -293,7 +347,13 @@
         "cooldownMs": 15000,
         "unlock": 12,
         "mult": 3.6,
-        "flat": 20
+        "flat": 20,
+        "status": {
+          "type": "bleed",
+          "chance": 0.7,
+          "ms": 5000,
+          "power": 0.2
+        }
       }
     ],
     "passives": [
@@ -348,7 +408,13 @@
         "mult": 1.8,
         "flat": 5,
         "element": "light",
-        "unlock": 1
+        "unlock": 1,
+        "status": {
+          "type": "bleed",
+          "chance": 0.3,
+          "ms": 4000,
+          "power": 0.12
+        }
       },
       {
         "id": "healing_bloom",
@@ -369,7 +435,13 @@
         "flat": 0,
         "aoe": 1.8,
         "element": "light",
-        "unlock": 4
+        "unlock": 4,
+        "status": {
+          "type": "slow",
+          "chance": 0.5,
+          "ms": 3000,
+          "power": 0
+        }
       },
       {
         "id": "root_strike",
@@ -380,7 +452,13 @@
         "unlock": 6,
         "mult": 1.7,
         "flat": 10,
-        "element": "light"
+        "element": "light",
+        "status": {
+          "type": "slow",
+          "chance": 0.6,
+          "ms": 3000,
+          "power": 0
+        }
       },
       {
         "id": "sunbeam",
@@ -456,7 +534,13 @@
         "mult": 2.0,
         "flat": 10,
         "element": "fire",
-        "unlock": 1
+        "unlock": 1,
+        "status": {
+          "type": "burn",
+          "chance": 0.5,
+          "ms": 4000,
+          "power": 0.18
+        }
       },
       {
         "id": "fire_nova",
@@ -492,7 +576,13 @@
         "unlock": 6,
         "mult": 1.4,
         "flat": 5,
-        "element": "fire"
+        "element": "fire",
+        "status": {
+          "type": "burn",
+          "chance": 0.3,
+          "ms": 3000,
+          "power": 0.12
+        }
       },
       {
         "id": "hex_flame",
@@ -504,7 +594,13 @@
         "mult": 1.2,
         "flat": 0,
         "hits": 3,
-        "element": "fire"
+        "element": "fire",
+        "status": {
+          "type": "burn",
+          "chance": 0.35,
+          "ms": 4000,
+          "power": 0.15
+        }
       },
       {
         "id": "inferno",
@@ -516,7 +612,13 @@
         "mult": 2.2,
         "flat": 20,
         "aoe": 2.6,
-        "element": "fire"
+        "element": "fire",
+        "status": {
+          "type": "burn",
+          "chance": 0.7,
+          "ms": 5000,
+          "power": 0.2
+        }
       }
     ],
     "passives": [
@@ -536,9 +638,14 @@
         "name": "Soul Burn",
         "icon": "👻",
         "unlock": 10,
-        "type": "lifesteal",
-        "desc": "ดูดเลือด 4%",
-        "pct": 0.04
+        "type": "onHit",
+        "desc": "ทุกการโจมตีมีโอกาส 15% ติดไหม้",
+        "status": {
+          "type": "burn",
+          "chance": 0.15,
+          "ms": 3000,
+          "power": 0.12
+        }
       }
     ],
     "weapon": "main"
@@ -569,7 +676,13 @@
         "mult": 1.8,
         "flat": 10,
         "element": "water",
-        "unlock": 1
+        "unlock": 1,
+        "status": {
+          "type": "slow",
+          "chance": 0.5,
+          "ms": 3000,
+          "power": 0
+        }
       },
       {
         "id": "ice_barrier",
@@ -590,7 +703,13 @@
         "flat": 0,
         "aoe": 2.4,
         "element": "water",
-        "unlock": 4
+        "unlock": 4,
+        "status": {
+          "type": "slow",
+          "chance": 0.7,
+          "ms": 3500,
+          "power": 0
+        }
       },
       {
         "id": "frost_bullet",
@@ -601,7 +720,13 @@
         "unlock": 6,
         "mult": 1.6,
         "flat": 5,
-        "element": "water"
+        "element": "water",
+        "status": {
+          "type": "slow",
+          "chance": 0.4,
+          "ms": 2500,
+          "power": 0
+        }
       },
       {
         "id": "frost_nova",
@@ -614,7 +739,13 @@
         "flat": 0,
         "aoe": 2.0,
         "self": true,
-        "element": "water"
+        "element": "water",
+        "status": {
+          "type": "freeze",
+          "chance": 0.3,
+          "ms": 1800,
+          "power": 0
+        }
       },
       {
         "id": "absolute_zero",
@@ -626,7 +757,13 @@
         "mult": 2.6,
         "flat": 20,
         "aoe": 2.2,
-        "element": "water"
+        "element": "water",
+        "status": {
+          "type": "freeze",
+          "chance": 0.6,
+          "ms": 2500,
+          "power": 0
+        }
       }
     ],
     "passives": [
@@ -635,11 +772,13 @@
         "name": "Frozen Heart",
         "icon": "💙",
         "unlock": 5,
-        "type": "stat",
-        "desc": "MP +100 · DEF +10",
-        "bonus": {
-          "mp": 100,
-          "armor": 10
+        "type": "onHit",
+        "desc": "ทุกการโจมตีมีโอกาส 12% ทำให้ช้า",
+        "status": {
+          "type": "slow",
+          "chance": 0.12,
+          "ms": 2500,
+          "power": 0
         }
       },
       {

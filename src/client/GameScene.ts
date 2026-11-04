@@ -29,7 +29,7 @@ interface View {
   aura?: Phaser.GameObjects.Ellipse;
   fxSig?: string; sparks?: Phaser.GameObjects.Particles.ParticleEmitter; ring?: Phaser.GameObjects.Ellipse; ringLv?: number;
   wings?: Phaser.GameObjects.Container;
-  formKey?: string; tint?: number; mount?: Phaser.GameObjects.Image; mountLook?: string; dust?: Phaser.GameObjects.Particles.ParticleEmitter;
+  formKey?: string; tint?: number; stKey?: string; stIcons?: Phaser.GameObjects.Text; mount?: Phaser.GameObjects.Image; mountLook?: string; dust?: Phaser.GameObjects.Particles.ParticleEmitter;
   scale: number; phase: number; lunge: number; lungeDir: { x: number; y: number }; height: number;
 }
 
@@ -127,7 +127,7 @@ export class GameScene extends Phaser.Scene {
     const alpha = Math.min(1, this.acc / TICK_MS), now = this.time.now / 1000;
     for (const e of this.world.entities.values()) { if (!this.views.has(e.id)) this.makeView(e); this.syncView(e, alpha, now, dtMs); }
     for (const [id, v] of this.views) if (!this.world.entities.has(id)) {
-      v.body.destroy(); v.shadow.destroy(); v.bar.destroy(); v.aura?.destroy(); v.sparks?.destroy(); v.ring?.destroy(); v.wings?.destroy(); v.mount?.destroy(); v.dust?.destroy();
+      v.body.destroy(); v.shadow.destroy(); v.bar.destroy(); v.stIcons?.destroy(); v.aura?.destroy(); v.sparks?.destroy(); v.ring?.destroy(); v.wings?.destroy(); v.mount?.destroy(); v.dust?.destroy();
       this.views.delete(id); this.names.get(id)?.destroy(); this.names.delete(id);
     }
     this.drawTargetRing();
@@ -194,6 +194,7 @@ export class GameScene extends Phaser.Scene {
       t.setText(`${e.name} Lv${e.level}`).setPosition(x, y - v.height * sqy - 18).setDepth(9600);
     }
 
+    this.syncStatus(e, v, x, y - v.height * sqy - 18);
     v.bar.clear();
     const showBar = !e.dead && (e.kind === 'player' || e.hp < e.maxHp || this.player.target === e.id);
     if (showBar) {
@@ -202,6 +203,20 @@ export class GameScene extends Phaser.Scene {
       v.bar.fillStyle(e.kind === 'player' ? 0x5be37a : 0xe5484d, 1).fillRect(bx, by, w * (e.hp / e.maxHp), 4);
       v.bar.setDepth(5000 + sy);
     }
+  }
+
+  /** Status icons above the head + body tint (freeze > stun > burn > slow > bleed). */
+  private syncStatus(e: Entity, v: View, x: number, y: number) {
+    const now = this.world.now, act = (e.statuses ?? []).filter(st => st.until > now).map(st => st.type);
+    const key = e.dead ? '' : act.join(',');
+    if (key !== v.stKey) {
+      v.stKey = key;
+      const order = ['freeze', 'stun', 'burn', 'slow', 'bleed'] as const, top = order.find(t => act.includes(t));
+      if (top) v.body.setTint(parseInt(defs.statuses[top].tint, 16)); else { v.body.clearTint(); if (v.tint) v.body.setTint(v.tint); }
+      v.stIcons?.destroy(); v.stIcons = undefined;
+      if (key) v.stIcons = this.add.text(0, 0, act.map(t => defs.statuses[t].icon).join(''), { fontSize: '13px' }).setOrigin(0.5, 1).setResolution(2);
+    }
+    if (v.stIcons) v.stIcons.setPosition(x, y - (this.net && e.kind === 'player' ? 12 : 0)).setDepth(9650);
   }
 
   /** Sprite/aura for card form + mount visuals. Runs every frame; only rebuilds when the key changes. */
@@ -310,18 +325,21 @@ export class GameScene extends Phaser.Scene {
 
   private onEvent(ev: GameEvent) {
     if (ev.t === 'attack') {
-      const a = this.world.entities.get(ev.from)!, b = this.world.entities.get(ev.to)!, va = this.views.get(a.id)!;
+      const a = this.world.entities.get(ev.from), b = this.world.entities.get(ev.to), va = a && this.views.get(a.id);
+      if (!a || !b || !va) return;
       const pa = toScreen(a.x, a.y), pb = toScreen(b.x, b.y);
       const d = Math.hypot(pb.sx - pa.sx, pb.sy - pa.sy) || 1;
       va.lungeDir = { x: (pb.sx - pa.sx) / d, y: (pb.sy - pa.sy) / d }; va.lunge = 1;
       if (ev.ranged) this.projectile(a, pa, pb);
     } else if (ev.t === 'dmg') {
-      const e = this.world.entities.get(ev.to)!, v = this.views.get(e.id)!;
+      const e = this.world.entities.get(ev.to), v = e && this.views.get(e.id);
+      if (!e || !v) return;
       const { sx, sy } = toScreen(e.x, e.y);
+      if (ev.dot) { this.floatText(sx + 14, sy - v.height + 6, String(ev.amount), ev.dot === 'burn' ? '#ff9f43' : '#ff5d7a', 12, 600); return; }
       const txt = ev.miss ? 'MISS' : String(ev.amount);
       const color = ev.miss ? '#c9d1e0' : e.kind === 'player' ? '#ff6b6b' : ev.crit ? '#ffd23f' : '#ffffff';
       this.floatText(sx, sy - v.height - 6, txt + (ev.crit ? '!' : ''), color, ev.crit ? 20 : 15);
-      if (!ev.miss) { v.body.setTintFill(0xffffff); this.time.delayedCall(70, () => v.body.setTint(0xff8080)); this.time.delayedCall(170, () => { v.body.clearTint(); if (v.tint) v.body.setTint(v.tint); }); }
+      if (!ev.miss) { v.body.setTintFill(0xffffff); this.time.delayedCall(70, () => v.body.setTint(0xff8080)); this.time.delayedCall(170, () => { v.body.clearTint(); if (v.tint) v.body.setTint(v.tint); v.stKey = undefined; }); }
     } else if (ev.t === 'die') {
       const v = this.views.get(ev.id)!;
       this.tweens.add({ targets: v.body, alpha: 0, duration: 450 });
@@ -338,6 +356,9 @@ export class GameScene extends Phaser.Scene {
       // don't wait on camerafadeoutcomplete: it never fires if another fade is running
       this.cameras.main.fadeOut(200, 27, 31, 42);
       this.time.delayedCall(220, () => this.scene.restart(data));
+    } else if (ev.t === 'status') {
+      const e = this.world.entities.get(ev.id), v = e && this.views.get(e.id);
+      if (e && v) { const { sx, sy } = toScreen(e.x, e.y); this.floatText(sx, sy - v.height - 22, defs.statuses[ev.type].name, '#ffe9a8', 12, 700); }
     } else if (ev.t === 'telegraph') {
       const { sx, sy } = toScreen(ev.x, ev.y), w = ev.r * TW * 2, h = ev.r * TH * 2;
       const ring = this.add.ellipse(sx, sy, w, h).setStrokeStyle(3, 0xff3b3b, 0.95).setDepth(3);
@@ -419,7 +440,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private projectile(a: Entity, pa: { sx: number; sy: number }, pb: { sx: number; sy: number }) {
-    const magic = a.stats?.attackType === 'magic';
+    const magic = (a.stats?.attackType ?? defs.monsters[a.type]?.attackType) === 'magic';
     const g = this.add.graphics().setDepth(9000);
     if (magic) { g.fillStyle(0xff8a3d, 1).fillCircle(0, 0, 5); g.fillStyle(0xffe08a, 1).fillCircle(0, 0, 2.5); }
     else { g.lineStyle(2, 0xf2e6c9, 1).lineBetween(-7, 0, 7, 0); }
@@ -463,9 +484,9 @@ export class GameScene extends Phaser.Scene {
       const { sx, sy } = toScreen(x, y);
       const water = this.world.isWater(x, y);
       const n = ((x * 73856093) ^ (y * 19349663)) >>> 0;
-      const stone = map.ground !== 'grass', ruin = map.ground === 'ruin';
-      const base = water ? 0x4aa3d8 : ruin ? [0x5b5466, 0x564f60, 0x605a6b][n % 3] : stone ? [0xc9c2b4, 0xc2bba9, 0xd0c9bb][n % 3] : [0x7cc56b, 0x76bf65, 0x82ca70][n % 3];
-      this.diamond(g, sx, sy, base, water ? 0x3a8cc0 : ruin ? 0x48425a : stone ? 0xa8a090 : 0x68ad58);
+      const stone = map.ground !== 'grass' && map.ground !== 'snow', ruin = map.ground === 'ruin', snow = map.ground === 'snow';
+      const base = water ? 0x8fd3f0 : snow ? [0xe8f0f8, 0xdfe9f4, 0xf1f6fb][n % 3] : ruin ? [0x5b5466, 0x564f60, 0x605a6b][n % 3] : stone ? [0xc9c2b4, 0xc2bba9, 0xd0c9bb][n % 3] : [0x7cc56b, 0x76bf65, 0x82ca70][n % 3];
+      this.diamond(g, sx, sy, base, water ? 0x3a8cc0 : snow ? 0xc5d4e4 : ruin ? 0x48425a : stone ? 0xa8a090 : 0x68ad58);
       if (!water && !stone && n % 11 === 0) { g.fillStyle(0xf4e27a, 1).fillCircle(sx - 6, sy + 2, 2); g.fillStyle(0xffffff, 1).fillCircle(sx + 8, sy - 3, 1.6); }
     }
     const key = `ground_${map.id}`;

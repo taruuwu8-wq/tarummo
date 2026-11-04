@@ -15,7 +15,7 @@ export interface DungeonDef {
 }
 export interface DungeonState { active: boolean; startedAt: number; room: number; openDoors: number[]; cleared: boolean; rank: 'S' | 'A' | 'B' | null; timeMs: number }
 export interface MapData {
-  id: string; name: string; ground: 'grass' | 'stone' | 'ruin'; safe: boolean; width: number; height: number; spawn: Tile;
+  id: string; name: string; ground: 'grass' | 'stone' | 'ruin' | 'snow'; safe: boolean; width: number; height: number; spawn: Tile;
   rocks: Tile[]; water: Tile[]; trees: Tile[]; walls?: Tile[]; monsters: { type: string; count: number }[];
   portals: Portal[]; npcs: { id: string; x: number; y: number }[]; dungeon?: DungeonDef;
 }
@@ -27,9 +27,9 @@ export interface SkillDef {
   id: string; name: string; icon: string; mp: number; cooldownMs: number;
   mult?: number; flat?: number; element?: Element; aoe?: number; self?: boolean; hits?: number; heal?: number;
   /** class skills: character level; card skills: card (job) level */
-  unlock: number; offhand?: boolean; range?: number;
+  unlock: number; offhand?: boolean; range?: number; status?: StatusSpec;
 }
-export interface PassiveDef { id: string; name: string; icon: string; unlock: number; desc: string; type: 'stat' | 'lifesteal' | 'lowhp'; bonus?: Bonus; pct?: number; threshold?: number; reduce?: number }
+export interface PassiveDef { id: string; name: string; icon: string; unlock: number; desc: string; type: 'stat' | 'lifesteal' | 'lowhp' | 'onHit'; bonus?: Bonus; pct?: number; threshold?: number; reduce?: number; status?: StatusSpec }
 /** hotbar entry: 's:<skillId>' or 'i:<itemId>' */
 export type BarRef = string | null;
 export const BAR_SIZE = 10;
@@ -60,8 +60,13 @@ export interface Defs {
   classes: Record<string, ClassDef>; monsters: Record<string, MonsterDef>;
   items: Record<string, ItemDef>; skills: Record<string, SkillDef[]>;
   cards: Record<string, CardDef>; upgrade: UpgradeCfg; npcs: Record<string, NpcDef>;
-  options: { options: OptDef[] }; rarity: RarityCfg;
+  options: { options: OptDef[] }; rarity: RarityCfg; statuses: Record<StatusType, StatusDef>;
 }
+export type StatusType = 'burn' | 'bleed' | 'slow' | 'stun' | 'freeze';
+export interface StatusDef { name: string; icon: string; tint: string; tick?: boolean; maxHpCap?: number; moveMul?: number; attackMul?: number; noAct?: boolean; breakOnHit?: boolean }
+/** chance 0..1, ms duration, power = DoT per second as a fraction of the triggering hit */
+export interface StatusSpec { type: StatusType; chance: number; ms: number; power: number }
+export interface StatusInst { type: StatusType; until: number; tickAt: number; perTick: number; src: number }
 export type Grade = 'C' | 'B' | 'A' | 'S';
 export interface OptDef { id: string; slot: 'weapon' | 'armor' | 'offhand'; grade: Grade; stat: string; min: number; max: number; label: string }
 export interface OptLine { id: string; v: number }
@@ -75,8 +80,8 @@ export interface RarityCfg {
 export interface LootCfg { classGear: number; shell: number; reroll: number; protect: number }
 const GRADES: Grade[] = ['C', 'B', 'A', 'S'];
 /** Per-player numbers from equipment options that aren't part of CombatStats. */
-export interface Extra { mpCost: number; gold: number; xp: number; restHp: number; restMp: number; natHp: number; natMp: number; potion: number }
-const NO_EXTRA = (): Extra => ({ mpCost: 0, gold: 0, xp: 0, restHp: 0, restMp: 0, natHp: 0, natMp: 0, potion: 0 });
+export interface Extra { bleed: number; mpCost: number; gold: number; xp: number; restHp: number; restMp: number; natHp: number; natMp: number; potion: number }
+const NO_EXTRA = (): Extra => ({ bleed: 0, mpCost: 0, gold: 0, xp: 0, restHp: 0, restMp: 0, natHp: 0, natMp: 0, potion: 0 });
 export interface CardDef {
   name: string; class: string; role: string; sprite: string; height: number; icon: string; rarity: ItemDef['rarity'];
   aura: string; element?: Element; bonus: Bonus; skills: SkillDef[]; passives: PassiveDef[];
@@ -119,6 +124,8 @@ export interface Entity {
   bars: Record<string, BarRef[]>; barKnown: Record<string, string[]>;
   passive: { lifesteal: number; lowhp?: { threshold: number; reduce: number } };
   extra: Extra;
+  statuses: StatusInst[]; prot: Partial<Record<StatusType, number>>; onHit: StatusSpec[];
+  summoner?: number; nextSummon: number;
 }
 
 export type Intent =
@@ -150,7 +157,7 @@ export type Intent =
 
 export type GameEvent =
   | { t: 'attack'; from: number; to: number; ranged: boolean }
-  | { t: 'dmg'; to: number; amount: number; crit: boolean; miss: boolean }
+  | { t: 'dmg'; to: number; amount: number; crit: boolean; miss: boolean; dot?: StatusType }
   | { t: 'die'; id: number }
   | { t: 'respawn'; id: number }
   | { t: 'xp'; id: number; amount: number }
@@ -161,6 +168,7 @@ export type GameEvent =
   | { t: 'gold'; id: number; amount: number }
   | { t: 'msg'; id: number; text: string }
   | { t: 'transform'; id: number; on: boolean }
+  | { t: 'status'; id: number; type: StatusType }
   | { t: 'rarify'; id: number; item: string; result: 'ok' | 'broke' | 'saved'; rare: number }
   | { t: 'upgrade'; id: number; item: string; ok: boolean; up: number }
   | { t: 'cardLevel'; id: number; card: string; lv: number }
@@ -182,7 +190,7 @@ export class World {
   stash: InvSlot[];
   stashDirty = false;
   dungeon: DungeonState = { active: false, startedAt: 0, room: 0, openDoors: [], cleared: false, rank: null, timeMs: 0 };
-  private blasts: { x: number; y: number; r: number; at: number; from: number; mult: number }[] = [];
+  private blasts: { x: number; y: number; r: number; at: number; from: number; mult: number; status?: StatusSpec }[] = [];
 
   /** mirror: client-side copy fed by server snapshots; no monsters are spawned and tick() is not called. */
   constructor(public map: MapData, public defs: Defs, seed = 1, opts: { mirror?: boolean; stash?: InvSlot[] } = {}) {
@@ -256,7 +264,7 @@ export class World {
       hp: 1, maxHp: 1, mp: 0, maxMp: 0, stats: undefined as unknown as CombatStats, speed: 1, range: 1, attackMs: 1000,
       target: null, nextAttack: 0, repathAt: 0, lastHurt: -1e9, dead: false, respawnAt: 0,
       idleTicks: 0, xpReward: 0, level: 1, xp: 0, auto: false,
-      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, cooldowns: {}, pendingSkill: null, talkTo: null, lastHit: -1e9, autoCfg: defaultAutoCfg(), autoAnchor: null, autoTrip: null, autoStats: { since: 0, xp: 0, gold: 0, kills: 0, items: {} }, mounted: false, aggro: 0, noRespawn: false, nextBlast: 0, bars: {}, barKnown: {}, passive: { lifesteal: 0 }, extra: NO_EXTRA(),
+      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, cooldowns: {}, pendingSkill: null, talkTo: null, lastHit: -1e9, autoCfg: defaultAutoCfg(), autoAnchor: null, autoTrip: null, autoStats: { since: 0, xp: 0, gold: 0, kills: 0, items: {} }, mounted: false, aggro: 0, noRespawn: false, nextBlast: 0, bars: {}, barKnown: {}, passive: { lifesteal: 0 }, extra: NO_EXTRA(), statuses: [], prot: {}, onHit: [], nextSummon: 0,
     };
   }
 
@@ -290,6 +298,7 @@ export class World {
     Object.assign(e, {
       name: m.name, speed: m.speed, range: m.range, attackMs: m.attackMs, home: t,
       hp: m.hp, maxHp: m.hp, stats: monsterStats(m), xpReward: m.xp, level: m.level, boss: m.boss,
+      aggro: m.aggro ?? 0, onHit: m.onHit ? [m.onHit] : [],
     });
     this.entities.set(e.id, e);
     return e;
@@ -317,9 +326,11 @@ export class World {
     // card passives: stat ones join the gear sum, the others become flags
     const card = e.transformed && e.equip.card ? this.defs.cards[e.equip.card.item] : undefined;
     e.passive = { lifesteal: 0 };
+    e.onHit = [];
     for (const ps of card ? this.unlockedPassives(e) : []) {
       if (ps.type === 'stat') gear.push({ def: { name: ps.name, slot: 'charm', rarity: 'common', icon: '', price: 0, bonus: ps.bonus }, up: 0 });
       else if (ps.type === 'lifesteal') e.passive.lifesteal += ps.pct ?? 0;
+      else if (ps.type === 'onHit' && ps.status) e.onHit.push(ps.status);
       else if (ps.type === 'lowhp') e.passive.lowhp = { threshold: ps.threshold ?? 0.3, reduce: ps.reduce ?? 0.2 };
     }
     const cls = this.defs.classes[e.type];
@@ -382,7 +393,9 @@ export class World {
       if (best.res_all) st.res[el] = (st.res[el] ?? 0) + best.res_all / 100;
     }
     st.dmgTakenRed = pct('dmgTaken'); st.critDmgRed = pct('critDmgRed'); st.critRateRed = pct('critRateRed');
-    e.extra = { mpCost: pct('mpCost'), gold: pct('gold'), xp: pct('xp'), restHp: pct('restHp'), restMp: pct('restMp'), natHp: pct('natHp'), natMp: pct('natMp'), potion: pct('potion') };
+    const all = pct('prot_all'), cap = (v: number) => Math.min(0.9, v + all);
+    e.prot = { bleed: cap(Math.max(pct('prot_bleed'), pct('prot_wounds'))), burn: cap(pct('prot_wounds')), stun: cap(pct('prot_stun')), freeze: cap(pct('prot_freeze')), slow: cap(pct('prot_slow')) };
+    e.extra = { bleed: pct('bleedChance'), mpCost: pct('mpCost'), gold: pct('gold'), xp: pct('xp'), restHp: pct('restHp'), restMp: pct('restMp'), natHp: pct('natHp'), natMp: pct('natMp'), potion: pct('potion') };
   }
 
   private refSlot(p: Entity, ref: number | Slot) { return typeof ref === 'number' ? p.inv[ref] : p.equip[ref]; }
@@ -760,12 +773,15 @@ export class World {
     for (const b of this.blasts.filter(b => this.now >= b.at)) {
       const boss = this.entities.get(b.from);
       if (boss && !boss.dead) for (const p of this.entities.values())
-        if (p.kind === 'player' && !p.dead && Math.hypot(p.x - b.x, p.y - b.y) <= b.r) this.strike(boss, p, { mult: b.mult, flat: 0 });
+        if (p.kind === 'player' && !p.dead && Math.hypot(p.x - b.x, p.y - b.y) <= b.r) this.strike(boss, p, { mult: b.mult, flat: 0 }, b.status);
     }
     this.blasts = this.blasts.filter(b => this.now < b.at);
     for (const e of this.entities.values()) {
       e.px = e.x; e.py = e.y;
       if (e.dead) { if (this.now >= e.respawnAt) this.respawn(e); continue; }
+      this.statusTick(e);
+      if (e.dead) continue;
+      if (!this.canAct(e)) continue;
       if (e.kind === 'monster') this.monsterAi(e);
       else { this.playerAi(e); this.walkToNpc(e); }
       this.combat(e);
@@ -876,7 +892,7 @@ export class World {
       if (this.now < e.nextAttack) return;
       const sk = e.pendingSkill ? this.skillsOf(e).find(k => k.id === e.pendingSkill) : undefined;
       if (sk) { e.pendingSkill = null; this.castSkill(e, sk, t); return; }
-      e.nextAttack = this.now + e.attackMs;
+      e.nextAttack = this.now + e.attackMs * (this.hasStatus(e, 'slow') ? this.defs.statuses.slow.attackMul ?? 1 : 1);
       this.events.push({ t: 'attack', from: e.id, to: t.id, ranged: e.range > 2 });
       this.strike(e, t, BASIC);
     } else if (this.now >= e.repathAt) {
@@ -886,14 +902,52 @@ export class World {
     }
   }
 
-  private strike(e: Entity, t: Entity, sk: Skill) {
+  // ---- status effects ----
+  hasStatus(e: Entity, type: StatusType) { return e.statuses?.some(x => x.type === type && x.until > this.now) ?? false; }
+  private canAct(e: Entity) { return !e.statuses?.some(x => this.defs.statuses[x.type].noAct && x.until > this.now); }
+
+  private applyStatus(t: Entity, spec: StatusSpec, from: Entity, hit: number) {
+    if (t.dead) return;
+    const def = this.defs.statuses[spec.type];
+    let chance = spec.chance * (1 - (t.prot?.[spec.type] ?? 0)), ms = spec.ms;
+    if (t.boss && def.noAct) { chance *= 0.4; ms *= 0.5; }      // bosses shrug off most hard CC
+    if (this.rng() >= chance) return;
+    let perTick = 0;
+    if (def.tick) { perTick = Math.max(1, Math.round(hit * spec.power)); if (def.maxHpCap) perTick = Math.min(perTick, Math.max(1, Math.round(t.maxHp * def.maxHpCap))); }
+    const old = t.statuses.find(x => x.type === spec.type);
+    if (old) { old.until = Math.max(old.until, this.now + ms); old.perTick = Math.max(old.perTick, perTick); old.src = from.id; }
+    else t.statuses.push({ type: spec.type, until: this.now + ms, tickAt: this.now + 1000, perTick, src: from.id });
+    if (def.noAct) { t.path = []; t.pendingSkill = null; }
+    this.events.push({ t: 'status', id: t.id, type: spec.type });
+  }
+
+  private statusTick(e: Entity) {
+    if (!e.statuses.length) return;
+    for (const st of e.statuses) {
+      if (!this.defs.statuses[st.type].tick || this.now < st.tickAt || st.until <= this.now) continue;
+      st.tickAt += 1000;
+      const src = this.entities.get(st.src) ?? e;
+      this.events.push({ t: 'dmg', to: e.id, amount: st.perTick, crit: false, miss: false, dot: st.type });
+      this.hurt(e, st.perTick, src);
+      if (e.dead) break;
+    }
+    e.statuses = e.statuses.filter(x => x.until > this.now && !e.dead);
+  }
+
+  private strike(e: Entity, t: Entity, sk: Skill, status?: StatusSpec) {
     e.lastHit = this.now;
     const r = rollAttack(this.defs.balance, e.stats, t.stats, this.rng, sk, { dungeon: !!this.map.dungeon });
     const lh = t.passive?.lowhp;
     if (lh && r.hit && t.hp / t.maxHp < lh.threshold) r.dmg = Math.max(1, Math.round(r.dmg * (1 - lh.reduce)));
     this.events.push({ t: 'dmg', to: t.id, amount: r.dmg, crit: r.crit, miss: !r.hit });
     if (e.passive?.lifesteal && r.hit) e.hp = Math.min(e.maxHp, e.hp + r.dmg * e.passive.lifesteal);
+    if (r.hit && t.statuses?.length) t.statuses = t.statuses.filter(x => !this.defs.statuses[x.type].breakOnHit);   // a hit shatters freeze
     this.hurt(t, r.dmg, e);
+    if (r.hit && !t.dead) {
+      if (status) this.applyStatus(t, status, e, r.dmg);
+      for (const oh of e.onHit ?? []) this.applyStatus(t, oh, e, r.dmg);
+      if (e.extra?.bleed) this.applyStatus(t, { type: 'bleed', chance: e.extra.bleed, ms: 4000, power: 0.15 }, e, r.dmg);
+    }
   }
 
   mpCost(e: Entity, sk: SkillDef) { return Math.round(sk.mp * (1 - (e.extra?.mpCost ?? 0))); }
@@ -916,7 +970,7 @@ export class World {
     const victims = sk.aoe
       ? [...this.entities.values()].filter(o => o.kind === 'monster' && !o.dead && Math.hypot(o.x - at.x, o.y - at.y) <= sk.aoe!)
       : t ? [t] : [];
-    for (const v of victims) for (let i = 0; i < (sk.hits ?? 1) && !v.dead; i++) this.strike(e, v, cs);
+    for (const v of victims) for (let i = 0; i < (sk.hits ?? 1) && !v.dead; i++) this.strike(e, v, cs, sk.status);
   }
 
   private nearestMonster(e: Entity, maxD: number, maxLevel: number) {
@@ -939,6 +993,10 @@ export class World {
     const rs = this.defs.balance.respawnMs;
     t.respawnAt = t.noRespawn ? Infinity : this.now + (t.kind === 'monster' ? rs.monster : rs.player);
     for (const o of this.entities.values()) if (o.target === t.id) o.target = null;
+    t.statuses = [];
+    // a summoner's minions vanish with it
+    for (const [id, o] of [...this.entities]) if (o.summoner === t.id) this.entities.delete(id);
+    if (t.summoner != null) { this.entities.delete(t.id); }
     if (t.kind === 'monster' && from.kind === 'player') {
       // everyone nearby gets full XP + gold + their own drop rolls: playing together never means sharing less
       const m = this.defs.monsters[t.type];
@@ -1082,8 +1140,22 @@ export class World {
         if (!e.nextBlast) e.nextBlast = this.now + 3000;
         else {
           e.nextBlast = this.now + blast.everyMs;
-          this.blasts.push({ x: t.x, y: t.y, r: blast.radius, at: this.now + blast.castMs, from: e.id, mult: blast.mult });
+          this.blasts.push({ x: t.x, y: t.y, r: blast.radius, at: this.now + blast.castMs, from: e.id, mult: blast.mult, status: blast.status });
           this.events.push({ t: 'telegraph', x: t.x, y: t.y, r: blast.radius, ms: blast.castMs });
+        }
+      }
+    }
+    const sm = this.defs.monsters[e.type].summon;
+    if (sm && e.target != null) {
+      if (!e.nextSummon) e.nextSummon = this.now + 5000;
+      else if (this.now >= e.nextSummon) {
+        e.nextSummon = this.now + sm.everyMs;
+        const alive = [...this.entities.values()].filter(o => o.summoner === e.id && !o.dead).length;
+        for (let i = 0; i < Math.min(sm.count, sm.max - alive); i++) {
+          let t: Tile = [Math.round(e.x), Math.round(e.y)];
+          for (let k = 0; k < 20; k++) { const c: Tile = [Math.round(e.x + this.rng() * 4 - 2), Math.round(e.y + this.rng() * 4 - 2)]; if (this.walkable(...c)) { t = c; break; } }
+          const m = this.spawnMonster(sm.type, t);
+          Object.assign(m, { noRespawn: true, summoner: e.id, aggro: 8, target: e.target, idleTicks: 1e9, xpReward: Math.round(m.xpReward * 0.3) });
         }
       }
     }
@@ -1102,7 +1174,7 @@ export class World {
 
   private step(e: Entity, dt: number) {
     const mount = e.mounted && e.equip.mount ? this.defs.items[e.equip.mount.item].mount : undefined;
-    let budget = e.speed * (mount?.speed ?? 1) * dt;
+    let budget = e.speed * (mount?.speed ?? 1) * (this.hasStatus(e, 'slow') ? this.defs.statuses.slow.moveMul ?? 1 : 1) * dt;
     e.moving = e.path.length > 0;
     while (budget > 0 && e.path.length) {
       const [tx, ty] = e.path[0];
