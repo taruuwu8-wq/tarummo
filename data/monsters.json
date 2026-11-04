@@ -53,7 +53,8 @@
         "slime_charm",
         0.015
       ]
-    ]
+    ],
+    "race": "animal"
   },
   "pumpkin": {
     "name": "Pumpkin Imp",
@@ -122,7 +123,8 @@
         0.02
       ]
     ],
-    "cardChance": 0.005
+    "cardChance": 0.005,
+    "race": "plant"
   },
   "golem": {
     "name": "Meadow Golem",
@@ -183,7 +185,9 @@
         0.15
       ]
     ],
-    "cardChance": 0.25
+    "cardChance": 0.25,
+    "race": "robot",
+    "loot": "miniBossLoot"
   },
   "slime_elite": {
     "name": "Ruin Slime",
@@ -228,7 +232,8 @@
         0.2
       ]
     ],
-    "tint": "0x9cff9c"
+    "tint": "0x9cff9c",
+    "race": "animal"
   },
   "pumpkin_elite": {
     "name": "Ruin Pumpkin",
@@ -274,7 +279,8 @@
       ]
     ],
     "cardChance": 0,
-    "tint": "0xc79cff"
+    "tint": "0xc79cff",
+    "race": "plant"
   },
   "magma_colossus": {
     "name": "Magma Colossus",
@@ -317,6 +323,8 @@
       "radius": 2.2,
       "everyMs": 7000,
       "castMs": 1500
-    }
+    },
+    "race": "demon",
+    "loot": "bossLoot"
   }
 }

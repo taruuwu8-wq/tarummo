@@ -1,5 +1,5 @@
 {
-  "_note": "Spirit Cards: 6 actives unlock at job (card) Lv 1/2/4/6/9/12, passives at 5/10. usesOffhand: the offhand becomes the main weapon while transformed (and vice versa).",
+  "_note": "Spirit Cards: weapon = which weapon every card skill uses ('main' or 'offhand'); the other weapon only adds its stats. 6 actives unlock at job Lv 1/2/4/6/9/12, passives at 5/10.",
   "crimson_knight": {
     "name": "Crimson Knight",
     "class": "swordsman",
@@ -108,7 +108,8 @@
         "desc": "ดูดเลือด 4% ของดาเมจ",
         "pct": 0.04
       }
-    ]
+    ],
+    "weapon": "main"
   },
   "guardian": {
     "name": "Iron Guardian",
@@ -165,8 +166,7 @@
         "unlock": 6,
         "mult": 1.2,
         "flat": 5,
-        "hits": 2,
-        "offhand": true
+        "hits": 2
       },
       {
         "id": "bastion",
@@ -213,9 +213,9 @@
         "reduce": 0.25
       }
     ],
-    "usesOffhand": true,
     "attackType": "ranged",
-    "range": 5
+    "range": 5,
+    "weapon": "offhand"
   },
   "wind_ranger": {
     "name": "Wind Ranger",
@@ -320,7 +320,8 @@
           "dmgPct": 0.12
         }
       }
-    ]
+    ],
+    "weapon": "main"
   },
   "forest_warden": {
     "name": "Forest Warden",
@@ -426,9 +427,9 @@
         "pct": 0.05
       }
     ],
-    "usesOffhand": true,
     "attackType": "melee",
-    "range": 1.4
+    "range": 1.4,
+    "weapon": "offhand"
   },
   "ember_witch": {
     "name": "Ember Witch",
@@ -539,7 +540,8 @@
         "desc": "ดูดเลือด 4%",
         "pct": 0.04
       }
-    ]
+    ],
+    "weapon": "main"
   },
   "frost_sage": {
     "name": "Frost Sage",
@@ -599,8 +601,7 @@
         "unlock": 6,
         "mult": 1.6,
         "flat": 5,
-        "element": "water",
-        "offhand": true
+        "element": "water"
       },
       {
         "id": "frost_nova",
@@ -652,6 +653,6 @@
         "reduce": 0.3
       }
     ],
-    "usesOffhand": true
+    "weapon": "offhand"
   }
 }

@@ -58,6 +58,10 @@
       {
         "item": "arcane_pistol",
         "price": 250
+      },
+      {
+        "item": "protect_scroll",
+        "price": 5000
       }
     ]
   },
@@ -92,5 +96,13 @@
     "height": 64,
     "role": "debug",
     "greet": "โหมดทดสอบ: เสกเลเวล ทอง ของตีบวก และการ์ด"
+  },
+  "rarer": {
+    "name": "Rina",
+    "title": "ช่างแรร์",
+    "sprite": "npc_rarer",
+    "height": 62,
+    "role": "rarer",
+    "greet": "สุ่ม Rare ใหม่ได้ 1-7 นะ แต่มีโอกาสแตก! ใช้ใบกันแตกจะปลอดภัย"
   }
 }

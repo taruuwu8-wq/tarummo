@@ -374,5 +374,43 @@
     "bonus": {
       "elemRate": 0.03
     }
+  },
+  "shell_weapon": {
+    "name": "Weapon Shell",
+    "slot": "shell",
+    "shellFor": "weapon",
+    "rarity": "rare",
+    "icon": "🐚",
+    "price": 30
+  },
+  "shell_armor": {
+    "name": "Armor Shell",
+    "slot": "shell",
+    "shellFor": "armor",
+    "rarity": "rare",
+    "icon": "🐚",
+    "price": 30
+  },
+  "shell_offhand": {
+    "name": "Offhand Shell",
+    "slot": "shell",
+    "shellFor": "offhand",
+    "rarity": "rare",
+    "icon": "🐚",
+    "price": 30
+  },
+  "reroll_scroll": {
+    "name": "Reroll Scroll",
+    "slot": "mat",
+    "rarity": "epic",
+    "icon": "📜",
+    "price": 50
+  },
+  "protect_scroll": {
+    "name": "Protection Scroll",
+    "slot": "mat",
+    "rarity": "epic",
+    "icon": "🛡️",
+    "price": 200
   }
 }

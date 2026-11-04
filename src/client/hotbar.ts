@@ -98,7 +98,7 @@ export class Hotbar {
     const unit = card ? 'Job' : 'Lv', bar = this.world.barOf(p);
     const rows = this.world.allSkillsOf(p).map(k => {
       const locked = k.unlock > lv, on = bar.includes('s:' + k.id);
-      const what = k.heal ? `ฟื้น HP ${k.heal * 100}%` : `×${k.mult}${k.hits ? ` ${k.hits} ครั้ง` : ''}${k.aoe ? ' · วงกว้าง' : ''}${k.offhand ? ' · อาวุธรอง' : ''}${k.element ? ' · ' + k.element : ''}`;
+      const what = k.heal ? `ฟื้น HP ${k.heal * 100}%` : `×${k.mult}${k.hits ? ` ${k.hits} ครั้ง` : ''}${k.aoe ? ' · วงกว้าง' : ''}${k.offhand && !card ? ' · อาวุธรอง' : ''}${k.element ? ' · ' + k.element : ''}`;
       return `<div class="srow${locked ? ' locked' : ''}"><span class="sic"${locked ? '' : ` data-drag="s:${k.id}"`}>${k.icon}</span>
         <span class="snm"><b>${k.name}</b><small>${locked ? `🔒 ปลดล็อก ${unit} ${k.unlock}` : `MP ${k.mp} · ${k.cooldownMs / 1000}s · ${what}`}${on ? ' · อยู่บนแถบ' : ''}</small></span></div>`;
     }).join('');
@@ -106,7 +106,7 @@ export class Hotbar {
     const uses = [...new Set(p.inv.filter(s => this.items[s.item].heal).map(s => s.item))]
       .map(id => `<span class="sic" data-drag="i:${id}" title="${this.items[id].name}">${this.items[id].icon}</span>`).join('');
     document.getElementById('skillbody')!.innerHTML = `
-      <p class="muted small">${card ? `ร่าง ${card.name} · Job ${lv}` : `ร่างปกติ · Lv ${lv}`} · ลากไอคอนลงแถบด้านล่าง ลากออกจากแถบเพื่อเอาออก</p>
+      <p class="muted small">${card ? `ร่าง ${card.name} · Job ${lv} · ใช้${card.weapon === 'offhand' ? 'อาวุธรอง' : 'อาวุธหลัก'}เป็นหลัก` : `ร่างปกติ · Lv ${lv}`} · ลากไอคอนลงแถบด้านล่าง ลากออกจากแถบเพื่อเอาออก</p>
       ${rows}${pas ? `<b>Passive</b>${pas}` : ''}<b>ของใช้</b><div class="uses">${uses || '<span class="muted">ไม่มี</span>'}</div>`;
   }
 

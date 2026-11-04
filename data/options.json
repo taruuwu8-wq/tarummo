@@ -1,0 +1,752 @@
+{
+ "_note": "PvE options. Adapted from the NosTale PvE shell table: flat values ~/10, % mostly kept. Same stat on several items: only the highest counts. Debuff/SP/fairy lines left out until those systems exist.",
+ "options": [
+  {
+   "slot": "weapon",
+   "grade": "C",
+   "stat": "atk",
+   "min": 8,
+   "max": 12,
+   "label": "พลังโจมตี +{v}",
+   "id": "w0"
+  },
+  {
+   "slot": "weapon",
+   "grade": "B",
+   "stat": "atk",
+   "min": 12,
+   "max": 16,
+   "label": "พลังโจมตี +{v}",
+   "id": "w1"
+  },
+  {
+   "slot": "weapon",
+   "grade": "A",
+   "stat": "atk",
+   "min": 16,
+   "max": 24,
+   "label": "พลังโจมตี +{v}",
+   "id": "w2"
+  },
+  {
+   "slot": "weapon",
+   "grade": "S",
+   "stat": "dmgPct",
+   "min": 12,
+   "max": 22,
+   "label": "ดาเมจรวม +{v}%",
+   "id": "w3"
+  },
+  {
+   "slot": "weapon",
+   "grade": "C",
+   "stat": "softcrit",
+   "min": 10,
+   "max": 30,
+   "label": "โอกาสซอฟต์คริ (+15% ดาเมจ) {v}%",
+   "id": "w4"
+  },
+  {
+   "slot": "weapon",
+   "grade": "C",
+   "stat": "race_plant",
+   "min": 5,
+   "max": 10,
+   "label": "ดาเมจต่อพืช +{v}%",
+   "id": "w5"
+  },
+  {
+   "slot": "weapon",
+   "grade": "B",
+   "stat": "race_plant",
+   "min": 10,
+   "max": 20,
+   "label": "ดาเมจต่อพืช +{v}%",
+   "id": "w6"
+  },
+  {
+   "slot": "weapon",
+   "grade": "C",
+   "stat": "race_animal",
+   "min": 5,
+   "max": 10,
+   "label": "ดาเมจต่อสัตว์ +{v}%",
+   "id": "w7"
+  },
+  {
+   "slot": "weapon",
+   "grade": "B",
+   "stat": "race_animal",
+   "min": 10,
+   "max": 20,
+   "label": "ดาเมจต่อสัตว์ +{v}%",
+   "id": "w8"
+  },
+  {
+   "slot": "weapon",
+   "grade": "C",
+   "stat": "race_demon",
+   "min": 5,
+   "max": 10,
+   "label": "ดาเมจต่อปีศาจ +{v}%",
+   "id": "w9"
+  },
+  {
+   "slot": "weapon",
+   "grade": "B",
+   "stat": "race_demon",
+   "min": 10,
+   "max": 20,
+   "label": "ดาเมจต่อปีศาจ +{v}%",
+   "id": "w10"
+  },
+  {
+   "slot": "weapon",
+   "grade": "C",
+   "stat": "race_spirit",
+   "min": 5,
+   "max": 10,
+   "label": "ดาเมจต่อวิญญาณ +{v}%",
+   "id": "w11"
+  },
+  {
+   "slot": "weapon",
+   "grade": "B",
+   "stat": "race_spirit",
+   "min": 10,
+   "max": 20,
+   "label": "ดาเมจต่อวิญญาณ +{v}%",
+   "id": "w12"
+  },
+  {
+   "slot": "weapon",
+   "grade": "B",
+   "stat": "race_angel",
+   "min": 5,
+   "max": 10,
+   "label": "ดาเมจต่อเทวดา +{v}%",
+   "id": "w13"
+  },
+  {
+   "slot": "weapon",
+   "grade": "A",
+   "stat": "race_angel",
+   "min": 10,
+   "max": 20,
+   "label": "ดาเมจต่อเทวดา +{v}%",
+   "id": "w14"
+  },
+  {
+   "slot": "weapon",
+   "grade": "B",
+   "stat": "race_robot",
+   "min": 10,
+   "max": 18,
+   "label": "ดาเมจต่อหุ่น/กอเลม +{v}%",
+   "id": "w15"
+  },
+  {
+   "slot": "weapon",
+   "grade": "A",
+   "stat": "race_robot",
+   "min": 12,
+   "max": 20,
+   "label": "ดาเมจต่อหุ่น/กอเลม +{v}%",
+   "id": "w16"
+  },
+  {
+   "slot": "weapon",
+   "grade": "B",
+   "stat": "pve",
+   "min": 5,
+   "max": 10,
+   "label": "[PvE] ดาเมจรวม +{v}%",
+   "id": "w17"
+  },
+  {
+   "slot": "weapon",
+   "grade": "A",
+   "stat": "pve",
+   "min": 10,
+   "max": 20,
+   "label": "[PvE] ดาเมจรวม +{v}%",
+   "id": "w18"
+  },
+  {
+   "slot": "weapon",
+   "grade": "S",
+   "stat": "dungeonDmg",
+   "min": 19,
+   "max": 31,
+   "label": "ดาเมจในดันเจี้ยน +{v}%",
+   "id": "w19"
+  },
+  {
+   "slot": "weapon",
+   "grade": "C",
+   "stat": "critRate",
+   "min": 4,
+   "max": 8,
+   "label": "โอกาสคริ +{v}%",
+   "id": "w20"
+  },
+  {
+   "slot": "weapon",
+   "grade": "C",
+   "stat": "critDmg",
+   "min": 20,
+   "max": 35,
+   "label": "ดาเมจคริ +{v}%",
+   "id": "w21"
+  },
+  {
+   "slot": "weapon",
+   "grade": "B",
+   "stat": "elem_fire",
+   "min": 3,
+   "max": 5,
+   "label": "พลังธาตุไฟ +{v}%",
+   "id": "w22"
+  },
+  {
+   "slot": "weapon",
+   "grade": "A",
+   "stat": "elem_fire",
+   "min": 5,
+   "max": 8,
+   "label": "พลังธาตุไฟ +{v}%",
+   "id": "w23"
+  },
+  {
+   "slot": "weapon",
+   "grade": "B",
+   "stat": "elem_water",
+   "min": 3,
+   "max": 5,
+   "label": "พลังธาตุน้ำ +{v}%",
+   "id": "w24"
+  },
+  {
+   "slot": "weapon",
+   "grade": "A",
+   "stat": "elem_water",
+   "min": 5,
+   "max": 8,
+   "label": "พลังธาตุน้ำ +{v}%",
+   "id": "w25"
+  },
+  {
+   "slot": "weapon",
+   "grade": "B",
+   "stat": "elem_light",
+   "min": 3,
+   "max": 5,
+   "label": "พลังธาตุแสง +{v}%",
+   "id": "w26"
+  },
+  {
+   "slot": "weapon",
+   "grade": "A",
+   "stat": "elem_light",
+   "min": 5,
+   "max": 8,
+   "label": "พลังธาตุแสง +{v}%",
+   "id": "w27"
+  },
+  {
+   "slot": "weapon",
+   "grade": "B",
+   "stat": "elem_shadow",
+   "min": 3,
+   "max": 5,
+   "label": "พลังธาตุมืด +{v}%",
+   "id": "w28"
+  },
+  {
+   "slot": "weapon",
+   "grade": "A",
+   "stat": "elem_shadow",
+   "min": 5,
+   "max": 8,
+   "label": "พลังธาตุมืด +{v}%",
+   "id": "w29"
+  },
+  {
+   "slot": "weapon",
+   "grade": "S",
+   "stat": "elem_all",
+   "min": 10,
+   "max": 15,
+   "label": "พลังทุกธาตุ +{v}%",
+   "id": "w30"
+  },
+  {
+   "slot": "weapon",
+   "grade": "C",
+   "stat": "mpCost",
+   "min": 6,
+   "max": 11,
+   "label": "ใช้ MP ลดลง {v}%",
+   "id": "w31"
+  },
+  {
+   "slot": "weapon",
+   "grade": "B",
+   "stat": "mpCost",
+   "min": 15,
+   "max": 21,
+   "label": "ใช้ MP ลดลง {v}%",
+   "id": "w32"
+  },
+  {
+   "slot": "weapon",
+   "grade": "B",
+   "stat": "elemRate",
+   "min": 3,
+   "max": 6,
+   "label": "ธาตุตัวละคร +{v}%",
+   "id": "w33"
+  },
+  {
+   "slot": "weapon",
+   "grade": "C",
+   "stat": "gold",
+   "min": 5,
+   "max": 12,
+   "label": "ทองที่ได้ +{v}%",
+   "id": "w34"
+  },
+  {
+   "slot": "weapon",
+   "grade": "B",
+   "stat": "gold",
+   "min": 15,
+   "max": 22,
+   "label": "ทองที่ได้ +{v}%",
+   "id": "w35"
+  },
+  {
+   "slot": "weapon",
+   "grade": "A",
+   "stat": "gold",
+   "min": 25,
+   "max": 40,
+   "label": "ทองที่ได้ +{v}%",
+   "id": "w36"
+  },
+  {
+   "slot": "weapon",
+   "grade": "B",
+   "stat": "xp",
+   "min": 6,
+   "max": 10,
+   "label": "EXP ที่ได้ +{v}%",
+   "id": "w37"
+  },
+  {
+   "slot": "weapon",
+   "grade": "A",
+   "stat": "xp",
+   "min": 11,
+   "max": 15,
+   "label": "EXP ที่ได้ +{v}%",
+   "id": "w38"
+  },
+  {
+   "slot": "armor",
+   "grade": "C",
+   "stat": "def_melee",
+   "min": 5,
+   "max": 10,
+   "label": "ป้องกันระยะประชิด +{v}",
+   "id": "a39"
+  },
+  {
+   "slot": "armor",
+   "grade": "B",
+   "stat": "def_melee",
+   "min": 11,
+   "max": 17,
+   "label": "ป้องกันระยะประชิด +{v}",
+   "id": "a40"
+  },
+  {
+   "slot": "armor",
+   "grade": "A",
+   "stat": "def_melee",
+   "min": 17,
+   "max": 23,
+   "label": "ป้องกันระยะประชิด +{v}",
+   "id": "a41"
+  },
+  {
+   "slot": "armor",
+   "grade": "C",
+   "stat": "def_ranged",
+   "min": 5,
+   "max": 10,
+   "label": "ป้องกันระยะไกล +{v}",
+   "id": "a42"
+  },
+  {
+   "slot": "armor",
+   "grade": "B",
+   "stat": "def_ranged",
+   "min": 11,
+   "max": 17,
+   "label": "ป้องกันระยะไกล +{v}",
+   "id": "a43"
+  },
+  {
+   "slot": "armor",
+   "grade": "A",
+   "stat": "def_ranged",
+   "min": 17,
+   "max": 23,
+   "label": "ป้องกันระยะไกล +{v}",
+   "id": "a44"
+  },
+  {
+   "slot": "armor",
+   "grade": "C",
+   "stat": "def_magic",
+   "min": 5,
+   "max": 10,
+   "label": "ป้องกันเวท +{v}",
+   "id": "a45"
+  },
+  {
+   "slot": "armor",
+   "grade": "B",
+   "stat": "def_magic",
+   "min": 11,
+   "max": 17,
+   "label": "ป้องกันเวท +{v}",
+   "id": "a46"
+  },
+  {
+   "slot": "armor",
+   "grade": "A",
+   "stat": "def_magic",
+   "min": 17,
+   "max": 23,
+   "label": "ป้องกันเวท +{v}",
+   "id": "a47"
+  },
+  {
+   "slot": "armor",
+   "grade": "S",
+   "stat": "dmgTaken",
+   "min": 8,
+   "max": 14,
+   "label": "ดาเมจที่ได้รับ -{v}%",
+   "id": "a48"
+  },
+  {
+   "slot": "armor",
+   "grade": "C",
+   "stat": "critDmgRed",
+   "min": 12,
+   "max": 24,
+   "label": "ดาเมจคริของศัตรู -{v}%",
+   "id": "a49"
+  },
+  {
+   "slot": "armor",
+   "grade": "B",
+   "stat": "critDmgRed",
+   "min": 24,
+   "max": 38,
+   "label": "ดาเมจคริของศัตรู -{v}%",
+   "id": "a50"
+  },
+  {
+   "slot": "armor",
+   "grade": "C",
+   "stat": "critRateRed",
+   "min": 2,
+   "max": 4,
+   "label": "โอกาสคริของศัตรู -{v}%",
+   "id": "a51"
+  },
+  {
+   "slot": "armor",
+   "grade": "B",
+   "stat": "critRateRed",
+   "min": 4,
+   "max": 7,
+   "label": "โอกาสคริของศัตรู -{v}%",
+   "id": "a52"
+  },
+  {
+   "slot": "armor",
+   "grade": "C",
+   "stat": "restHp",
+   "min": 35,
+   "max": 54,
+   "label": "ฟื้น HP ตอนพัก +{v}%",
+   "id": "a53"
+  },
+  {
+   "slot": "armor",
+   "grade": "B",
+   "stat": "restHp",
+   "min": 44,
+   "max": 90,
+   "label": "ฟื้น HP ตอนพัก +{v}%",
+   "id": "a54"
+  },
+  {
+   "slot": "armor",
+   "grade": "A",
+   "stat": "natHp",
+   "min": 43,
+   "max": 90,
+   "label": "ฟื้น HP ระหว่างสู้ +{v}%",
+   "id": "a55"
+  },
+  {
+   "slot": "armor",
+   "grade": "C",
+   "stat": "restMp",
+   "min": 35,
+   "max": 54,
+   "label": "ฟื้น MP ตอนพัก +{v}%",
+   "id": "a56"
+  },
+  {
+   "slot": "armor",
+   "grade": "B",
+   "stat": "restMp",
+   "min": 44,
+   "max": 90,
+   "label": "ฟื้น MP ตอนพัก +{v}%",
+   "id": "a57"
+  },
+  {
+   "slot": "armor",
+   "grade": "A",
+   "stat": "natMp",
+   "min": 43,
+   "max": 90,
+   "label": "ฟื้น MP ระหว่างสู้ +{v}%",
+   "id": "a58"
+  },
+  {
+   "slot": "armor",
+   "grade": "B",
+   "stat": "res_fire",
+   "min": 7,
+   "max": 11,
+   "label": "ต้านธาตุไฟ +{v}%",
+   "id": "a59"
+  },
+  {
+   "slot": "armor",
+   "grade": "A",
+   "stat": "res_fire",
+   "min": 12,
+   "max": 22,
+   "label": "ต้านธาตุไฟ +{v}%",
+   "id": "a60"
+  },
+  {
+   "slot": "armor",
+   "grade": "B",
+   "stat": "res_water",
+   "min": 7,
+   "max": 11,
+   "label": "ต้านธาตุน้ำ +{v}%",
+   "id": "a61"
+  },
+  {
+   "slot": "armor",
+   "grade": "A",
+   "stat": "res_water",
+   "min": 12,
+   "max": 22,
+   "label": "ต้านธาตุน้ำ +{v}%",
+   "id": "a62"
+  },
+  {
+   "slot": "armor",
+   "grade": "B",
+   "stat": "res_light",
+   "min": 7,
+   "max": 11,
+   "label": "ต้านธาตุแสง +{v}%",
+   "id": "a63"
+  },
+  {
+   "slot": "armor",
+   "grade": "A",
+   "stat": "res_light",
+   "min": 12,
+   "max": 22,
+   "label": "ต้านธาตุแสง +{v}%",
+   "id": "a64"
+  },
+  {
+   "slot": "armor",
+   "grade": "B",
+   "stat": "res_shadow",
+   "min": 7,
+   "max": 11,
+   "label": "ต้านธาตุมืด +{v}%",
+   "id": "a65"
+  },
+  {
+   "slot": "armor",
+   "grade": "A",
+   "stat": "res_shadow",
+   "min": 12,
+   "max": 22,
+   "label": "ต้านธาตุมืด +{v}%",
+   "id": "a66"
+  },
+  {
+   "slot": "armor",
+   "grade": "S",
+   "stat": "res_all",
+   "min": 25,
+   "max": 35,
+   "label": "ต้านทุกธาตุ +{v}%",
+   "id": "a67"
+  },
+  {
+   "slot": "armor",
+   "grade": "B",
+   "stat": "potion",
+   "min": 20,
+   "max": 30,
+   "label": "ยาฟื้นฟูได้ผล +{v}%",
+   "id": "a68"
+  },
+  {
+   "slot": "armor",
+   "grade": "A",
+   "stat": "potion",
+   "min": 45,
+   "max": 60,
+   "label": "ยาฟื้นฟูได้ผล +{v}%",
+   "id": "a69"
+  },
+  {
+   "slot": "offhand",
+   "grade": "C",
+   "stat": "atk",
+   "min": 4,
+   "max": 8,
+   "label": "พลังโจมตี +{v}",
+   "id": "o70"
+  },
+  {
+   "slot": "offhand",
+   "grade": "B",
+   "stat": "atk",
+   "min": 8,
+   "max": 12,
+   "label": "พลังโจมตี +{v}",
+   "id": "o71"
+  },
+  {
+   "slot": "offhand",
+   "grade": "C",
+   "stat": "critRate",
+   "min": 3,
+   "max": 6,
+   "label": "โอกาสคริ +{v}%",
+   "id": "o72"
+  },
+  {
+   "slot": "offhand",
+   "grade": "B",
+   "stat": "critRate",
+   "min": 6,
+   "max": 10,
+   "label": "โอกาสคริ +{v}%",
+   "id": "o73"
+  },
+  {
+   "slot": "offhand",
+   "grade": "C",
+   "stat": "critDmg",
+   "min": 15,
+   "max": 25,
+   "label": "ดาเมจคริ +{v}%",
+   "id": "o74"
+  },
+  {
+   "slot": "offhand",
+   "grade": "B",
+   "stat": "critDmg",
+   "min": 25,
+   "max": 40,
+   "label": "ดาเมจคริ +{v}%",
+   "id": "o75"
+  },
+  {
+   "slot": "offhand",
+   "grade": "B",
+   "stat": "softcrit",
+   "min": 10,
+   "max": 25,
+   "label": "โอกาสซอฟต์คริ (+15% ดาเมจ) {v}%",
+   "id": "o76"
+  },
+  {
+   "slot": "offhand",
+   "grade": "C",
+   "stat": "mpCost",
+   "min": 5,
+   "max": 10,
+   "label": "ใช้ MP ลดลง {v}%",
+   "id": "o77"
+  },
+  {
+   "slot": "offhand",
+   "grade": "C",
+   "stat": "gold",
+   "min": 5,
+   "max": 12,
+   "label": "ทองที่ได้ +{v}%",
+   "id": "o78"
+  },
+  {
+   "slot": "offhand",
+   "grade": "B",
+   "stat": "xp",
+   "min": 5,
+   "max": 9,
+   "label": "EXP ที่ได้ +{v}%",
+   "id": "o79"
+  },
+  {
+   "slot": "offhand",
+   "grade": "B",
+   "stat": "pve",
+   "min": 4,
+   "max": 8,
+   "label": "[PvE] ดาเมจรวม +{v}%",
+   "id": "o80"
+  },
+  {
+   "slot": "offhand",
+   "grade": "A",
+   "stat": "dungeonDmg",
+   "min": 8,
+   "max": 15,
+   "label": "ดาเมจในดันเจี้ยน +{v}%",
+   "id": "o81"
+  },
+  {
+   "slot": "offhand",
+   "grade": "B",
+   "stat": "elemRate",
+   "min": 2,
+   "max": 5,
+   "label": "ธาตุตัวละคร +{v}%",
+   "id": "o82"
+  }
+ ]
+}

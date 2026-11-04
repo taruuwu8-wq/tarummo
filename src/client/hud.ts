@@ -3,6 +3,7 @@ import type { Entity, World, Intent, SkillDef, InvSlot } from '../sim/world';
 import { SLOTS } from '../sim/world';
 import { Hotbar } from './hotbar';
 import { AutoPanel } from './autopanel';
+import { itemName, optLines, RARE_COLOR } from './itemtext';
 import type { ItemDef, Slot } from '../core/stats';
 
 type Tab = 'gear' | 'card' | 'use' | 'mat';
@@ -19,6 +20,7 @@ export class Hud {
   private hot!: Hotbar;
   private npc: string | null = null;
   private npcSig = '';
+  private useProt = false;
   private onKey: (e: KeyboardEvent) => void;
 
   constructor(private world: World, private p: Entity, private items: Record<string, ItemDef>, private send: (i: Intent) => void) {
@@ -84,6 +86,7 @@ export class Hud {
     };
     window.addEventListener('keydown', this.onKey);
     this.$('npc').addEventListener('click', e => this.onNpcClick(e));
+    this.$('npc').addEventListener('change', e => { const t = e.target as HTMLInputElement; if (t.id === 'useprot') { this.useProt = t.checked; this.npcSig = ''; } });
   }
 
   destroy() { window.removeEventListener('keydown', this.onKey); }
@@ -112,6 +115,7 @@ export class Hud {
     else if (a === 'heal') this.send({ kind: 'heal', id: p.id });
     else if (a === 'put') this.send({ kind: 'stashPut', id: p.id, index: Number(b.dataset.i) });
     else if (a === 'take') this.send({ kind: 'stashTake', id: p.id, index: Number(b.dataset.i) });
+    else if (a === 'rare') { const r = b.dataset.ref!; this.send({ kind: 'rarify', id: p.id, ref: /^\d+$/.test(r) ? Number(r) : r as Slot, protect: this.useProt }); }
     else if (a === 'dbg') this.send({ kind: 'debug', id: p.id, what: b.dataset.w as 'level' });
     this.npcSig = '';
   }
@@ -148,8 +152,17 @@ export class Hud {
         return `<button type="button" class="cell ${it.rarity}" data-act="${act}" data-i="${i}" title="${it.name}"><span class="ic">${it.icon}</span>${st.up ? `<em>+${st.up}</em>` : ''}${st.qty > 1 ? `<b>${st.qty}</b>` : ''}</button>`; };
       body = `<b>คลังกลาง (${this.world.stash.length}/60) · คลิกเพื่อหยิบ</b><div class="grid">${this.world.stash.map((st, i) => cell(st, i, 'take')).join('') || '<span class="muted">ว่าง</span>'}</div>
         <b>กระเป๋า · คลิกเพื่อฝาก</b><div class="grid">${p.inv.map((st, i) => cell(st, i, 'put')).join('') || '<span class="muted">ว่าง</span>'}</div>`;
+    } else if (d.role === 'rarer') {
+      const w = this.world, r = w.defs.rarity, prot = p.inv.find(x => x.item === r.rarify.protectItem)?.qty ?? 0;
+      const refs: { ref: string; st: InvSlot; where: string }[] = [];
+      for (const sl of r.gearSlots) { const st = p.equip[sl as Slot]; if (st) refs.push({ ref: sl, st, where: 'สวมอยู่' }); }
+      p.inv.forEach((st, i) => { if (r.gearSlots.includes(this.items[st.item].slot)) refs.push({ ref: String(i), st, where: 'ในกระเป๋า' }); });
+      body = `<label class="chk"><input type="checkbox" id="useprot"${this.useProt && prot ? ' checked' : ''}${prot ? '' : ' disabled'}> ใช้ใบกันแตก (มี ${prot})</label>
+        <p class="muted small">ผลสุ่ม R1-R7 · โอกาสแตก ${Math.round(r.rarify.breakChance * 100)}% (ของหายถาวร ถ้าไม่ใช้ใบกันแตก) · สุ่มออฟใหม่ตาม Rare</p>`
+        + (refs.map(({ ref, st, where }) => `<div class="row"><span class="ic">${this.items[st.item].icon}</span><span class="nm">${itemName(w, st)}<small class="muted"> · ${where}</small></span>
+          <span class="pr">${w.rarifyCost(st)} G</span><button type="button" data-act="rare" data-ref="${ref}"${p.gold < w.rarifyCost(st) ? ' disabled' : ''}>สุ่ม Rare</button></div>`).join('') || '<p class="muted">ไม่มีอาวุธ อาวุธรอง หรือเกราะ</p>');
     } else if (d.role === 'debug') {
-      body = [['level', '+1 เลเวล'], ['level5', '+5 เลเวล'], ['gold', '+10,000 G'], ['mats', 'วัตถุดิบตีบวก ×30'], ['card', 'การ์ดสุ่มของอาชีพ'], ['job', 'การ์ดที่ใส่ Job +3']]
+      body = [['level', '+1 เลเวล'], ['level5', '+5 เลเวล'], ['gold', '+10,000 G'], ['mats', 'วัตถุดิบตีบวก ×30'], ['card', 'การ์ดสุ่มของอาชีพ'], ['job', 'การ์ดที่ใส่ Job +3'], ['gear', 'ของอาชีพ Rare สูง ×3'], ['shells', 'Shell ×3 (ทุกแบบ)'], ['scrolls', 'Reroll ×5 + กันแตก ×3']]
         .map(([w, t]) => `<button type="button" class="big" data-act="dbg" data-w="${w}">${t}</button>`).join('');
     } else {
       body = `<button type="button" class="big" data-act="heal">${p.hp >= p.maxHp ? 'HP/MP เต็มแล้ว' : 'ฟื้นฟู HP/MP (ฟรี)'}</button>`;
@@ -184,7 +197,8 @@ export class Hud {
     this.$('pxpt').textContent = `XP ${p.xp} / ${xpNeed}`;
     const tf = this.$('tf'); tf.hidden = !t;
     if (t) {
-      this.$('tn').textContent = `${t.name} · Lv ${t.level}${t.boss ? ' · BOSS' : ''}`;
+      const race = { plant: 'พืช', animal: 'สัตว์', demon: 'ปีศาจ', angel: 'เทวดา', spirit: 'วิญญาณ', robot: 'หุ่น' }[this.world.defs.monsters[t.type]?.race ?? ''] ?? '';
+      this.$('tn').textContent = `${t.name} · Lv ${t.level}${race ? ' · ' + race : ''}${t.boss ? ' · BOSS' : ''}`;
       this.$('thp').style.width = `${(t.hp / t.maxHp) * 100}%`;
       this.$('thpt').textContent = `${Math.ceil(t.hp)} / ${t.maxHp}`;
     }
@@ -221,7 +235,7 @@ export class Hud {
     if (sig === this.invSig) return;
     this.invSig = sig;
     this.el.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === this.tab));
-    const badge = (st: InvSlot) => (st.up || st.lv) ? `<em>${st.up ? '+' + st.up : ''}${st.lv ? (st.up ? ' ' : '') + 'Lv' + st.lv : ''}</em>` : '';
+    const badge = (st: InvSlot) => (st.up || st.lv || st.rare) ? `<em style="color:${RARE_COLOR[st.rare ?? 0]}">${st.rare ? 'R' + st.rare + ' ' : ''}${st.up ? '+' + st.up : ''}${st.lv ? (st.up ? ' ' : '') + 'Lv' + st.lv : ''}</em>` : '';
     this.$('equip').innerHTML = SLOTS.map(s => {
       const st = p.equip[s], d = st ? this.items[st.item] : null;
       return `<button type="button" class="slot ${d ? d.rarity : 'empty'}${this.sel === s ? ' sel' : ''}" data-slot="${s}" title="${d ? d.name : SLOT_TH[s]}"><span class="ic">${d ? d.icon : ''}</span>${st ? badge(st) : ''}<small>${SLOT_TH[s]}</small></button>`;
@@ -230,7 +244,7 @@ export class Hud {
     const s = p.stats;
     this.$('stats').innerHTML = `<span>ATK ${s.baseAtk + s.weapon.min}–${s.baseAtk + s.weapon.max}</span><span>DEF ${s.armor.melee}/${s.armor.ranged}/${s.armor.magic}</span><span>ACC ${s.acc}</span><span>EVA ${s.eva}</span><span>CRIT ${Math.round(s.critRate * 100)}%</span>${s.elemRate ? `<span>ธาตุ ${Math.round(s.elemRate * 100)}%</span>` : ''}`;
 
-    const inTab = (d: ItemDef) => this.tab === 'gear' ? SLOTS.includes(d.slot as Slot) && d.slot !== 'card' : d.slot === this.tab;
+    const inTab = (d: ItemDef) => this.tab === 'gear' ? (SLOTS.includes(d.slot as Slot) && d.slot !== 'card') || d.slot === 'shell' : d.slot === this.tab;
     const cells = p.inv.map((st, i) => ({ st, i, d: this.items[st.item] })).filter(c => inTab(c.d));
     this.$('grid').innerHTML = cells.map(c => `<button type="button" class="cell ${c.d.rarity}${this.sel === c.i ? ' sel' : ''}" data-i="${c.i}" title="${c.d.name}"><span class="ic">${c.d.icon}</span>${badge(c.st)}${c.st.qty > 1 ? `<b>${c.st.qty}</b>` : ''}</button>`).join('')
       + `<span class="count">${p.inv.length} / 30</span>`;
@@ -242,8 +256,12 @@ export class Hud {
     if (!st) { det.innerHTML = '<span class="muted">เลือกไอเทมเพื่อดูรายละเอียด</span>'; return; }
     const d = this.items[st.item];
     const lines: string[] = [];
-    if (d.weapon) lines.push(`ดาเมจ ${d.weapon.min}–${d.weapon.max} · คริ +${Math.round(d.weapon.critDmg * 100)}%`);
-    for (const [k, v] of Object.entries(d.bonus ?? {})) lines.push(`${k.toUpperCase()} +${k === 'critRate' || k === 'elemRate' || k === 'dmgPct' ? Math.round(v * 100) + '%' : v}`);
+    const mul = 1 + (this.world.defs.rarity.mul[st.rare ?? 0] ?? 0), rn = st.rare ? ` (R${st.rare} +${Math.round((mul - 1) * 100)}%)` : '';
+    if (d.weapon) lines.push(`ดาเมจ ${Math.round(d.weapon.min * mul)}–${Math.round(d.weapon.max * mul)}${rn} · คริ +${Math.round(d.weapon.critDmg * 100)}%`);
+    for (const [k, v] of Object.entries(d.bonus ?? {})) {
+      const m = d.slot === 'armor' && (k === 'armor' || k === 'hp') ? mul : 1;
+      lines.push(`${k.toUpperCase()} +${k === 'critRate' || k === 'elemRate' || k === 'dmgPct' ? Math.round(v * 100) + '%' : Math.round(v * m)}${m > 1 ? rn : ''}`);
+    }
     if (d.heal?.hp) lines.push(`ฟื้น HP ${d.heal.hp * 100}%`);
     if (d.heal?.mp) lines.push(`ฟื้น MP ${d.heal.mp * 100}%`);
     const req = [d.level && d.level > 1 ? `Lv ${d.level}` : '', d.class ? this.world.defs.classes[d.class].name : ''].filter(Boolean).join(' · ');
@@ -255,15 +273,39 @@ export class Hud {
       const have = p.inv.find(x => x.item === cost.mat)?.qty ?? 0, m = this.items[cost.mat];
       extra = `<div class="muted">ตีบวก +${st.up ?? 0} → +${(st.up ?? 0) + 1} · โอกาส ${Math.round(cost.rate * 100)}% · ${cost.gold} G + ${m.icon} ${m.name} ${have}/${cost.qty} <br><small>ตีบวกได้ที่ช่าง Brann ในเมือง</small></div>`;
     } else if (cost === null) extra = '<div class="muted">ตีบวกสูงสุดแล้ว (+10)</div>';
+    const w = this.world;
+    extra += optLines(w, st);
+    const targets = (slot: string) => {
+      const out: { ref: string; label: string }[] = [];
+      const eq = p.equip[slot as Slot]; if (eq) out.push({ ref: slot, label: `${itemName(w, eq)} (สวมอยู่)` });
+      p.inv.forEach((x, j) => { if (x !== st && this.items[x.item].slot === slot) out.push({ ref: String(j), label: itemName(w, x) }); });
+      return out;
+    };
+    let tgtAct = '';
+    if (d.slot === 'shell') {
+      const t = targets(d.shellFor!);
+      tgtAct = 'shell';
+      extra += `<div class="muted small">ใส่แล้วจะแทนออฟเดิมทั้งหมดของชิ้นนั้น</div><div class="tg">${t.map(x => `<button type="button" data-tgt="${x.ref}">ใส่ใน ${x.label}</button>`).join('') || '<span class="muted">ไม่มี' + (d.shellFor === 'weapon' ? 'อาวุธ' : d.shellFor === 'armor' ? 'เกราะ' : 'อาวุธรอง') + 'ให้ใส่</span>'}</div>`;
+    } else if (st.item === w.defs.rarity.rerollItem) {
+      const t = ['weapon', 'offhand', 'armor'].flatMap(targets).filter(x => { const y = /^\d+$/.test(x.ref) ? p.inv[Number(x.ref)] : p.equip[x.ref as Slot]; return (y?.rare ?? 0) > 0; });
+      tgtAct = 'reroll';
+      extra += `<div class="muted small">สุ่มออฟใหม่ทุกแถว (เก็บแถวเดิมไม่ได้)</div><div class="tg">${t.map(x => `<button type="button" data-tgt="${x.ref}">รีออฟ ${x.label}</button>`).join('') || '<span class="muted">ไม่มีของ R1 ขึ้นไป</span>'}</div>`;
+    }
     if (card) {
       const u = this.world.defs.upgrade, lv = st.lv ?? 1;
       const pu = Object.entries(u.card.perUp).map(([k, v]) => `${k.toUpperCase()} +${k === 'elemRate' ? Math.round(v * (st.up ?? 0) * 100) + '%' : v * (st.up ?? 0)}`).join(' · ');
       extra += `<div class="muted">${(st.up ?? 0) > 0 ? `ตีบวก +${st.up}: ${pu}<br>` : ''}${card.role} · การ์ด Lv ${lv}${lv < u.cardMaxLevel ? ` (${st.xp ?? 0}/${u.cardXpPerLevel * lv} XP ตอนแปลงร่าง)` : ' (สูงสุด)'} · โบนัส +${(lv - 1) * 10}%</div>
+        <div class="muted">อาวุธหลัก: <b>${card.weapon === 'offhand' ? 'อาวุธรอง' : 'อาวุธหลัก'}</b> (อีกชิ้นเพิ่มสเตตัสอย่างเดียว)</div>
         <div class="muted">สกิล: ${card.skills.map(k => `${k.icon} ${k.name}${k.unlock > lv ? ` (Job ${k.unlock})` : ''}`).join(' · ')}</div>`;
     }
-    det.innerHTML = `<div><b class="${d.rarity}-t">${d.icon} ${d.name}${st.up ? ' +' + st.up : ''}</b> <small class="muted">${RARITY_TH[d.rarity]}${req ? ' · ต้องการ ' + req : ''}${worn ? ' · สวมอยู่' : ''}</small></div>
+    det.innerHTML = `<div><b>${d.icon} ${itemName(w, st)}</b> <small class="muted">${RARITY_TH[d.rarity]}${req ? ' · ต้องการ ' + req : ''}${worn ? ' · สวมอยู่' : ''}</small></div>
       <div class="muted">${lines.join(' · ') || 'วัตถุดิบ ใช้ตีบวกอุปกรณ์'}</div>${extra}
-      <div class="acts">${canEquip ? '<button type="button" id="act-eq">สวมใส่</button>' : ''}${worn ? '<button type="button" id="act-un">ถอด</button>' : ''}${canUse ? '<button type="button" id="act-use">ใช้</button>' : ''}${worn ? '' : `<button type="button" id="act-sell">ขาย ${d.price * st.qty} G</button>`}</div>`;
+      <div class="acts">${canEquip ? '<button type="button" id="act-eq">สวมใส่</button>' : ''}${worn ? '<button type="button" id="act-un">ถอด</button>' : ''}${canUse ? '<button type="button" id="act-use">ใช้</button>' : ''}${worn ? '' : `<button type="button" id="act-sell">ขาย ${w.priceOf(st) * st.qty} G</button>`}</div>`;
+    det.querySelectorAll<HTMLElement>('[data-tgt]').forEach(b => b.addEventListener('click', () => {
+      const r = b.dataset.tgt!, ref = /^\d+$/.test(r) ? Number(r) : r as Slot;
+      if (tgtAct === 'shell') this.send({ kind: 'applyShell', id: p.id, shell: i, ref }); else this.send({ kind: 'reroll', id: p.id, ref });
+      this.sel = null; this.invSig = '';
+    }));
     const i = this.sel as number, sl = this.sel as Slot;
     document.getElementById('act-eq')?.addEventListener('click', () => { this.send({ kind: 'equip', id: p.id, index: i }); this.sel = d.slot as Slot; });
     document.getElementById('act-un')?.addEventListener('click', () => { this.send({ kind: 'unequip', id: p.id, slot: sl }); this.sel = null; });

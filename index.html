@@ -130,6 +130,10 @@
     #autocfg select { padding: 3px 4px; font: inherit; font-size: 12px; color: var(--fg); background: #0f1320; border: 1px solid var(--line); border-radius: 4px; }
     #autosum { position: absolute; left: calc(10px + env(safe-area-inset-left, 0px)); top: calc(104px + env(safe-area-inset-top, 0px)); width: 210px; padding: 6px 8px; font-size: 11px; line-height: 1.5; background: var(--panel); border: 1px solid var(--gold); border-radius: 8px; font-variant-numeric: tabular-nums; }
     #autosum b { color: var(--gold); }
+    .opt { font-size: 12px; } .opt b { display: inline-block; width: 14px; }
+    .tg { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tg button { padding: 5px 8px; font: inherit; font-size: 12px; color: var(--fg); background: #0f1320; border: 1px solid var(--gold); border-radius: 6px; cursor: pointer; }
+    #npc .chk { display: flex; gap: 6px; align-items: center; font-size: 12px; }
     #pick { position: fixed; inset: 0; z-index: 10; display: grid; place-content: center; gap: 16px; padding: 16px; text-align: center; background: radial-gradient(circle at 50% 40%, #2a3350, var(--bg)); }
     #pick h1 { margin: 0; font-size: 28px; letter-spacing: .04em; }
     #pick p { margin: 0; color: var(--muted); }

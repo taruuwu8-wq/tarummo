@@ -372,6 +372,9 @@ export class GameScene extends Phaser.Scene {
       g.fillStyle(card ? parseInt(card.aura, 16) : 0xffffff, 0.8).fillCircle(0, 0, 30);
       this.tweens.add({ targets: g, scale: 2.5, alpha: 0, duration: 500, onComplete: () => g.destroy() });
       if (e.id === this.player.id) this.hud.toast(card ? `แปลงร่างเป็น ${card.name}` : 'คืนร่าง', card ? 'rare' : 'muted');
+    } else if (ev.t === 'rarify' && ev.id === this.player.id) {
+      const d = defs.items[ev.item];
+      this.hud.toast(ev.result === 'ok' ? `สุ่มได้ R${ev.rare}! ${d.name}` : ev.result === 'saved' ? `แตก! แต่ใบกันแตกช่วยไว้ ${d.name} ยังเป็น R${ev.rare}` : `${d.name} แตกหายไปแล้ว...`, ev.result === 'ok' ? (ev.rare >= 6 ? 'epic' : 'rare') : 'warn');
     } else if (ev.t === 'upgrade' && ev.id === this.player.id) {
       const d = defs.items[ev.item];
       this.hud.toast(ev.ok ? `ตีบวกสำเร็จ! ${d.name} +${ev.up}` : `ตีบวกล้มเหลว ${d.name} ยังเป็น +${ev.up}`, ev.ok ? 'uncommon' : 'warn');
@@ -384,7 +387,8 @@ export class GameScene extends Phaser.Scene {
       this.floatText(sx, sy - 75, `+${ev.amount}`, ev.mp ? '#7fb2ff' : '#6ff08f', 15);
     } else if (ev.t === 'loot' && ev.id === this.player.id) {
       const d = defs.items[ev.item];
-      this.hud.toast(ev.sold ? `ขายอัตโนมัติ ${d.name} +${d.price * ev.qty} G` : `ได้รับ ${d.icon} ${d.name}${ev.qty > 1 ? ' ×' + ev.qty : ''}`, ev.sold ? 'muted' : d.rarity);
+      const st = !ev.sold ? [...this.player.inv].reverse().find(x => x.item === ev.item) : undefined;
+      this.hud.toast(ev.sold ? `ขายอัตโนมัติ ${d.name} +${d.price * ev.qty} G` : `ได้รับ ${d.icon} ${st?.rare ? 'R' + st.rare + ' ' : ''}${d.name}${ev.qty > 1 ? ' ×' + ev.qty : ''}`, ev.sold ? 'muted' : (st?.rare ?? 0) >= 6 ? 'epic' : d.rarity);
     } else if (ev.t === 'gold' && ev.id === this.player.id) {
       const { sx, sy } = toScreen(this.player.x, this.player.y);
       this.floatText(sx + 18, sy - 62, `+${ev.amount} G`, '#ffd23f', 12);
