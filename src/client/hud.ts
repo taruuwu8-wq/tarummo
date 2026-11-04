@@ -4,7 +4,7 @@ import { SLOTS } from '../sim/world';
 import type { ItemDef, Slot } from '../core/stats';
 
 type Tab = 'gear' | 'card' | 'use' | 'mat';
-const SLOT_TH: Record<Slot, string> = { weapon: 'อาวุธ', armor: 'เกราะ', hat: 'หมวก', charm: 'ชาร์ม', card: 'การ์ด' };
+const SLOT_TH: Record<Slot, string> = { weapon: 'อาวุธ', armor: 'เกราะ', hat: 'หมวก', charm: 'ชาร์ม', card: 'การ์ด', mount: 'พาหนะ' };
 const RARITY_TH: Record<string, string> = { common: 'ธรรมดา', uncommon: 'ดี', rare: 'หายาก', epic: 'ตำนาน' };
 
 export class Hud {
@@ -30,6 +30,7 @@ export class Hud {
         <span id="skills"></span>
         <button type="button" class="sk" id="tf-btn" title="แปลงร่าง (T)"><span class="ic">✨</span><span class="key">T</span><i class="cd"></i></button>
         <button type="button" class="sk" id="potion" title="HP Potion"><span class="ic">🧪</span><span class="key">Q</span><span class="mpc" id="potq"></span><i class="cd"></i></button>
+        <button type="button" class="sk" id="mountbtn" title="ขี่พาหนะ (R)"><span class="ic">🐎</span><span class="key">R</span></button>
         <button type="button" class="sk wide" id="bagbtn" title="กระเป๋า"><span class="ic">🎒</span><span class="key">I</span></button>
         <button type="button" class="sk wide" id="auto">AUTO<br>OFF</button>
       </div>
@@ -43,12 +44,14 @@ export class Hud {
         <label class="autosell"><input type="checkbox" id="autosell"> ขายอุปกรณ์ระดับธรรมดาอัตโนมัติ</label>
       </div>
       <div id="npc" hidden></div>
+      <div id="dg" hidden></div>
       <div id="chat"><div id="chatlog"></div><input id="chatin" maxlength="120" placeholder="Enter เพื่อพิมพ์แชท" autocomplete="off"></div>
       <div id="banner"></div>
       <div class="xp"><i id="pxp"></i><span id="pxpt"></span></div>`;
 
     this.$('skills').addEventListener('click', e => { const b = (e.target as HTMLElement).closest<HTMLElement>('[data-sk]'); if (b) this.cast(b.dataset.sk!); });
     this.$('tf-btn').addEventListener('click', () => send({ kind: 'transform', id: p.id }));
+    this.$('mountbtn').addEventListener('click', () => send({ kind: 'mount', id: p.id }));
     this.$('potion').addEventListener('click', () => this.potion());
     this.$('bagbtn').addEventListener('click', () => this.toggleBag());
     this.$('bagx').addEventListener('click', () => this.toggleBag(false));
@@ -68,6 +71,7 @@ export class Hud {
       const n = Number(e.key), skills = this.world.skillsOf(this.p);
       if (n >= 1 && n <= skills.length) this.cast(skills[n - 1].id);
       else if (e.key === 't' || e.key === 'T') this.send({ kind: 'transform', id: this.p.id });
+      else if (e.key === 'r' || e.key === 'R') this.send({ kind: 'mount', id: this.p.id });
       else if (e.key === 'q' || e.key === 'Q') this.potion();
       else if (e.key === 'i' || e.key === 'I') this.toggleBag();
       else if (e.key === 'Escape') { this.toggleBag(false); this.closeNpc(); }
@@ -203,6 +207,18 @@ export class Hud {
     const pl = Math.max(0, (p.cooldowns['potion'] ?? 0) - now);
     (this.$('potion').querySelector('.cd') as HTMLElement).style.height = `${(pl / 1500) * 100}%`;
     this.$('potq').textContent = String(p.inv.filter(s => this.items[s.item].heal?.hp).reduce((a, s) => a + s.qty, 0));
+    const mb = this.$('mountbtn'), mt = p.equip.mount;
+    mb.classList.toggle('on', p.mounted); mb.classList.toggle('nomp', !mt);
+    (mb.querySelector('.ic') as HTMLElement).textContent = mt ? this.items[mt.item].icon : '🐎';
+    const d = this.world.map.dungeon, dgEl = this.$('dg');
+    dgEl.hidden = !d;
+    if (d) {
+      const st = this.world.dungeon, t = Math.floor((st.cleared || st.active ? st.timeMs : 0) / 1000);
+      const time = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+      const next = st.timeMs / 1000 <= d.rankSec.S ? `S ≤ ${d.rankSec.S / 60} นาที` : st.timeMs / 1000 <= d.rankSec.A ? `A ≤ ${d.rankSec.A / 60} นาที` : 'B';
+      dgEl.textContent = st.cleared ? `เคลียร์แล้ว · อันดับ ${st.rank} · ${time} · ไปที่พอร์ทัลท้ายห้องเพื่อออก`
+        : `ห้อง ${Math.min(st.room + 1, d.rooms.length)}/${d.rooms.length}${st.room === d.rooms.length - 1 ? ' (บอส)' : ''} · ⏱ ${time} · ${next}`;
+    }
     if (!this.$('bag').hidden) this.renderBag();
     if (this.npc) this.renderNpc();
   }

@@ -17,6 +17,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) saveN
 
 export interface SceneData { net?: Net; cls: string; save?: SaveData; map?: string; at?: [number, number]; vitals?: { hp: number; mp: number } }
 
+const fmtTime = (ms: number) => { const t = Math.floor(ms / 1000); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
 const toScreen = (x: number, y: number) => ({ sx: (x - y) * (TW / 2), sy: (x + y) * (TH / 2) });
 const toTile = (sx: number, sy: number) => ({
   x: Math.round((sx / (TW / 2) + sy / (TH / 2)) / 2),
@@ -28,6 +29,7 @@ interface View {
   aura?: Phaser.GameObjects.Ellipse;
   fxSig?: string; sparks?: Phaser.GameObjects.Particles.ParticleEmitter; ring?: Phaser.GameObjects.Ellipse; ringLv?: number;
   wings?: Phaser.GameObjects.Container;
+  formKey?: string; tint?: number; mount?: Phaser.GameObjects.Image; mountLook?: string; dust?: Phaser.GameObjects.Particles.ParticleEmitter;
   scale: number; phase: number; lunge: number; lungeDir: { x: number; y: number }; height: number;
 }
 
@@ -51,9 +53,11 @@ export class GameScene extends Phaser.Scene {
   private net?: Net;
   private act: (i: Intent) => void = () => {};
   private names = new Map<number, Phaser.GameObjects.Text>();
+  private doorViews: { room: number; imgs: Phaser.GameObjects.Image[] }[] = [];
+  private gated: { objs: Phaser.GameObjects.GameObject[] }[] = [];
 
   create(data: SceneData) {
-    this.views.clear(); this.names.clear(); this.acc = 0; this.leaving = false; this.net = data.net;
+    this.views.clear(); this.names.clear(); this.doorViews = []; this.gated = []; this.acc = 0; this.leaving = false; this.net = data.net;
     (window as unknown as { __scene: GameScene }).__scene = this;  // handy for automated playtests
     const net = data.net;
     const map = MAPS[net ? net.map : data.map ?? data.save?.map ?? 'town'] ?? MAPS.town;
@@ -122,10 +126,13 @@ export class GameScene extends Phaser.Scene {
     const alpha = Math.min(1, this.acc / TICK_MS), now = this.time.now / 1000;
     for (const e of this.world.entities.values()) { if (!this.views.has(e.id)) this.makeView(e); this.syncView(e, alpha, now, dtMs); }
     for (const [id, v] of this.views) if (!this.world.entities.has(id)) {
-      v.body.destroy(); v.shadow.destroy(); v.bar.destroy(); v.aura?.destroy(); v.sparks?.destroy(); v.ring?.destroy(); v.wings?.destroy();
+      v.body.destroy(); v.shadow.destroy(); v.bar.destroy(); v.aura?.destroy(); v.sparks?.destroy(); v.ring?.destroy(); v.wings?.destroy(); v.mount?.destroy(); v.dust?.destroy();
       this.views.delete(id); this.names.get(id)?.destroy(); this.names.delete(id);
     }
     this.drawTargetRing();
+    const dg = this.world.dungeon;
+    for (const d of this.doorViews) for (const im of d.imgs) im.setVisible(!dg.openDoors.includes(d.room));
+    for (const g of this.gated) for (const o of g.objs) (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(dg.cleared);
     const tgt = this.player.target != null ? this.world.entities.get(this.player.target) ?? null : null;
     this.hud.update(this.world.xpNeeded(this.player), tgt);
   }
@@ -140,7 +147,7 @@ export class GameScene extends Phaser.Scene {
         const wait = () => { if (net.last && net.queue.some(q => q.t === 'tick')) { net.queue.length = 0; this.scene.restart({ net, cls: net.cls }); } else this.time.delayedCall(30, wait); };
         this.cameras.main.fadeOut(200, 27, 31, 42); wait();
       } else if (m.t === 'tick') {
-        this.world.applySnapshot(m.now, m.ents); this.world.stash = m.stash; this.acc = 0;
+        this.world.applySnapshot(m.now, m.ents); this.world.stash = m.stash; this.world.dungeon = m.dungeon; this.acc = 0;
         for (const ev of m.ev) this.onEvent(ev);
       } else if (m.t === 'error') this.hud.toast(m.text, 'warn');
     }
@@ -153,7 +160,9 @@ export class GameScene extends Phaser.Scene {
     const scale = d.height / body.height;
     const shadow = this.add.ellipse(0, 0, body.width * scale * 0.6, 10, 0x000000, 0.28);
     const bar = this.add.graphics();
-    this.views.set(e.id, { body, shadow, bar, scale, phase: Math.random() * 6, lunge: 0, lungeDir: { x: 0, y: 0 }, height: d.height });
+    const tint = 'tint' in d && d.tint ? parseInt(d.tint as string, 16) : undefined;
+    if (tint) body.setTint(tint);
+    this.views.set(e.id, { body, shadow, bar, scale, tint, phase: Math.random() * 6, lunge: 0, lungeDir: { x: 0, y: 0 }, height: d.height });
   }
 
   private syncView(e: Entity, alpha: number, now: number, dtMs: number) {
@@ -165,10 +174,15 @@ export class GameScene extends Phaser.Scene {
     else { sqy = 1 + Math.sin(t) * 0.025; sqx = 1 - Math.sin(t) * 0.015; }
     v.lunge = Math.max(0, v.lunge - dtMs / 180);
     const l = Math.sin(v.lunge * Math.PI) * 10;
-    const x = sx + v.lungeDir.x * l, y = sy + 3 + bob + v.lungeDir.y * l;
+    if (e.kind === 'player') this.syncForm(e, v);
+    const lift = e.mounted ? -10 + Math.sin(now * 3) * 2 : 0;
+    if (e.mounted) bob *= 0.3;
+    const x = sx + v.lungeDir.x * l, y = sy + 3 + bob + lift + v.lungeDir.y * l;
     v.body.setPosition(x, y).setScale(v.scale * sqx * e.facing, v.scale * sqy);
     v.shadow.setPosition(sx, sy + 1).setScale(1 + bob / 30);
     v.body.setDepth(10 + sy); v.shadow.setDepth(2);
+    if (v.mount) v.mount.setPosition(sx, y + 4).setDepth(v.body.depth - 0.2).setScale(v.mountLook === 'cloud' ? 1 + Math.sin(now * 5) * 0.03 : 1).setVisible(!e.dead);
+    if (v.dust) { v.dust.setPosition(sx, sy + 2).setDepth(v.body.depth - 0.3); v.dust.emitting = e.moving && !e.dead; }
     if (v.aura) { v.aura.setPosition(sx, sy + 1).setVisible(!e.dead).setScale(1 + Math.sin(now * 4) * 0.08); }
     if (e.kind === 'player') this.syncGearFx(e, v, x, y, sx, sy, now);
     v.body.setVisible(!e.dead || v.body.alpha > 0.01); v.shadow.setVisible(!e.dead);
@@ -186,6 +200,47 @@ export class GameScene extends Phaser.Scene {
       v.bar.fillStyle(e.kind === 'player' ? 0x5be37a : 0xe5484d, 1).fillRect(bx, by, w * (e.hp / e.maxHp), 4);
       v.bar.setDepth(5000 + sy);
     }
+  }
+
+  /** Sprite/aura for card form + mount visuals. Runs every frame; only rebuilds when the key changes. */
+  private syncForm(e: Entity, v: View) {
+    const card = this.world.cardOf(e), mount = e.mounted && e.equip.mount ? defs.items[e.equip.mount.item].mount : undefined;
+    const key = `${card?.sprite ?? ''}|${mount?.look ?? ''}`;
+    if (key === v.formKey) return;
+    v.formKey = key;
+    const base = defs.classes[e.type];
+    const sprite = card ? card.sprite : base.sprite, height = card ? card.height : base.height;
+    if (v.body.texture.key !== sprite) { v.body.setTexture(sprite); }
+    v.scale = height / v.body.height; v.height = height;
+    v.aura?.destroy(); v.aura = undefined;
+    if (card) v.aura = this.add.ellipse(0, 0, 56, 26, parseInt(card.aura, 16), 0.35).setDepth(2).setStrokeStyle(2, parseInt(card.aura, 16), 0.9);
+    v.mount?.destroy(); v.mount = undefined; v.dust?.destroy(); v.dust = undefined; v.mountLook = mount?.look;
+    if (mount) {
+      const tex = mount.sprite && this.textures.exists(mount.sprite) ? mount.sprite : `mount_${mount.look}`;
+      if (!this.textures.exists(tex)) this.makeMountTexture(mount.look, parseInt(mount.color, 16));
+      v.mount = this.add.image(0, 0, tex).setOrigin(0.5, 0.7);
+      v.dust = this.add.particles(0, 0, 'spark', { frequency: 70, lifespan: 500, speedX: { min: -20, max: 20 }, speedY: { min: -10, max: 0 },
+        scale: { start: 0.8, end: 0 }, alpha: { start: 0.7, end: 0 }, tint: mount.look === 'cloud' ? 0xffffff : 0xffd23f });
+    }
+  }
+
+  /** Placeholder mount art drawn in code (swap for a PNG via items.json mount.sprite). */
+  private makeMountTexture(look: string, color: number) {
+    const g = this.make.graphics({}, false);
+    if (look === 'cloud') {
+      g.translateCanvas(40, 22);
+      g.fillStyle(0xdfe8ff, 1).fillEllipse(0, 6, 64, 18);
+      g.fillStyle(color, 1); for (const [x, y, r] of [[-20, 0, 12], [-6, -5, 15], [10, -3, 13], [22, 3, 10], [0, 6, 14]]) g.fillCircle(x, y, r);
+      g.generateTexture('mount_cloud', 80, 44);
+    } else {
+      g.translateCanvas(40, 20);
+      g.fillStyle(0x000000, 0.25).fillEllipse(0, 10, 70, 14);
+      g.fillStyle(color, 1).fillPoints([{ x: -34, y: 0 }, { x: 0, y: -14 }, { x: 34, y: 0 }, { x: 0, y: 14 }], true);
+      g.lineStyle(2, 0xffd23f, 1).strokePoints([{ x: -30, y: 0 }, { x: 0, y: -12 }, { x: 30, y: 0 }, { x: 0, y: 12 }], true);
+      g.fillStyle(0xffd23f, 1).fillCircle(0, 0, 3);
+      g.generateTexture('mount_carpet', 80, 40);
+    }
+    g.destroy();
   }
 
   private tier<T extends { min: number }>(tiers: T[], lv: number): T | undefined {
@@ -264,7 +319,7 @@ export class GameScene extends Phaser.Scene {
       const txt = ev.miss ? 'MISS' : String(ev.amount);
       const color = ev.miss ? '#c9d1e0' : e.kind === 'player' ? '#ff6b6b' : ev.crit ? '#ffd23f' : '#ffffff';
       this.floatText(sx, sy - v.height - 6, txt + (ev.crit ? '!' : ''), color, ev.crit ? 20 : 15);
-      if (!ev.miss) { v.body.setTintFill(0xffffff); this.time.delayedCall(70, () => v.body.setTint(0xff8080)); this.time.delayedCall(170, () => v.body.clearTint()); }
+      if (!ev.miss) { v.body.setTintFill(0xffffff); this.time.delayedCall(70, () => v.body.setTint(0xff8080)); this.time.delayedCall(170, () => { v.body.clearTint(); if (v.tint) v.body.setTint(v.tint); }); }
     } else if (ev.t === 'die') {
       const v = this.views.get(ev.id)!;
       this.tweens.add({ targets: v.body, alpha: 0, duration: 450 });
@@ -281,6 +336,19 @@ export class GameScene extends Phaser.Scene {
       // don't wait on camerafadeoutcomplete: it never fires if another fade is running
       this.cameras.main.fadeOut(200, 27, 31, 42);
       this.time.delayedCall(220, () => this.scene.restart(data));
+    } else if (ev.t === 'telegraph') {
+      const { sx, sy } = toScreen(ev.x, ev.y), w = ev.r * TW * 2, h = ev.r * TH * 2;
+      const ring = this.add.ellipse(sx, sy, w, h).setStrokeStyle(3, 0xff3b3b, 0.95).setDepth(3);
+      const fill = this.add.ellipse(sx, sy, w, h, 0xff3b3b, 0.35).setDepth(3).setScale(0);
+      this.tweens.add({ targets: fill, scale: 1, duration: ev.ms, onComplete: () => {
+        ring.destroy(); fill.setFillStyle(0xffb36b, 0.8);
+        this.tweens.add({ targets: fill, alpha: 0, scale: 1.15, duration: 250, onComplete: () => fill.destroy() });
+        this.cameras.main.shake(120, 0.004);
+      } });
+    } else if (ev.t === 'dungeon') {
+      if (ev.state === 'start') this.hud.banner('ดันเจี้ยนเริ่มแล้ว! เคลียร์ทุกห้อง');
+      else if (ev.state === 'door') this.hud.toast('ประตูเปิดแล้ว', 'uncommon');
+      else if (ev.state === 'clear') this.hud.banner(`เคลียร์! อันดับ ${ev.rank} · ${fmtTime(ev.timeMs ?? 0)}`);
     } else if (ev.t === 'chat') {
       this.hud.chatLine(ev.name, ev.text, ev.id === this.player.id);
       const v = this.views.get(ev.id);
@@ -293,12 +361,10 @@ export class GameScene extends Phaser.Scene {
     } else if (ev.t === 'talk' && ev.id === this.player.id) {
       this.hud.openNpc(ev.npc);
     } else if (ev.t === 'transform') {
-      const e = this.world.entities.get(ev.id)!, v = this.views.get(e.id)!;
-      const card = this.world.cardOf(e), base = defs.classes[e.type];
-      const sprite = card ? card.sprite : base.sprite, height = card ? card.height : base.height;
-      v.body.setTexture(sprite); v.scale = height / v.body.height; v.height = height;
-      v.aura?.destroy(); v.aura = undefined;
-      if (card) v.aura = this.add.ellipse(0, 0, 56, 26, parseInt(card.aura, 16), 0.35).setDepth(2).setStrokeStyle(2, parseInt(card.aura, 16), 0.9);
+      const e = this.world.entities.get(ev.id)!, v = this.views.get(e.id);
+      if (!v) return;
+      this.syncForm(e, v);
+      const card = this.world.cardOf(e), height = v.height;
       const { sx, sy } = toScreen(e.x, e.y);
       const g = this.add.graphics().setDepth(9000).setPosition(sx, sy - height / 2);
       g.fillStyle(card ? parseInt(card.aura, 16) : 0xffffff, 0.8).fillCircle(0, 0, 30);
@@ -380,9 +446,9 @@ export class GameScene extends Phaser.Scene {
       const { sx, sy } = toScreen(x, y);
       const water = this.world.isWater(x, y);
       const n = ((x * 73856093) ^ (y * 19349663)) >>> 0;
-      const stone = map.ground === 'stone';
-      const base = water ? 0x4aa3d8 : stone ? [0xc9c2b4, 0xc2bba9, 0xd0c9bb][n % 3] : [0x7cc56b, 0x76bf65, 0x82ca70][n % 3];
-      this.diamond(g, sx, sy, base, water ? 0x3a8cc0 : stone ? 0xa8a090 : 0x68ad58);
+      const stone = map.ground !== 'grass', ruin = map.ground === 'ruin';
+      const base = water ? 0x4aa3d8 : ruin ? [0x5b5466, 0x564f60, 0x605a6b][n % 3] : stone ? [0xc9c2b4, 0xc2bba9, 0xd0c9bb][n % 3] : [0x7cc56b, 0x76bf65, 0x82ca70][n % 3];
+      this.diamond(g, sx, sy, base, water ? 0x3a8cc0 : ruin ? 0x48425a : stone ? 0xa8a090 : 0x68ad58);
       if (!water && !stone && n % 11 === 0) { g.fillStyle(0xf4e27a, 1).fillCircle(sx - 6, sy + 2, 2); g.fillStyle(0xffffff, 1).fillCircle(sx + 8, sy - 3, 1.6); }
     }
     const key = `ground_${map.id}`;
@@ -404,17 +470,33 @@ export class GameScene extends Phaser.Scene {
       r.generateTexture('rock', 44, 30); r.destroy();
     }
     for (const [x, y] of map.trees) { const { sx, sy } = toScreen(x, y); this.add.image(sx, sy, 'tree').setOrigin(24 / 48, 58 / 70).setDepth(10 + sy); }
+    if (!this.textures.exists('wall')) {
+      const w = this.make.graphics({}, false); w.translateCanvas(32, 44);
+      w.fillStyle(0x3a3446, 1).fillPoints([{ x: -32, y: 0 }, { x: 0, y: 16 }, { x: 0, y: -12 }, { x: -32, y: -28 }], true);
+      w.fillStyle(0x2c2738, 1).fillPoints([{ x: 32, y: 0 }, { x: 0, y: 16 }, { x: 0, y: -12 }, { x: 32, y: -28 }], true);
+      w.fillStyle(0x6b6380, 1).fillPoints([{ x: -32, y: -28 }, { x: 0, y: -44 }, { x: 32, y: -28 }, { x: 0, y: -12 }], true);
+      w.generateTexture('wall', 64, 62);
+      const d = this.make.graphics({}, false); d.translateCanvas(32, 44);
+      d.fillStyle(0x7a5232, 1).fillPoints([{ x: -28, y: -2 }, { x: 0, y: 12 }, { x: 0, y: -16 }, { x: -28, y: -30 }], true);
+      d.lineStyle(3, 0xffd23f, 0.9); for (const k of [-21, -14, -7]) d.lineBetween(k, -28 + (k + 28) / 2 + 2, k, (k + 28) / 2 + 2);
+      d.generateTexture('door', 64, 62); w.destroy(); d.destroy();
+    }
+    for (const [x, y] of map.walls ?? []) { const { sx, sy } = toScreen(x, y); this.add.image(sx, sy, 'wall').setOrigin(0.5, 44 / 62).setDepth(10 + sy); }
+    this.doorViews = (map.dungeon?.doors ?? []).map(d => ({ room: d.room, imgs: d.tiles.map(([x, y]) => { const { sx, sy } = toScreen(x, y); return this.add.image(sx, sy, 'door').setOrigin(0.5, 44 / 62).setDepth(10 + sy); }) }));
     for (const [x, y] of map.rocks) { const { sx, sy } = toScreen(x, y); this.add.image(sx, sy, 'rock').setOrigin(0.5, 20 / 30).setDepth(10 + sy); }
   }
 
   private drawPortals(map: MapData) {
+    this.gated = [];
     for (const p of map.portals) {
       const { sx, sy } = toScreen(p.x, p.y);
+      const before = this.children.list.length;
       const ring = this.add.ellipse(sx, sy, 54, 26, 0x8f7bff, 0.35).setStrokeStyle(3, 0xc6b8ff, 1).setDepth(2);
       this.tweens.add({ targets: ring, scaleX: 1.15, scaleY: 1.15, alpha: 0.6, yoyo: true, repeat: -1, duration: 700 });
       this.add.particles(sx, sy, 'spark', { frequency: 120, lifespan: 1000, x: { min: -20, max: 20 }, speedY: { min: -40, max: -15 },
         scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, tint: 0xc6b8ff, blendMode: 'ADD' }).setDepth(9 + sy);
       this.label(sx, sy - 46, '⟡ ' + p.label, '#d9d0ff');
+      if (p.when === 'cleared') this.gated.push({ objs: this.children.list.slice(before) });
     }
   }
 

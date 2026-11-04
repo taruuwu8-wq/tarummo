@@ -98,7 +98,7 @@ setInterval(() => {
       enter(c, e.to, save.cls, save, e.spawn, vitals);
       persist(c);
     }
-    const msg = JSON.stringify({ t: 'tick', now: w.now, ents: w.snapshot(), ev: ev.filter(e => e.t !== 'portal'), stash } satisfies ServerMsg);
+    const msg = JSON.stringify({ t: 'tick', now: w.now, ents: w.snapshot(), ev: ev.filter(e => e.t !== 'portal'), stash, dungeon: w.dungeon } satisfies ServerMsg);
     for (const c of clients) if (c.room === roomId && c.ws.readyState === WebSocket.OPEN) c.ws.send(msg);
   }
 }, TICK_MS);

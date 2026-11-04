@@ -38,6 +38,14 @@
       {
         "item": "ember_staff",
         "price": 200
+      },
+      {
+        "item": "cloud_board",
+        "price": 300
+      },
+      {
+        "item": "magic_carpet",
+        "price": 1500
       }
     ]
   },

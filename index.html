@@ -44,7 +44,7 @@
     #bag button { font: inherit; color: var(--fg); cursor: pointer; }
     .bag-head { display: flex; justify-content: space-between; align-items: center; }
     .bag-head button { background: none; border: 0; font-size: 16px; }
-    .equip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+    .equip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
     .slot { display: grid; justify-items: center; gap: 2px; padding: 6px 2px; background: #0f1320; border: 1px solid var(--line); border-radius: 8px; }
     .slot .ic { font-size: 22px; height: 26px; } .slot small { font-size: 10px; color: var(--muted); }
     .stats { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -92,6 +92,9 @@
     #npc .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
     #npc .grid .cell { position: relative; aspect-ratio: 1; padding: 0; font-size: 18px; }
     #npc .cell b { position: absolute; right: 2px; bottom: 0; font-size: 10px; }
+    #mountbtn.on { border-color: #9be7ff; box-shadow: 0 0 10px #9be7ff inset; }
+    #dg { position: absolute; left: 50%; transform: translateX(-50%); top: calc(12px + env(safe-area-inset-top, 0px)); padding: 6px 14px; background: var(--panel); border: 1px solid #ff8a5b; border-radius: 999px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    @media (max-width: 600px) { #dg { top: auto; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); font-size: 11px; } }
     #pick { position: fixed; inset: 0; z-index: 10; display: grid; place-content: center; gap: 16px; padding: 16px; text-align: center; background: radial-gradient(circle at 50% 40%, #2a3350, var(--bg)); }
     #pick h1 { margin: 0; font-size: 28px; letter-spacing: .04em; }
     #pick p { margin: 0; color: var(--muted); }

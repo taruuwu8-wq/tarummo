@@ -9,8 +9,9 @@ import upgrade from '../data/upgrade.json';
 import npcs from '../data/npcs.json';
 import meadow from '../data/maps/meadow.json';
 import town from '../data/maps/town.json';
+import ruins from '../data/maps/ruins.json';
 import type { Defs, MapData } from './sim/world';
 
 export const loadDefs = () => structuredClone({ balance, classes, monsters, items, skills, cards, upgrade, npcs }) as unknown as Defs;
-export const MAPS = { meadow, town } as unknown as Record<string, MapData>;
+export const MAPS = { meadow, town, ruins } as unknown as Record<string, MapData>;
 export const START_MAP = 'town';

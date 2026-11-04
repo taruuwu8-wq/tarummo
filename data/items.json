@@ -1,23 +1,291 @@
 {
-  "wooden_sword":     { "name": "Wooden Sword",     "slot": "weapon", "rarity": "common",   "icon": "⚔️", "level": 1, "class": "swordsman", "price": 5,   "weapon": { "min": 14, "max": 19, "critDmg": 0.6 } },
-  "iron_sword":       { "name": "Iron Sword",       "slot": "weapon", "rarity": "uncommon", "icon": "⚔️", "level": 3, "class": "swordsman", "price": 40,  "weapon": { "min": 20, "max": 27, "critDmg": 0.7 } },
-  "golem_blade":      { "name": "Golem Blade",      "slot": "weapon", "rarity": "rare",     "icon": "⚔️", "level": 6, "class": "swordsman", "price": 160, "weapon": { "min": 30, "max": 40, "critDmg": 0.8 } },
-  "short_bow":        { "name": "Short Bow",        "slot": "weapon", "rarity": "common",   "icon": "🏹", "level": 1, "class": "archer",    "price": 5,   "weapon": { "min": 10, "max": 18, "critDmg": 0.8 } },
-  "hunter_bow":       { "name": "Hunter Bow",       "slot": "weapon", "rarity": "uncommon", "icon": "🏹", "level": 3, "class": "archer",    "price": 40,  "weapon": { "min": 15, "max": 26, "critDmg": 0.9 } },
-  "golem_bow":        { "name": "Golem Bow",        "slot": "weapon", "rarity": "rare",     "icon": "🏹", "level": 6, "class": "archer",    "price": 160, "weapon": { "min": 22, "max": 38, "critDmg": 1.0 } },
-  "apprentice_staff": { "name": "Apprentice Staff", "slot": "weapon", "rarity": "common",   "icon": "🪄", "level": 1, "class": "mage",      "price": 5,   "weapon": { "min": 14, "max": 20, "critDmg": 0.5 } },
-  "ember_staff":      { "name": "Ember Staff",      "slot": "weapon", "rarity": "uncommon", "icon": "🪄", "level": 3, "class": "mage",      "price": 40,  "weapon": { "min": 20, "max": 28, "critDmg": 0.5 }, "bonus": { "elemRate": 0.05 } },
-  "golem_staff":      { "name": "Golem Staff",      "slot": "weapon", "rarity": "rare",     "icon": "🪄", "level": 6, "class": "mage",      "price": 160, "weapon": { "min": 28, "max": 38, "critDmg": 0.6 }, "bonus": { "elemRate": 0.1 } },
-  "cloth_tunic":      { "name": "Cloth Tunic",      "slot": "armor",  "rarity": "common",   "icon": "👕", "level": 1, "price": 6,   "bonus": { "armor": 3, "hp": 10 } },
-  "leather_armor":    { "name": "Leather Armor",    "slot": "armor",  "rarity": "uncommon", "icon": "🦺", "level": 3, "price": 45,  "bonus": { "armor": 7, "hp": 30 } },
-  "stone_plate":      { "name": "Stone Plate",      "slot": "armor",  "rarity": "rare",     "icon": "🛡️", "level": 6, "price": 150, "bonus": { "armor": 14, "hp": 80 } },
-  "straw_hat":        { "name": "Straw Hat",        "slot": "hat",    "rarity": "common",   "icon": "👒", "level": 1, "price": 6,   "bonus": { "hp": 15 } },
-  "pumpkin_hat":      { "name": "Pumpkin Hat",      "slot": "hat",    "rarity": "uncommon", "icon": "🎃", "level": 3, "price": 50,  "bonus": { "hp": 40, "eva": 5 } },
-  "slime_charm":      { "name": "Slime Charm",      "slot": "charm",  "rarity": "uncommon", "icon": "💧", "level": 1, "price": 35,  "bonus": { "mp": 20, "acc": 5 } },
-  "golem_core":       { "name": "Golem Core",       "slot": "charm",  "rarity": "rare",     "icon": "💎", "level": 5, "price": 180, "bonus": { "atk": 6, "critRate": 0.05 } },
-  "hp_potion":        { "name": "HP Potion",        "slot": "use",    "rarity": "common",   "icon": "🧪", "price": 3,  "heal": { "hp": 0.4 } },
-  "mp_potion":        { "name": "MP Potion",        "slot": "use",    "rarity": "common",   "icon": "🔷", "price": 3,  "heal": { "mp": 0.4 } },
-  "slime_jelly":      { "name": "Slime Jelly",      "slot": "mat",    "rarity": "common",   "icon": "🫧", "price": 1 },
-  "pumpkin_seed":     { "name": "Pumpkin Seed",     "slot": "mat",    "rarity": "common",   "icon": "🌰", "price": 2 },
-  "golem_shard":      { "name": "Golem Shard",      "slot": "mat",    "rarity": "uncommon", "icon": "🪨", "price": 10 }
+  "wooden_sword": {
+    "name": "Wooden Sword",
+    "slot": "weapon",
+    "rarity": "common",
+    "icon": "⚔️",
+    "level": 1,
+    "class": "swordsman",
+    "price": 5,
+    "weapon": {
+      "min": 14,
+      "max": 19,
+      "critDmg": 0.6
+    }
+  },
+  "iron_sword": {
+    "name": "Iron Sword",
+    "slot": "weapon",
+    "rarity": "uncommon",
+    "icon": "⚔️",
+    "level": 3,
+    "class": "swordsman",
+    "price": 40,
+    "weapon": {
+      "min": 20,
+      "max": 27,
+      "critDmg": 0.7
+    }
+  },
+  "golem_blade": {
+    "name": "Golem Blade",
+    "slot": "weapon",
+    "rarity": "rare",
+    "icon": "⚔️",
+    "level": 6,
+    "class": "swordsman",
+    "price": 160,
+    "weapon": {
+      "min": 30,
+      "max": 40,
+      "critDmg": 0.8
+    }
+  },
+  "short_bow": {
+    "name": "Short Bow",
+    "slot": "weapon",
+    "rarity": "common",
+    "icon": "🏹",
+    "level": 1,
+    "class": "archer",
+    "price": 5,
+    "weapon": {
+      "min": 10,
+      "max": 18,
+      "critDmg": 0.8
+    }
+  },
+  "hunter_bow": {
+    "name": "Hunter Bow",
+    "slot": "weapon",
+    "rarity": "uncommon",
+    "icon": "🏹",
+    "level": 3,
+    "class": "archer",
+    "price": 40,
+    "weapon": {
+      "min": 15,
+      "max": 26,
+      "critDmg": 0.9
+    }
+  },
+  "golem_bow": {
+    "name": "Golem Bow",
+    "slot": "weapon",
+    "rarity": "rare",
+    "icon": "🏹",
+    "level": 6,
+    "class": "archer",
+    "price": 160,
+    "weapon": {
+      "min": 22,
+      "max": 38,
+      "critDmg": 1.0
+    }
+  },
+  "apprentice_staff": {
+    "name": "Apprentice Staff",
+    "slot": "weapon",
+    "rarity": "common",
+    "icon": "🪄",
+    "level": 1,
+    "class": "mage",
+    "price": 5,
+    "weapon": {
+      "min": 14,
+      "max": 20,
+      "critDmg": 0.5
+    }
+  },
+  "ember_staff": {
+    "name": "Ember Staff",
+    "slot": "weapon",
+    "rarity": "uncommon",
+    "icon": "🪄",
+    "level": 3,
+    "class": "mage",
+    "price": 40,
+    "weapon": {
+      "min": 20,
+      "max": 28,
+      "critDmg": 0.5
+    },
+    "bonus": {
+      "elemRate": 0.05
+    }
+  },
+  "golem_staff": {
+    "name": "Golem Staff",
+    "slot": "weapon",
+    "rarity": "rare",
+    "icon": "🪄",
+    "level": 6,
+    "class": "mage",
+    "price": 160,
+    "weapon": {
+      "min": 28,
+      "max": 38,
+      "critDmg": 0.6
+    },
+    "bonus": {
+      "elemRate": 0.1
+    }
+  },
+  "cloth_tunic": {
+    "name": "Cloth Tunic",
+    "slot": "armor",
+    "rarity": "common",
+    "icon": "👕",
+    "level": 1,
+    "price": 6,
+    "bonus": {
+      "armor": 3,
+      "hp": 10
+    }
+  },
+  "leather_armor": {
+    "name": "Leather Armor",
+    "slot": "armor",
+    "rarity": "uncommon",
+    "icon": "🦺",
+    "level": 3,
+    "price": 45,
+    "bonus": {
+      "armor": 7,
+      "hp": 30
+    }
+  },
+  "stone_plate": {
+    "name": "Stone Plate",
+    "slot": "armor",
+    "rarity": "rare",
+    "icon": "🛡️",
+    "level": 6,
+    "price": 150,
+    "bonus": {
+      "armor": 14,
+      "hp": 80
+    }
+  },
+  "straw_hat": {
+    "name": "Straw Hat",
+    "slot": "hat",
+    "rarity": "common",
+    "icon": "👒",
+    "level": 1,
+    "price": 6,
+    "bonus": {
+      "hp": 15
+    }
+  },
+  "pumpkin_hat": {
+    "name": "Pumpkin Hat",
+    "slot": "hat",
+    "rarity": "uncommon",
+    "icon": "🎃",
+    "level": 3,
+    "price": 50,
+    "bonus": {
+      "hp": 40,
+      "eva": 5
+    }
+  },
+  "slime_charm": {
+    "name": "Slime Charm",
+    "slot": "charm",
+    "rarity": "uncommon",
+    "icon": "💧",
+    "level": 1,
+    "price": 35,
+    "bonus": {
+      "mp": 20,
+      "acc": 5
+    }
+  },
+  "golem_core": {
+    "name": "Golem Core",
+    "slot": "charm",
+    "rarity": "rare",
+    "icon": "💎",
+    "level": 5,
+    "price": 180,
+    "bonus": {
+      "atk": 6,
+      "critRate": 0.05
+    }
+  },
+  "hp_potion": {
+    "name": "HP Potion",
+    "slot": "use",
+    "rarity": "common",
+    "icon": "🧪",
+    "price": 3,
+    "heal": {
+      "hp": 0.4
+    }
+  },
+  "mp_potion": {
+    "name": "MP Potion",
+    "slot": "use",
+    "rarity": "common",
+    "icon": "🔷",
+    "price": 3,
+    "heal": {
+      "mp": 0.4
+    }
+  },
+  "slime_jelly": {
+    "name": "Slime Jelly",
+    "slot": "mat",
+    "rarity": "common",
+    "icon": "🫧",
+    "price": 1
+  },
+  "pumpkin_seed": {
+    "name": "Pumpkin Seed",
+    "slot": "mat",
+    "rarity": "common",
+    "icon": "🌰",
+    "price": 2
+  },
+  "golem_shard": {
+    "name": "Golem Shard",
+    "slot": "mat",
+    "rarity": "uncommon",
+    "icon": "🪨",
+    "price": 10
+  },
+  "spirit_crystal": {
+    "name": "Spirit Crystal",
+    "slot": "mat",
+    "rarity": "rare",
+    "icon": "🔮",
+    "price": 40
+  },
+  "cloud_board": {
+    "name": "Cloud Board",
+    "slot": "mount",
+    "rarity": "uncommon",
+    "icon": "☁️",
+    "price": 100,
+    "mount": {
+      "speed": 1.7,
+      "look": "cloud",
+      "color": "0xffffff",
+      "sprite": null
+    }
+  },
+  "magic_carpet": {
+    "name": "Magic Carpet",
+    "slot": "mount",
+    "rarity": "rare",
+    "icon": "🧞",
+    "price": 300,
+    "mount": {
+      "speed": 2.0,
+      "look": "carpet",
+      "color": "0xc0392b",
+      "sprite": null
+    }
+  }
 }

@@ -9,19 +9,21 @@ export interface ClassDef {
   growth: { hp: number; mp: number; atk: number; armor: Armor; acc: number; eva: number; elemRate?: number };
   starterWeapon: string;
 }
-export type Slot = 'weapon' | 'armor' | 'hat' | 'charm' | 'card';
+export type Slot = 'weapon' | 'armor' | 'hat' | 'charm' | 'card' | 'mount';
 export interface Bonus { hp?: number; mp?: number; atk?: number; armor?: number; acc?: number; eva?: number; critRate?: number; elemRate?: number; dmgPct?: number }
 export interface ItemDef {
   name: string; slot: Slot | 'use' | 'mat'; element?: Element; rarity: 'common' | 'uncommon' | 'rare' | 'epic'; icon: string;
   level?: number; class?: string; price: number;
   weapon?: { min: number; max: number; critDmg: number }; bonus?: Bonus; heal?: { hp?: number; mp?: number };
+  mount?: { speed: number; look: string; color: string; sprite: string | null };
 }
 export interface MonsterDef {
   name: string; sprite: string; height: number; speed: number; wanderRadius: number;
   level: number; hp: number; xp: number; attackType: AttackType; range: number; attackMs: number;
   atk: { min: number; max: number }; armor: Armor; armorUpgrade: number;
   acc: number; eva: number; critRate: number; element: Element; res: CombatStats['res']; boss?: boolean;
-  gold: [number, number]; drops: [string, number, number?][]; cardChance?: number;
+  gold: [number, number]; drops: [string, number, number?][]; cardChance?: number; tint?: string;
+  blast?: { mult: number; radius: number; everyMs: number; castMs: number };
 }
 
 const FISTS = { min: 4, max: 6, critDmg: 0.3 };

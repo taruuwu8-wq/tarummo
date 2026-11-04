@@ -6,11 +6,18 @@ import { playerStats, monsterStats, ClassDef, MonsterDef, ItemDef, Slot, Worn, B
 
 export const TICK_MS = 100;
 
-export interface Portal { x: number; y: number; to: string; spawn: Tile; label: string }
+export interface Portal { x: number; y: number; to: string; spawn: Tile; label: string; when?: 'cleared' }
+export interface DungeonDef {
+  doors: { room: number; tiles: Tile[] }[];
+  rooms: { area: [number, number, number, number]; monsters: [string, number][] }[];
+  aggro: number; hpScale: number[]; rankSec: { S: number; A: number };
+  rewards: Record<'S' | 'A' | 'B', { gold: [number, number]; items: [string, number][]; cardChance: number }>;
+}
+export interface DungeonState { active: boolean; startedAt: number; room: number; openDoors: number[]; cleared: boolean; rank: 'S' | 'A' | 'B' | null; timeMs: number }
 export interface MapData {
-  id: string; name: string; ground: 'grass' | 'stone'; safe: boolean; width: number; height: number; spawn: Tile;
-  rocks: Tile[]; water: Tile[]; trees: Tile[]; monsters: { type: string; count: number }[];
-  portals: Portal[]; npcs: { id: string; x: number; y: number }[];
+  id: string; name: string; ground: 'grass' | 'stone' | 'ruin'; safe: boolean; width: number; height: number; spawn: Tile;
+  rocks: Tile[]; water: Tile[]; trees: Tile[]; walls?: Tile[]; monsters: { type: string; count: number }[];
+  portals: Portal[]; npcs: { id: string; x: number; y: number }[]; dungeon?: DungeonDef;
 }
 export interface NpcDef {
   name: string; title: string; sprite: string; height: number; role: 'shop' | 'smith' | 'healer' | 'stash' | 'debug'; greet: string;
@@ -31,11 +38,11 @@ export interface CardDef {
   aura: string; element?: Element; bonus: Bonus; skills: SkillDef[];
 }
 export interface UpgradeCfg {
-  slots: Slot[]; successRate: number[]; gold: number[]; material: string[]; materialQty: number[];
+  slots: Slot[]; successRate: number[]; gold: number[]; material: string[]; materialQty: number[]; maxUp: number;
   cardXpPerLevel: number; cardMaxLevel: number; giftCardAtLevel: number;
-  card: { successRate: number[]; gold: number[]; material: string[]; materialQty: number[]; perUp: Bonus };
+  card: { successRate: number[]; gold: number[]; material: string[]; materialQty: number[]; perUp: Bonus; maxUp: number };
   glowTiers: { min: number; color: string; rate: number }[];
-  wingTiers: { min: number; size: number; color: string; sprite: string | null }[];
+  wingTiers: { min: number; size: number; color: string; sprite: string | null; glow?: boolean }[];
 }
 /** up = upgrade level (gear), lv/xp = card level */
 export interface InvSlot { item: string; qty: number; up?: number; lv?: number; xp?: number }
@@ -43,8 +50,8 @@ export const INV_SIZE = 30;
 export const STASH_SIZE = 60;
 /** Players within this many tiles of a kill share its XP, gold and (own) drop rolls. */
 export const SHARE_RANGE = 12;
-export const SLOTS: Slot[] = ['weapon', 'armor', 'hat', 'charm', 'card'];
-export interface SaveData { map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean }
+export const SLOTS: Slot[] = ['weapon', 'armor', 'hat', 'charm', 'card', 'mount'];
+export interface SaveData { transformed?: boolean; mounted?: boolean; map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean }
 
 export interface Entity {
   id: number; kind: 'player' | 'monster'; type: string; name: string;
@@ -60,6 +67,7 @@ export interface Entity {
   level: number; xp: number; auto: boolean;
   gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot>>; autoSell: boolean; transformed: boolean;
   cooldowns: Record<string, number>; pendingSkill: string | null; talkTo: string | null;
+  mounted: boolean; aggro: number; noRespawn: boolean; nextBlast: number; room?: number;
 }
 
 export type Intent =
@@ -80,7 +88,8 @@ export type Intent =
   | { kind: 'chat'; id: number; text: string }
   | { kind: 'stashPut'; id: number; index: number }
   | { kind: 'stashTake'; id: number; index: number }
-  | { kind: 'debug'; id: number; what: 'level' | 'level5' | 'gold' | 'mats' | 'card' };
+  | { kind: 'debug'; id: number; what: 'level' | 'level5' | 'gold' | 'mats' | 'card' }
+  | { kind: 'mount'; id: number };
 
 export type GameEvent =
   | { t: 'attack'; from: number; to: number; ranged: boolean }
@@ -99,7 +108,9 @@ export type GameEvent =
   | { t: 'cardLevel'; id: number; card: string; lv: number }
   | { t: 'portal'; id: number; to: string; spawn: Tile }
   | { t: 'talk'; id: number; npc: string }
-  | { t: 'chat'; id: number; name: string; text: string };
+  | { t: 'chat'; id: number; name: string; text: string }
+  | { t: 'telegraph'; x: number; y: number; r: number; ms: number }
+  | { t: 'dungeon'; state: 'start' | 'door' | 'clear' | 'reset'; rank?: 'S' | 'A' | 'B'; timeMs?: number };
 
 export class World {
   entities = new Map<number, Entity>();
@@ -112,13 +123,16 @@ export class World {
   /** Shared across rooms (and players). Server persists it; offline it lives in localStorage. */
   stash: InvSlot[];
   stashDirty = false;
+  dungeon: DungeonState = { active: false, startedAt: 0, room: 0, openDoors: [], cleared: false, rank: null, timeMs: 0 };
+  private blasts: { x: number; y: number; r: number; at: number; from: number; mult: number }[] = [];
 
   /** mirror: client-side copy fed by server snapshots; no monsters are spawned and tick() is not called. */
   constructor(public map: MapData, public defs: Defs, seed = 1, opts: { mirror?: boolean; stash?: InvSlot[] } = {}) {
     this.stash = opts.stash ?? [];
     let s = seed >>> 0;
     this.rng = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
-    for (const [x, y] of [...map.rocks, ...map.water, ...map.trees, ...map.npcs.map(n => [n.x, n.y] as Tile)]) this.blocked.add(y * 10000 + x);
+    for (const [x, y] of [...map.rocks, ...map.water, ...map.trees, ...(map.walls ?? []), ...map.npcs.map(n => [n.x, n.y] as Tile)]) this.blocked.add(y * 10000 + x);
+    for (const d of map.dungeon?.doors ?? []) for (const [x, y] of d.tiles) this.blocked.add(y * 10000 + x);
     // cards live in the item table too, so the bag/equip code handles them uniformly
     for (const [id, c] of Object.entries(defs.cards)) if (!id.startsWith('_'))
       defs.items[id] = { name: c.name, slot: 'card', rarity: c.rarity, icon: c.icon, class: c.class, price: 100, element: c.element, bonus: c.bonus };
@@ -131,6 +145,7 @@ export class World {
   isWater(x: number, y: number) { return this.map.water.some(([a, b]) => a === x && b === y); }
   isRock(x: number, y: number) { return this.map.rocks.some(([a, b]) => a === x && b === y); }
   isTree(x: number, y: number) { return this.map.trees.some(([a, b]) => a === x && b === y); }
+  isWall(x: number, y: number) { return (this.map.walls ?? []).some(([a, b]) => a === x && b === y); }
 
   private nearNpc(e: Entity, role: NpcDef['role']) {
     return this.map.npcs.some(n => this.defs.npcs[n.id].role === role && Math.hypot(n.x - e.x, n.y - e.y) <= 3);
@@ -183,7 +198,7 @@ export class World {
       hp: 1, maxHp: 1, mp: 0, maxMp: 0, stats: undefined as unknown as CombatStats, speed: 1, range: 1, attackMs: 1000,
       target: null, nextAttack: 0, repathAt: 0, lastHurt: -1e9, dead: false, respawnAt: 0,
       idleTicks: 0, xpReward: 0, level: 1, xp: 0, auto: false,
-      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, cooldowns: {}, pendingSkill: null, talkTo: null,
+      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, cooldowns: {}, pendingSkill: null, talkTo: null, mounted: false, aggro: 0, noRespawn: false, nextBlast: 0,
     };
   }
 
@@ -197,12 +212,14 @@ export class World {
       Object.assign(e, { xp: save.xp, gold: save.gold, inv: save.inv.filter(s => this.defs.items[s.item]), equip, autoSell: save.autoSell });
     } else { e.equip = { weapon: { item: c.starterWeapon, qty: 1, up: 0 } }; e.inv = [{ item: 'hp_potion', qty: 3 }]; }
     this.applyLevel(e, save?.level ?? 1);
+    if (save?.transformed && e.equip.card) { e.transformed = true; this.recalc(e); e.hp = e.maxHp; e.mp = e.maxMp; }
+    if (save?.mounted && e.equip.mount) e.mounted = true;
     if (vitals) { e.hp = Math.max(1, Math.min(e.maxHp, vitals.hp)); e.mp = Math.min(e.maxMp, vitals.mp); }
     this.entities.set(e.id, e);
     return e;
   }
 
-  private spawnMonster(type: string, t: Tile) {
+  private spawnMonster(type: string, t: Tile): Entity {
     const m = this.defs.monsters[type];
     const e = this.base('monster', type, t);
     Object.assign(e, {
@@ -210,6 +227,7 @@ export class World {
       hp: m.hp, maxHp: m.hp, stats: monsterStats(m), xpReward: m.xp, level: m.level, boss: m.boss,
     });
     this.entities.set(e.id, e);
+    return e;
   }
 
   private applyLevel(e: Entity, level: number) {
@@ -237,7 +255,7 @@ export class World {
   }
 
   save(e: Entity): SaveData {
-    return { map: this.map.id, cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell };
+    return { transformed: e.transformed, mounted: e.mounted, map: this.map.id, cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell };
   }
 
   skillsOf(e: Entity): SkillDef[] {
@@ -251,7 +269,7 @@ export class World {
   upgradeCost(st: InvSlot) {
     const isCard = this.defs.items[st.item].slot === 'card';
     const u = isCard ? this.defs.upgrade.card : this.defs.upgrade, up = st.up ?? 0;
-    if (up >= 10) return null;
+    if (up >= (isCard ? this.defs.upgrade.card.maxUp : this.defs.upgrade.maxUp)) return null;
     return { gold: u.gold[up], mat: u.material[up], qty: u.materialQty[up], rate: u.successRate[up] };
   }
 
@@ -362,9 +380,15 @@ export class World {
     const e = this.entities.get(intent.id);
     if (!e || e.dead) return;
     if (intent.kind === 'move') { e.target = null; e.talkTo = null; this.pathTo(e, intent.to); }
-    else if (intent.kind === 'attack') { const t = this.entities.get(intent.target); if (t && !t.dead) { e.target = t.id; e.repathAt = 0; } }
+    else if (intent.kind === 'mount') {
+      if (!e.equip.mount) { this.events.push({ t: 'msg', id: e.id, text: 'ยังไม่ได้ใส่พาหนะ (ซื้อที่ร้าน Mira)' }); return; }
+      e.mounted = !e.mounted; e.target = null; e.pendingSkill = null;
+    }
+    else if (intent.kind === 'attack') {
+      e.mounted = false; const t = this.entities.get(intent.target); if (t && !t.dead) { e.target = t.id; e.repathAt = 0; } }
     else if (intent.kind === 'auto') e.auto = intent.on;
     else if (intent.kind === 'skill') {
+      e.mounted = false;
       if (intent.target != null) { const t = this.entities.get(intent.target); if (t && !t.dead && t.kind === 'monster') e.target = t.id; }
       e.pendingSkill = intent.skill; e.repathAt = 0;
     }
@@ -415,6 +439,13 @@ export class World {
   tick() {
     this.now += TICK_MS;
     const dt = TICK_MS / 1000;
+    if (this.map.dungeon) this.dungeonTick(this.map.dungeon);
+    for (const b of this.blasts.filter(b => this.now >= b.at)) {
+      const boss = this.entities.get(b.from);
+      if (boss && !boss.dead) for (const p of this.entities.values())
+        if (p.kind === 'player' && !p.dead && Math.hypot(p.x - b.x, p.y - b.y) <= b.r) this.strike(boss, p, { mult: b.mult, flat: 0 });
+    }
+    this.blasts = this.blasts.filter(b => this.now < b.at);
     for (const e of this.entities.values()) {
       e.px = e.x; e.py = e.y;
       if (e.dead) { if (this.now >= e.respawnAt) this.respawn(e); continue; }
@@ -428,10 +459,62 @@ export class World {
       }
       this.step(e, dt);
       if (e.kind === 'player') {
-        const pt = this.map.portals.find(p => p.x === Math.round(e.x) && p.y === Math.round(e.y));
+        const pt = this.map.portals.find(p => p.x === Math.round(e.x) && p.y === Math.round(e.y) && (p.when !== 'cleared' || this.dungeon.cleared));
         if (pt && !e.dead) { e.path = []; this.events.push({ t: 'portal', id: e.id, to: pt.to, spawn: pt.spawn }); }
       }
     }
+  }
+
+  // ---- dungeon: rooms gated by doors, boss at the end, rank by clear time ----
+  private dungeonTick(d: DungeonDef) {
+    const st = this.dungeon;
+    const players = [...this.entities.values()].filter(e => e.kind === 'player');
+    if (!players.length) { if (st.active || st.cleared) this.dungeonReset(d); return; }
+    if (!st.active && !st.cleared) {
+      st.active = true; st.startedAt = this.now; st.room = 0;
+      const k = d.hpScale[Math.min(players.length, d.hpScale.length) - 1];
+      d.rooms.forEach((room, ri) => {
+        for (const [type, n] of room.monsters) for (let i = 0; i < n; i++) {
+          const [x0, y0, x1, y1] = room.area;
+          let t: Tile = [x0, y0];
+          for (let tries = 0; tries < 50; tries++) { t = [x0 + Math.floor(this.rng() * (x1 - x0 + 1)), y0 + Math.floor(this.rng() * (y1 - y0 + 1))]; if (this.walkable(...t)) break; }
+          const m = this.spawnMonster(type, t);
+          m.noRespawn = true; m.aggro = d.aggro; m.maxHp = m.hp = Math.round(m.maxHp * k); m.idleTicks = 1e9; m.home = t;
+          m.room = ri;
+        }
+      });
+      this.events.push({ t: 'dungeon', state: 'start' });
+      return;
+    }
+    if (!st.active) return;
+    st.timeMs = this.now - st.startedAt;
+    const alive = (ri: number) => [...this.entities.values()].some(m => m.kind === 'monster' && m.room === ri && !m.dead);
+    while (st.room < d.rooms.length && !alive(st.room)) {
+      const door = d.doors.find(x => x.room === st.room);
+      if (door) { for (const [x, y] of door.tiles) this.blocked.delete(y * 10000 + x); st.openDoors.push(st.room); this.events.push({ t: 'dungeon', state: 'door' }); }
+      st.room++;
+    }
+    if (st.room >= d.rooms.length) {
+      st.active = false; st.cleared = true;
+      const sec = st.timeMs / 1000;
+      st.rank = sec <= d.rankSec.S ? 'S' : sec <= d.rankSec.A ? 'A' : 'B';
+      const rw = d.rewards[st.rank];
+      for (const p of players) {
+        const g = rw.gold[0] + Math.floor(this.rng() * (rw.gold[1] - rw.gold[0] + 1));
+        p.gold += g; this.events.push({ t: 'gold', id: p.id, amount: g });
+        for (const [item, q] of rw.items) this.grantItem(p, item, q);
+        if (this.rng() < rw.cardChance) this.grantItem(p, this.randomCardFor(p.type));
+      }
+      this.events.push({ t: 'dungeon', state: 'clear', rank: st.rank, timeMs: st.timeMs });
+    }
+  }
+
+  private dungeonReset(d: DungeonDef) {
+    for (const [id, m] of [...this.entities]) if (m.kind === 'monster') this.entities.delete(id);
+    for (const door of d.doors) for (const [x, y] of door.tiles) this.blocked.add(y * 10000 + x);
+    this.blasts = [];
+    this.dungeon = { active: false, startedAt: 0, room: 0, openDoors: [], cleared: false, rank: null, timeMs: 0 };
+    this.events.push({ t: 'dungeon', state: 'reset' });
   }
 
   private walkToNpc(e: Entity) {
@@ -452,6 +535,7 @@ export class World {
   private dist(a: Entity, b: Entity) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
   private combat(e: Entity) {
+    if (e.mounted) return;
     // self-cast skills (heal, whirlwind) don't need a target in range
     if (e.pendingSkill) {
       const sk = this.skillsOf(e).find(k => k.id === e.pendingSkill);
@@ -525,10 +609,10 @@ export class World {
     if (t.kind === 'monster' && t.target == null) { t.target = from.id; t.nextAttack = this.now + 600; }
     t.hp -= dmg;
     if (t.hp > 0) return;
-    t.hp = 0; t.dead = true; t.target = null; t.path = [];
+    t.hp = 0; t.dead = true; t.target = null; t.path = []; t.mounted = false;
     this.events.push({ t: 'die', id: t.id });
     const rs = this.defs.balance.respawnMs;
-    t.respawnAt = this.now + (t.kind === 'monster' ? rs.monster : rs.player);
+    t.respawnAt = t.noRespawn ? Infinity : this.now + (t.kind === 'monster' ? rs.monster : rs.player);
     for (const o of this.entities.values()) if (o.target === t.id) o.target = null;
     if (t.kind === 'monster' && from.kind === 'player') {
       // everyone nearby gets full XP + gold + their own drop rolls: playing together never means sharing less
@@ -579,11 +663,15 @@ export class World {
 
   private playerAi(e: Entity) {
     if (!e.auto || e.dead) return;
+    if (e.mounted) e.mounted = false;   // Auto fights, so it gets off the mount
     if (e.hp < e.maxHp * 0.35) { const i = e.inv.findIndex(s => this.defs.items[s.item].heal?.hp); if (i >= 0) this.use(e, i); }
     if (e.mp < e.maxMp * 0.15) { const i = e.inv.findIndex(s => this.defs.items[s.item].heal?.mp); if (i >= 0) this.use(e, i); }
     if (e.target == null && !e.path.length) {
-      const m = this.nearestMonster(e, 14, e.level + 1);
-      if (m && !m.boss) { e.target = m.id; e.repathAt = 0; }
+      // in a dungeon: only the current room (doors block the rest), bosses included
+      const m = this.map.dungeon
+        ? [...this.entities.values()].filter(o => o.kind === 'monster' && !o.dead && o.room === this.dungeon.room).sort((p, q) => this.dist(e, p) - this.dist(e, q))[0]
+        : this.nearestMonster(e, 14, e.level + 1);
+      if (m && (!m.boss || this.map.dungeon)) { e.target = m.id; e.repathAt = 0; }
     }
     // skills in bar order; heal only when hurt; whirlwind only when the target is close
     if (e.target != null && !e.pendingSkill) {
@@ -598,6 +686,23 @@ export class World {
   }
 
   private monsterAi(e: Entity) {
+    if (e.target == null && e.aggro) {
+      let best: Entity | null = null, bd = e.aggro;
+      for (const o of this.entities.values()) if (o.kind === 'player' && !o.dead) { const d = this.dist(e, o); if (d < bd) { bd = d; best = o; } }
+      if (best) { e.target = best.id; e.repathAt = 0; }
+    }
+    const blast = this.defs.monsters[e.type].blast;
+    if (blast && e.target != null && this.now >= e.nextBlast) {
+      const t = this.entities.get(e.target);
+      if (t && !t.dead) {
+        if (!e.nextBlast) e.nextBlast = this.now + 3000;
+        else {
+          e.nextBlast = this.now + blast.everyMs;
+          this.blasts.push({ x: t.x, y: t.y, r: blast.radius, at: this.now + blast.castMs, from: e.id, mult: blast.mult });
+          this.events.push({ t: 'telegraph', x: t.x, y: t.y, r: blast.radius, ms: blast.castMs });
+        }
+      }
+    }
     if (e.target != null) {
       const t = this.entities.get(e.target);
       // give up if the player ran far from home
@@ -612,7 +717,8 @@ export class World {
   }
 
   private step(e: Entity, dt: number) {
-    let budget = e.speed * dt;
+    const mount = e.mounted && e.equip.mount ? this.defs.items[e.equip.mount.item].mount : undefined;
+    let budget = e.speed * (mount?.speed ?? 1) * dt;
     e.moving = e.path.length > 0;
     while (budget > 0 && e.path.length) {
       const [tx, ty] = e.path[0];
