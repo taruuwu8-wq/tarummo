@@ -15,7 +15,7 @@ export interface Balance {
   elementBonus: Record<Exclude<Element, 'none'>, Record<Element, number>>;
   elementFlat: number;
   hit: { base: number; k: number; min: number; max: number };
-  xpCurve: { a: number; p: number; b: number };
+  xpCurve: { a: number; p: number; b: number; lateFrom?: number; lateStep?: number; maxLevel?: number };
 }
 
 export interface CombatStats {
@@ -91,5 +91,6 @@ export function rollAttack(b: Balance, a: CombatStats, d: CombatStats, rng: () =
 }
 
 export function xpToNext(b: Balance, level: number) {
-  return Math.floor(b.xpCurve.a * Math.pow(level, b.xpCurve.p) + b.xpCurve.b * level);
+  const c = b.xpCurve, late = c.lateFrom && level >= c.lateFrom ? 1 + (level - c.lateFrom + 1) * (c.lateStep ?? 0) : 1;
+  return Math.floor((c.a * Math.pow(level, c.p) + c.b * level) * late);
 }

@@ -1219,7 +1219,9 @@ export class World {
     this.events.push({ t: 'xp', id: p.id, amount });
     if (p.auto) p.autoStats.xp += amount;
     p.xp += amount;
-    while (p.xp >= this.xpNeeded(p)) {
+    const cap = this.defs.balance.xpCurve.maxLevel ?? 99;
+    if (p.level >= cap) p.xp = 0;
+    while (p.level < cap && p.xp >= this.xpNeeded(p)) {
       p.xp -= this.xpNeeded(p);
       this.applyLevel(p, p.level + 1);
       this.events.push({ t: 'level', id: p.id, level: p.level });

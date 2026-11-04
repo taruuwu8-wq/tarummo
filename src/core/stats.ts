@@ -12,7 +12,9 @@ export interface ClassDef {
 export type Slot = 'weapon' | 'offhand' | 'armor' | 'hat' | 'charm' | 'card' | 'mount';
 export interface Bonus { hp?: number; mp?: number; atk?: number; armor?: number; acc?: number; eva?: number; critRate?: number; elemRate?: number; dmgPct?: number }
 export interface ItemDef {
-  name: string; slot: Slot | 'use' | 'mat' | 'shell'; element?: Element; rarity: 'common' | 'uncommon' | 'rare' | 'epic'; icon: string;
+  name: string; slot: Slot | 'use' | 'mat' | 'shell'; element?: Element;
+  /** bag tab for materials: mat (default) | drop | enh */
+  tab?: 'mat' | 'drop' | 'enh'; rarity: 'common' | 'uncommon' | 'rare' | 'epic'; icon: string;
   level?: number; class?: string; price: number;
   weapon?: { min: number; max: number; critDmg: number }; bonus?: Bonus; heal?: { hp?: number; mp?: number };
   mount?: { speed: number; look: string; color: string; sprite: string | null };

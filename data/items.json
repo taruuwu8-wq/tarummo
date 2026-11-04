@@ -239,28 +239,32 @@
     "slot": "mat",
     "rarity": "common",
     "icon": "🫧",
-    "price": 1
+    "price": 1,
+    "tab": "drop"
   },
   "pumpkin_seed": {
     "name": "Pumpkin Seed",
     "slot": "mat",
     "rarity": "common",
     "icon": "🌰",
-    "price": 2
+    "price": 2,
+    "tab": "drop"
   },
   "golem_shard": {
     "name": "Golem Shard",
     "slot": "mat",
     "rarity": "uncommon",
     "icon": "🪨",
-    "price": 10
+    "price": 10,
+    "tab": "mat"
   },
   "spirit_crystal": {
     "name": "Spirit Crystal",
     "slot": "mat",
     "rarity": "rare",
     "icon": "🔮",
-    "price": 40
+    "price": 40,
+    "tab": "enh"
   },
   "cloud_board": {
     "name": "Cloud Board",
@@ -381,7 +385,8 @@
     "shellFor": "weapon",
     "rarity": "rare",
     "icon": "🐚",
-    "price": 30
+    "price": 30,
+    "tab": "enh"
   },
   "shell_armor": {
     "name": "Armor Shell",
@@ -389,7 +394,8 @@
     "shellFor": "armor",
     "rarity": "rare",
     "icon": "🐚",
-    "price": 30
+    "price": 30,
+    "tab": "enh"
   },
   "shell_offhand": {
     "name": "Offhand Shell",
@@ -397,42 +403,48 @@
     "shellFor": "offhand",
     "rarity": "rare",
     "icon": "🐚",
-    "price": 30
+    "price": 30,
+    "tab": "enh"
   },
   "reroll_scroll": {
     "name": "Reroll Scroll",
     "slot": "mat",
     "rarity": "epic",
     "icon": "📜",
-    "price": 50
+    "price": 50,
+    "tab": "enh"
   },
   "protect_scroll": {
     "name": "Rare Protection Scroll",
     "slot": "mat",
     "rarity": "epic",
     "icon": "🛡️",
-    "price": 200
+    "price": 200,
+    "tab": "enh"
   },
   "frost_shard": {
     "name": "Frost Shard",
     "slot": "mat",
     "rarity": "uncommon",
     "icon": "❄️",
-    "price": 8
+    "price": 8,
+    "tab": "drop"
   },
   "treant_bark": {
     "name": "Treant Bark",
     "slot": "mat",
     "rarity": "common",
     "icon": "🪵",
-    "price": 4
+    "price": 4,
+    "tab": "drop"
   },
   "upgrade_scroll": {
     "name": "Upgrade Protection Scroll",
     "slot": "mat",
     "rarity": "epic",
     "icon": "🔰",
-    "price": 200
+    "price": 200,
+    "tab": "enh"
   },
   "hp_potion_big": {
     "name": "Big HP Potion",

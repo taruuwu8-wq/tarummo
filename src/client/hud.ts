@@ -7,7 +7,7 @@ import { SellPanel } from './sellpanel';
 import { itemName, optLines, RARE_COLOR } from './itemtext';
 import type { ItemDef, Slot } from '../core/stats';
 
-type Tab = 'gear' | 'card' | 'use' | 'mat';
+type Tab = 'gear' | 'card' | 'use' | 'enh' | 'mat' | 'drop';
 const SLOT_TH: Record<Slot, string> = { weapon: 'อาวุธ', armor: 'เกราะ', hat: 'หมวก', charm: 'ชาร์ม', card: 'การ์ด', mount: 'พาหนะ', offhand: 'อาวุธรอง' };
 const RARITY_TH: Record<string, string> = { common: 'ธรรมดา', uncommon: 'ดี', rare: 'หายาก', epic: 'ตำนาน' };
 
@@ -52,7 +52,7 @@ export class Hud {
         <div id="sellbox" hidden></div>
         <div class="equip" id="equip"></div>
         <div class="stats" id="stats"></div>
-        <div class="tabs">${(['gear', 'card', 'use', 'mat'] as Tab[]).map(t => `<button type="button" data-tab="${t}">${{ gear: 'อุปกรณ์', card: 'การ์ด', use: 'ของใช้', mat: 'วัตถุดิบ' }[t]}</button>`).join('')}</div>
+        <div class="tabs">${(['gear', 'card', 'use', 'enh', 'mat', 'drop'] as Tab[]).map(t => `<button type="button" data-tab="${t}">${{ gear: 'อุปกรณ์', card: 'การ์ด', use: 'ของใช้', enh: 'ของตีบวก', mat: 'วัตถุดิบ', drop: 'ดรอปมอน' }[t]}</button>`).join('')}</div>
         <div class="grid" id="grid"></div>
         <div class="detail" id="detail"></div>
         <small class="muted">ตั้งค่าขาย/ทิ้งของอัตโนมัติได้ที่ ⚙ ข้างปุ่ม AUTO</small>
@@ -311,7 +311,8 @@ export class Hud {
     const s = p.stats;
     this.$('stats').innerHTML = `<span>ATK ${s.baseAtk + s.weapon.min}–${s.baseAtk + s.weapon.max}</span><span>DEF ${s.armor.melee}/${s.armor.ranged}/${s.armor.magic}</span><span>ACC ${s.acc}</span><span>EVA ${s.eva}</span><span>CRIT ${Math.round(s.critRate * 100)}%</span>${s.elemRate ? `<span>ธาตุ ${Math.round(s.elemRate * 100)}%</span>` : ''}`;
 
-    const inTab = (d: ItemDef) => this.tab === 'gear' ? (SLOTS.includes(d.slot as Slot) && d.slot !== 'card') || d.slot === 'shell' : d.slot === this.tab;
+    const tabOf = (d: ItemDef): Tab => d.slot === 'card' ? 'card' : SLOTS.includes(d.slot as Slot) ? 'gear' : d.slot === 'use' ? 'use' : d.slot === 'shell' ? (d.tab ?? 'enh') : d.tab ?? 'mat';
+    const inTab = (d: ItemDef) => tabOf(d) === this.tab;
     const cells = p.inv.map((st, i) => ({ st, i, d: this.items[st.item] })).filter(c => inTab(c.d));
     this.$('grid').innerHTML = cells.map(c => `<button type="button" class="cell ${c.d.rarity}${this.sel === c.i ? ' sel' : ''}" data-i="${c.i}" title="${c.d.name}"><span class="ic">${c.d.icon}</span>${badge(c.st)}${c.st.qty > 1 ? `<b>${c.st.qty}</b>` : ''}</button>`).join('')
       + `<span class="count">${p.inv.length} / 30</span>`;

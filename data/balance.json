@@ -52,9 +52,13 @@
     "max": 0.98
   },
   "xpCurve": {
-    "a": 45,
-    "p": 2.4,
-    "b": 20
+    "_note": "need(L) = a*L^p + b*L, times (1 + (L-lateFrom)*lateStep) from lateFrom. maxLevel cap. New monsters: xp ~ need(level)/60 so a level takes roughly 60 same-level kills before Lv80.",
+    "a": 25,
+    "p": 2.0,
+    "b": 10,
+    "lateFrom": 80,
+    "lateStep": 0.3,
+    "maxLevel": 99
   },
   "respawnMs": {
     "monster": 8000,
