@@ -955,7 +955,12 @@ export class World {
     else if (intent.kind === 'rarify') { if (this.nearNpc(e, 'rarer')) this.rarify(e, intent.ref, intent.protect); else this.events.push({ t: 'msg', id: e.id, text: 'สุ่ม Rare ได้ที่ Rina ในเมือง' }); }
     else if (intent.kind === 'applyShell') this.applyShell(e, intent.shell, intent.ref);
     else if (intent.kind === 'sellMany') this.sellMany(e, intent.indices);
-    else if (intent.kind === 'recall') { if (this.map.id !== 'town' && !this.map.dungeon && !this.inCombat(e)) e.recallTown = true; else if (this.inCombat(e)) this.events.push({ t: 'msg', id: e.id, text: 'อยู่ในการต่อสู้ วาร์ปไม่ได้' }); }
+    else if (intent.kind === 'recall') {
+      // dungeons: always allowed (emergency exit, even mid-fight; the run is abandoned)
+      if (this.map.id === 'town') this.events.push({ t: 'msg', id: e.id, text: 'อยู่ในเมืองแล้ว' });
+      else if (this.map.dungeon || !this.inCombat(e)) e.recallTown = true;
+      else this.events.push({ t: 'msg', id: e.id, text: 'อยู่ในการต่อสู้ วาร์ปไม่ได้' });
+    }
     else if (intent.kind === 'craft') { if (this.nearNpc(e, 'craft')) this.craft(e, intent.recipe, intent.times); }
     else if (intent.kind === 'autoQuest') {
       e.autoQuest = intent.on && !!this.questOf(e);
@@ -1045,7 +1050,7 @@ export class World {
       if (e.dead) continue;
       if (!this.canAct(e)) continue;
       if (e.kind === 'monster') this.monsterAi(e);
-      else { if (e.recallTown) { if (e.lastHurt > this.now - 300) { e.recallTown = false; delete e.cooldowns['recall']; this.events.push({ t: 'msg', id: e.id, text: 'โดนโจมตี วาร์ปถูกยกเลิก' }); } else this.recall(e, 'town', TOWN_SPAWN); if (!e.cooldowns['recall'] && this.map.id === 'town') e.recallTown = false; } this.playerAi(e); this.walkToNpc(e); }
+      else { if (e.recallTown) { if (e.lastHurt > this.now - 300 && !this.map.dungeon) { e.recallTown = false; delete e.cooldowns['recall']; this.events.push({ t: 'msg', id: e.id, text: 'โดนโจมตี วาร์ปถูกยกเลิก' }); } else this.recall(e, 'town', TOWN_SPAWN); if (!e.cooldowns['recall'] && this.map.id === 'town') e.recallTown = false; } this.playerAi(e); this.walkToNpc(e); }
       this.combat(e);
       // out-of-combat regen for players
       if (e.kind === 'player') {
