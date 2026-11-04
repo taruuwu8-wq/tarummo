@@ -24,6 +24,8 @@ const toTile = (sx: number, sy: number) => ({
 interface View {
   body: Phaser.GameObjects.Image; shadow: Phaser.GameObjects.Ellipse; bar: Phaser.GameObjects.Graphics;
   aura?: Phaser.GameObjects.Ellipse;
+  fxSig?: string; sparks?: Phaser.GameObjects.Particles.ParticleEmitter; ring?: Phaser.GameObjects.Ellipse; ringLv?: number;
+  wings?: Phaser.GameObjects.Container;
   scale: number; phase: number; lunge: number; lungeDir: { x: number; y: number }; height: number;
 }
 
@@ -48,6 +50,10 @@ export class GameScene extends Phaser.Scene {
     this.world = new World(map, defs, Date.now() & 0xffff);
     this.player = this.world.spawnPlayer(data.cls ?? 'swordsman', data.save);
 
+    // tiny 4-point star used by upgrade sparkles
+    const sg = this.make.graphics({}, false);
+    sg.fillStyle(0xffffff, 1).fillPoints([{ x: 4, y: 0 }, { x: 5, y: 3 }, { x: 8, y: 4 }, { x: 5, y: 5 }, { x: 4, y: 8 }, { x: 3, y: 5 }, { x: 0, y: 4 }, { x: 3, y: 3 }], true);
+    sg.generateTexture('spark', 8, 8); sg.destroy();
     this.drawGround(map);
     this.hover = this.add.graphics().setDepth(1);
     this.marker = this.add.graphics().setDepth(1).setAlpha(0);
@@ -116,6 +122,7 @@ export class GameScene extends Phaser.Scene {
     v.shadow.setPosition(sx, sy + 1).setScale(1 + bob / 30);
     v.body.setDepth(10 + sy); v.shadow.setDepth(2);
     if (v.aura) { v.aura.setPosition(sx, sy + 1).setVisible(!e.dead).setScale(1 + Math.sin(now * 4) * 0.08); }
+    if (e.kind === 'player') this.syncGearFx(e, v, x, y, sx, sy, now);
     v.body.setVisible(!e.dead || v.body.alpha > 0.01); v.shadow.setVisible(!e.dead);
 
     v.bar.clear();
@@ -126,6 +133,69 @@ export class GameScene extends Phaser.Scene {
       v.bar.fillStyle(e.kind === 'player' ? 0x5be37a : 0xe5484d, 1).fillRect(bx, by, w * (e.hp / e.maxHp), 4);
       v.bar.setDepth(5000 + sy);
     }
+  }
+
+  private tier<T extends { min: number }>(tiers: T[], lv: number): T | undefined {
+    let t: T | undefined; for (const x of tiers) if (lv >= x.min) t = x; return t;
+  }
+
+  // Upgrade visuals: weapon +N -> sparkles, armor +N -> ground aura, card +N (while transformed) -> wings.
+  private syncGearFx(e: Entity, v: View, x: number, y: number, sx: number, sy: number, now: number) {
+    const wUp = e.equip.weapon?.up ?? 0, aUp = e.equip.armor?.up ?? 0, cUp = e.transformed ? e.equip.card?.up ?? 0 : 0;
+    const sig = `${wUp}|${aUp}|${cUp}|${v.height}`;
+    const u = defs.upgrade;
+    if (sig !== v.fxSig) {
+      v.fxSig = sig;
+      v.sparks?.destroy(); v.sparks = undefined;
+      const gt = this.tier(u.glowTiers, wUp);
+      if (gt && gt.rate > 0) {
+        v.sparks = this.add.particles(0, 0, 'spark', {
+          frequency: 1000 / gt.rate, lifespan: 900, quantity: 1,
+          x: { min: -16, max: 16 }, y: { min: -v.height * 0.9, max: -6 },
+          speedY: { min: -28, max: -8 }, speedX: { min: -8, max: 8 },
+          scale: { start: wUp >= 9 ? 1.4 : 1, end: 0 }, alpha: { start: 1, end: 0 },
+          tint: parseInt(gt.color, 16), blendMode: 'ADD',
+        });
+      }
+      v.ring?.destroy(); v.ring = undefined; v.ringLv = aUp;
+      const at = this.tier(u.glowTiers, aUp);
+      if (at) v.ring = this.add.ellipse(0, 0, 50 + aUp * 2, 22 + aUp, parseInt(at.color, 16), 0.08 + aUp * 0.02)
+        .setStrokeStyle(aUp >= 7 ? 3 : 2, parseInt(at.color, 16), 0.35 + aUp * 0.05).setDepth(2);
+      v.wings?.destroy(); v.wings = undefined;
+      const wt = this.tier(u.wingTiers, cUp);
+      if (wt) v.wings = this.makeWings(wt, v.height);
+    }
+    if (v.sparks) v.sparks.setPosition(x, y).setDepth(v.body.depth + 1).emitting = !e.dead;
+    if (v.ring) v.ring.setPosition(sx, sy + 1).setVisible(!e.dead).setAlpha(0.75 + Math.sin(now * 3) * 0.25);
+    if (v.wings) {
+      v.wings.setPosition(x, y - v.height * 0.45).setDepth(v.body.depth - 0.5).setVisible(!e.dead && v.body.alpha > 0.5);
+      const f = Math.sin(now * 3.2) * 0.1;
+      (v.wings.list[0] as unknown as Phaser.GameObjects.Components.Transform).scaleX = 1 + f;
+      (v.wings.list[1] as unknown as Phaser.GameObjects.Components.Transform).scaleX = -(1 + f);
+    }
+  }
+
+  /** Placeholder wings drawn from feather shapes; replaced by `sprite` in data/upgrade.json when real art exists. */
+  private makeWings(t: { size: number; color: string; sprite: string | null }, h: number) {
+    const c = this.add.container(0, 0);
+    const col = parseInt(t.color, 16), k = t.size * (h / 64);
+    for (const side of [1, -1]) {
+      if (t.sprite && this.textures.exists(t.sprite)) {
+        c.add(this.add.image(0, 0, t.sprite).setOrigin(1, 0.5).setScale(k * 0.5));
+        continue;
+      }
+      const g = this.add.graphics();
+      for (let i = 0; i < 4; i++) {
+        const a = (-178 + i * 20) * Math.PI / 180, L = 54 * k * (1 - i * 0.13), w = 9 * k;
+        const tx = Math.cos(a) * L, ty = Math.sin(a) * L, mx = tx * 0.55, my = ty * 0.55;
+        const px = -Math.sin(a) * w, py = Math.cos(a) * w;
+        g.fillStyle(col, 0.85 - i * 0.12).fillPoints([{ x: 0, y: 0 }, { x: mx + px, y: my + py }, { x: tx, y: ty }, { x: mx - px, y: my - py }], true);
+        g.lineStyle(1, 0xffffff, 0.5).strokePoints([{ x: 0, y: 0 }, { x: mx + px, y: my + py }, { x: tx, y: ty }, { x: mx - px, y: my - py }], true);
+      }
+      g.setScale(side === 1 ? 1 : -1, 1);
+      c.add(g);
+    }
+    return c;
   }
 
   private onEvent(ev: GameEvent) {

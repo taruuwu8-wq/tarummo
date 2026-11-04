@@ -125,7 +125,7 @@ export class Hud {
     if (sig === this.invSig) return;
     this.invSig = sig;
     this.el.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === this.tab));
-    const badge = (st: InvSlot) => st.lv ? `<em>Lv${st.lv}</em>` : st.up ? `<em>+${st.up}</em>` : '';
+    const badge = (st: InvSlot) => (st.up || st.lv) ? `<em>${st.up ? '+' + st.up : ''}${st.lv ? (st.up ? ' ' : '') + 'Lv' + st.lv : ''}</em>` : '';
     this.$('equip').innerHTML = SLOTS.map(s => {
       const st = p.equip[s], d = st ? this.items[st.item] : null;
       return `<button type="button" class="slot ${d ? d.rarity : 'empty'}${this.sel === s ? ' sel' : ''}" data-slot="${s}" title="${d ? d.name : SLOT_TH[s]}"><span class="ic">${d ? d.icon : ''}</span>${st ? badge(st) : ''}<small>${SLOT_TH[s]}</small></button>`;
@@ -161,7 +161,8 @@ export class Hud {
     } else if (cost === null) extra = '<div class="muted">ตีบวกสูงสุดแล้ว (+10)</div>';
     if (card) {
       const u = this.world.defs.upgrade, lv = st.lv ?? 1;
-      extra = `<div class="muted">${card.role} · การ์ด Lv ${lv}${lv < u.cardMaxLevel ? ` (${st.xp ?? 0}/${u.cardXpPerLevel * lv} XP ตอนแปลงร่าง)` : ' (สูงสุด)'} · โบนัส +${(lv - 1) * 10}%</div>
+      const pu = Object.entries(u.card.perUp).map(([k, v]) => `${k.toUpperCase()} +${k === 'elemRate' ? Math.round(v * (st.up ?? 0) * 100) + '%' : v * (st.up ?? 0)}`).join(' · ');
+      extra += `<div class="muted">${(st.up ?? 0) > 0 ? `ตีบวก +${st.up}: ${pu}<br>` : ''}${card.role} · การ์ด Lv ${lv}${lv < u.cardMaxLevel ? ` (${st.xp ?? 0}/${u.cardXpPerLevel * lv} XP ตอนแปลงร่าง)` : ' (สูงสุด)'} · โบนัส +${(lv - 1) * 10}%</div>
         <div class="muted">สกิล: ${card.skills.map((k, i) => `${k.icon} ${k.name}${i >= 2 && lv < 3 ? ' (ปลดล็อก Lv3)' : ''}`).join(' · ')}</div>`;
     }
     det.innerHTML = `<div><b class="${d.rarity}-t">${d.icon} ${d.name}${st.up ? ' +' + st.up : ''}</b> <small class="muted">${RARITY_TH[d.rarity]}${req ? ' · ต้องการ ' + req : ''}${worn ? ' · สวมอยู่' : ''}</small></div>

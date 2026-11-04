@@ -1,11 +1,170 @@
 {
   "_note": "Upgrade +0 -> +10 for weapon/armor. Fail = lose gold+materials only, never the item.",
-  "slots": ["weapon", "armor"],
-  "successRate": [1.0, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
-  "gold": [20, 40, 80, 140, 220, 320, 450, 600, 800, 1000],
-  "material": ["slime_jelly", "slime_jelly", "slime_jelly", "slime_jelly", "pumpkin_seed", "pumpkin_seed", "pumpkin_seed", "golem_shard", "golem_shard", "golem_shard"],
-  "materialQty": [2, 3, 4, 5, 3, 4, 5, 2, 3, 4],
+  "slots": [
+    "weapon",
+    "armor",
+    "card"
+  ],
+  "successRate": [
+    1.0,
+    1.0,
+    0.9,
+    0.8,
+    0.7,
+    0.6,
+    0.5,
+    0.4,
+    0.3,
+    0.2
+  ],
+  "gold": [
+    20,
+    40,
+    80,
+    140,
+    220,
+    320,
+    450,
+    600,
+    800,
+    1000
+  ],
+  "material": [
+    "slime_jelly",
+    "slime_jelly",
+    "slime_jelly",
+    "slime_jelly",
+    "pumpkin_seed",
+    "pumpkin_seed",
+    "pumpkin_seed",
+    "golem_shard",
+    "golem_shard",
+    "golem_shard"
+  ],
+  "materialQty": [
+    2,
+    3,
+    4,
+    5,
+    3,
+    4,
+    5,
+    2,
+    3,
+    4
+  ],
   "cardXpPerLevel": 60,
   "cardMaxLevel": 10,
-  "giftCardAtLevel": 3
+  "giftCardAtLevel": 3,
+  "card": {
+    "_note": "Card upgrade: separate cost table. Each + adds perUp stats on top of the card bonus.",
+    "successRate": [
+      1.0,
+      0.95,
+      0.9,
+      0.8,
+      0.7,
+      0.6,
+      0.5,
+      0.4,
+      0.3,
+      0.2
+    ],
+    "gold": [
+      50,
+      100,
+      160,
+      240,
+      340,
+      460,
+      600,
+      800,
+      1000,
+      1300
+    ],
+    "material": [
+      "pumpkin_seed",
+      "pumpkin_seed",
+      "pumpkin_seed",
+      "golem_shard",
+      "golem_shard",
+      "golem_shard",
+      "golem_shard",
+      "golem_shard",
+      "golem_shard",
+      "golem_shard"
+    ],
+    "materialQty": [
+      3,
+      4,
+      5,
+      1,
+      2,
+      2,
+      3,
+      3,
+      4,
+      5
+    ],
+    "perUp": {
+      "atk": 2,
+      "hp": 15,
+      "armor": 1,
+      "elemRate": 0.01
+    }
+  },
+  "glowTiers": [
+    {
+      "min": 1,
+      "color": "0xffffff",
+      "rate": 0
+    },
+    {
+      "min": 4,
+      "color": "0xffffff",
+      "rate": 3
+    },
+    {
+      "min": 7,
+      "color": "0x7fd6ff",
+      "rate": 6
+    },
+    {
+      "min": 9,
+      "color": "0xffd23f",
+      "rate": 9
+    },
+    {
+      "min": 10,
+      "color": "0xd08bff",
+      "rate": 14
+    }
+  ],
+  "wingTiers": [
+    {
+      "min": 1,
+      "size": 0.55,
+      "color": "0xf4f6ff",
+      "sprite": null
+    },
+    {
+      "min": 4,
+      "size": 0.75,
+      "color": "0x9fd8ff",
+      "sprite": null
+    },
+    {
+      "min": 7,
+      "size": 0.95,
+      "color": "0xffd23f",
+      "sprite": null
+    },
+    {
+      "min": 10,
+      "size": 1.15,
+      "color": "0xd08bff",
+      "sprite": null
+    }
+  ],
+  "_wingNote": "sprite: put a PNG name here (public/sprites/<name>.png, one wing pair centered) to replace the drawn placeholder"
 }

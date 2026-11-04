@@ -27,6 +27,9 @@ export interface CardDef {
 export interface UpgradeCfg {
   slots: Slot[]; successRate: number[]; gold: number[]; material: string[]; materialQty: number[];
   cardXpPerLevel: number; cardMaxLevel: number; giftCardAtLevel: number;
+  card: { successRate: number[]; gold: number[]; material: string[]; materialQty: number[]; perUp: Bonus };
+  glowTiers: { min: number; color: string; rate: number }[];
+  wingTiers: { min: number; size: number; color: string; sprite: string | null }[];
 }
 /** up = upgrade level (gear), lv/xp = card level */
 export interface InvSlot { item: string; qty: number; up?: number; lv?: number; xp?: number }
@@ -152,6 +155,7 @@ export class World {
         if (!e.transformed) continue;
         const k = 1 + 0.1 * ((st.lv ?? 1) - 1), b: Bonus = {};
         for (const [key, v] of Object.entries(this.defs.items[st.item].bonus ?? {})) b[key as keyof Bonus] = v * k;
+        for (const [key, v] of Object.entries(this.defs.upgrade.card.perUp)) b[key as keyof Bonus] = (b[key as keyof Bonus] ?? 0) + v * (st.up ?? 0);
         gear.push({ def: { ...this.defs.items[st.item], bonus: b }, up: 0 });
       } else gear.push({ def: this.defs.items[st.item], up: st.up ?? 0 });
     }
@@ -173,7 +177,8 @@ export class World {
   cardOf(e: Entity) { const c = e.transformed ? e.equip.card : undefined; return c ? this.defs.cards[c.item] : undefined; }
 
   upgradeCost(st: InvSlot) {
-    const u = this.defs.upgrade, up = st.up ?? 0;
+    const isCard = this.defs.items[st.item].slot === 'card';
+    const u = isCard ? this.defs.upgrade.card : this.defs.upgrade, up = st.up ?? 0;
     if (up >= 10) return null;
     return { gold: u.gold[up], mat: u.material[up], qty: u.materialQty[up], rate: u.successRate[up] };
   }
