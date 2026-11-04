@@ -36,10 +36,10 @@
     "anim": {
       "sheet": "adventurer_sheet",
       "faceLeft": true,
-      "fw": 142,
-      "fh": 143,
-      "ax": 69,
-      "ay": 141,
+      "fw": 121,
+      "fh": 122,
+      "ax": 59,
+      "ay": 120,
       "cols": 9,
       "anims": {
         "idle": {
@@ -73,7 +73,7 @@
   },
   "swordsman": {
     "name": "Swordsman",
-    "sprite": "swordsman_m",
+    "sprite": "swordsman_anim",
     "height": 64,
     "speed": 3.5,
     "attackType": "melee",
@@ -105,11 +105,52 @@
       "eva": 1.5
     },
     "starterWeapon": "wooden_sword",
-    "starterOffhand": "wooden_crossbow"
+    "starterOffhand": "wooden_crossbow",
+    "anim": {
+      "sheet": "swordsman_anim_sheet",
+      "faceLeft": true,
+      "fw": 122,
+      "fh": 121,
+      "ax": 67,
+      "ay": 120,
+      "cols": 9,
+      "anims": {
+        "idle": {
+          "row": 0,
+          "n": 3,
+          "fps": 5
+        },
+        "back": {
+          "row": 1,
+          "n": 3,
+          "fps": 8
+        },
+        "walk": {
+          "row": 2,
+          "n": 9,
+          "fps": 12
+        },
+        "attack": {
+          "row": 3,
+          "n": 4,
+          "fps": 14
+        },
+        "hurt": {
+          "row": 4,
+          "n": 2,
+          "fps": 10
+        },
+        "die": {
+          "row": 5,
+          "n": 4,
+          "fps": 8
+        }
+      }
+    }
   },
   "archer": {
     "name": "Archer",
-    "sprite": "archer_f",
+    "sprite": "archer_anim",
     "height": 64,
     "speed": 3.4,
     "attackType": "ranged",
@@ -141,11 +182,47 @@
       "eva": 3
     },
     "starterWeapon": "short_bow",
-    "starterOffhand": "hunting_dagger"
+    "starterOffhand": "hunting_dagger",
+    "anim": {
+      "sheet": "archer_anim_sheet",
+      "faceLeft": true,
+      "fw": 85,
+      "fh": 123,
+      "ax": 43,
+      "ay": 122,
+      "cols": 4,
+      "anims": {
+        "idle": {
+          "row": 0,
+          "n": 3,
+          "fps": 5
+        },
+        "back": {
+          "row": 1,
+          "n": 3,
+          "fps": 8
+        },
+        "walk": {
+          "row": 2,
+          "n": 4,
+          "fps": 10
+        },
+        "attack": {
+          "row": 3,
+          "n": 4,
+          "fps": 14
+        },
+        "hurt": {
+          "row": 4,
+          "n": 2,
+          "fps": 10
+        }
+      }
+    }
   },
   "mage": {
     "name": "Mage",
-    "sprite": "mage_f",
+    "sprite": "mage_anim",
     "height": 64,
     "speed": 3.0,
     "attackType": "magic",
@@ -180,6 +257,42 @@
       "elemRate": 0.005
     },
     "starterWeapon": "apprentice_staff",
-    "starterOffhand": "spell_gun"
+    "starterOffhand": "spell_gun",
+    "anim": {
+      "sheet": "mage_anim_sheet",
+      "faceLeft": true,
+      "fw": 95,
+      "fh": 121,
+      "ax": 50,
+      "ay": 119,
+      "cols": 9,
+      "anims": {
+        "idle": {
+          "row": 0,
+          "n": 3,
+          "fps": 5
+        },
+        "back": {
+          "row": 1,
+          "n": 3,
+          "fps": 8
+        },
+        "walk": {
+          "row": 2,
+          "n": 9,
+          "fps": 12
+        },
+        "attack": {
+          "row": 3,
+          "n": 3,
+          "fps": 12
+        },
+        "hurt": {
+          "row": 4,
+          "n": 3,
+          "fps": 10
+        }
+      }
+    }
   }
 }

@@ -13,6 +13,7 @@ src, outp, spec = sys.argv[1], sys.argv[2], sys.argv[3]
 a = np.array(Image.open(src).convert('RGBA')); H, W = a.shape[:2]
 r, g, b = (a[:, :, i].astype(int) for i in range(3))
 lav = (b - g > 16) & (r > 115) & (b > 145) & (b > r)            # baked ground shadow (light lavender)
+if '--nolav' in sys.argv: lav[:] = False; sys.argv.remove('--nolav')   # sheets without a baked shadow (purple characters!)
 MINX = int(sys.argv[4]) if len(sys.argv) > 4 else 0
 rows = []
 for part in spec.split(','):

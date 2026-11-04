@@ -41,7 +41,9 @@ interface View {
   /** procedural animation state: hit recoil, turn squish, spawn pop, death fall (all 1 → 0 or 0 → 1), last step index */
   hitT: number; flipT: number; popT: number; dieT: number; face: number; step: number;
   /** frame-animated base form (classes with `anim`): sheet key, art faces left; one-shot requests from events */
-  anim?: { sheet: string; faceLeft: boolean }; atkReq?: boolean; hurtReq?: boolean;
+  anim?: { sheet: string; faceLeft: boolean; has: { back: boolean; die: boolean } }; atkReq?: boolean; hurtReq?: boolean; up?: boolean; lastSum?: number;
+  /** main weapon drawn in the hand (animated base forms only; their art is empty-handed) */
+  weapon?: Phaser.GameObjects.Image; weaponKey?: string;
 }
 
 export class GameScene extends Phaser.Scene {
@@ -162,7 +164,7 @@ export class GameScene extends Phaser.Scene {
     for (const e of this.world.entities.values()) { if (!this.views.has(e.id)) this.makeView(e); this.syncView(e, alpha, now, dtMs); }
     this.animDecor(now, dtMs);
     for (const [id, v] of this.views) if (!this.world.entities.has(id)) {
-      v.body.destroy(); v.shadow.destroy(); v.bar.destroy(); v.stIcons?.destroy(); v.bubble?.destroy(); v.rareSparks?.destroy(); v.pillar?.destroy(); v.aura?.destroy(); v.sparks?.destroy(); v.ring?.destroy(); v.wings?.destroy(); v.mount?.destroy(); v.dust?.destroy();
+      v.body.destroy(); v.shadow.destroy(); v.bar.destroy(); v.weapon?.destroy(); v.stIcons?.destroy(); v.bubble?.destroy(); v.rareSparks?.destroy(); v.pillar?.destroy(); v.aura?.destroy(); v.sparks?.destroy(); v.ring?.destroy(); v.wings?.destroy(); v.mount?.destroy(); v.dust?.destroy();
       this.views.delete(id); this.names.get(id)?.destroy(); this.names.delete(id);
     }
     this.drawTargetRing();
@@ -271,11 +273,17 @@ export class GameScene extends Phaser.Scene {
     if (v.dieT > 0) rot = e.facing * 1.35 * (1 - Math.pow(1 - v.dieT, 3));
     if (e.kind === 'player') this.syncForm(e, v);
     if (v.anim) {
-      // the frames already walk/attack/fall: drop the hop and the death tilt, keep a little lean
-      if (e.moving) { bob = 0; sqx = 1; sqy = 1; rot *= 0.4; }
-      if (v.dieT > 0) rot = 0;
+      // walking up the screen shows the back (sticky while moving; screen y = (x + y) * TH/2)
+      const ssum = e.x + e.y;
+      if (!e.moving) v.up = false; else if (v.lastSum != null && Math.abs(ssum - v.lastSum) > 0.004) v.up = ssum < v.lastSum;
+      v.lastSum = ssum;
+      const back = v.up && v.anim.has.back;
+      // the frames already walk/attack/fall: drop the hop and the death tilt (the back row only stands, so it keeps the hop)
+      if (e.moving && !back) { bob = 0; sqx = 1; sqy = 1; rot *= 0.4; }
+      if (v.dieT > 0 && v.anim.has.die) rot = 0;
       const A = v.anim.sheet + '_', cur = v.body.anims.currentAnim?.key ?? '';
-      const busy = v.body.anims.isPlaying && (cur === A + 'attack' || cur === A + 'hurt'), want = A + (e.dead ? 'die' : e.moving ? 'walk' : 'idle');
+      const busy = v.body.anims.isPlaying && (cur === A + 'attack' || cur === A + 'hurt');
+      const want = A + (e.dead ? (v.anim.has.die ? 'die' : 'hurt') : back ? 'back' : e.moving ? 'walk' : 'idle');
       if (!e.dead && v.atkReq) v.body.play(A + 'attack');
       else if (!e.dead && v.hurtReq && !busy) v.body.play(A + 'hurt');
       else if (cur !== want && (!busy || e.dead)) v.body.play(want);
@@ -288,6 +296,7 @@ export class GameScene extends Phaser.Scene {
     sqx *= pop * (1 - v.flipT * 0.8); sqy *= pop;
     v.body.setPosition(x, y).setScale(v.scale * sqx * (v.anim?.faceLeft ? -e.facing : e.facing), v.scale * sqy);
     v.shadow.setPosition(sx, sy + 1).setScale((1 + bob / 30) * pop);
+    if (e.kind === 'player') this.syncWeapon(e, v, x, y, rot, sqy);
     v.body.setDepth(10 + sy); v.shadow.setDepth(2);
     if (v.mount) v.mount.setPosition(sx, y + 4).setDepth(v.body.depth - 0.2).setScale(v.mountLook === 'cloud' ? 1 + Math.sin(now * 5) * 0.03 : 1).setVisible(!e.dead);
     if (v.dust) { v.dust.setPosition(sx, sy + 2).setDepth(v.body.depth - 0.3); v.dust.emitting = e.moving && !e.dead; }
@@ -335,6 +344,27 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Sprite/aura for card form + mount visuals. Runs every frame; only rebuilds when the key changes. */
+  /** Equipped main weapon (tier icon) in the front hand; swings with the attack lunge, hidden from behind / dead / in card form. */
+  private syncWeapon(e: Entity, v: View, x: number, y: number, rot: number, sqy: number) {
+    const it = e.equip.weapon ? defs.items[e.equip.weapon.item] : undefined, key = v.anim && it?.img ? 'wi_' + it.img : '';
+    if (key !== v.weaponKey) {
+      v.weaponKey = key; v.weapon?.destroy(); v.weapon = undefined;
+      if (key) {
+        if (this.textures.exists(key)) v.weapon = this.add.image(0, 0, key);
+        else { this.load.image(key, it!.img!); this.load.once('complete', () => { v.weaponKey = undefined; }); this.load.start(); }
+      }
+    }
+    const w = v.weapon; if (!w) return;
+    const show = !e.dead && !v.up && !e.mounted; w.setVisible(show); if (!show) return;
+    const f = e.facing, H = v.height * sqy, ranged = /bow|staff|pistol/.test(it!.img!);
+    // icons point up-right with the grip bottom-left: hold the grip, mirror when facing left
+    const p = 1 - v.lunge, swing = v.lunge > 0 ? (p < 0.3 ? -0.9 * (p / 0.3) : -0.9 + 2.1 * Math.sin((p - 0.3) / 0.7 * Math.PI / 2)) : 0;
+    const base = ranged ? -0.7 : 0.1;   // swords lean forward, bows/staves stand upright
+    w.setOrigin(f > 0 ? 0.22 : 0.78, 0.8).setFlipX(f < 0).setScale(H * (ranged ? 0.0085 : 0.0078))
+      .setPosition(x + f * v.height * (ranged ? 0.3 : 0.26), y - H * 0.24).setRotation(rot + f * (base + (ranged ? swing * 0.3 : swing)))
+      .setDepth(v.body.depth + (v.lunge > 0 ? 0.05 : -0.05));   // at the side, behind the body; in front while swinging
+  }
+
   private syncForm(e: Entity, v: View) {
     const card = this.world.cardOf(e), mount = e.mounted && e.equip.mount ? defs.items[e.equip.mount.item].mount : undefined;
     const key = `${e.type}|${card?.sprite ?? ''}|${mount?.look ?? ''}`;
@@ -343,7 +373,7 @@ export class GameScene extends Phaser.Scene {
     const base = defs.classes[e.type];
     const sprite = card ? card.sprite : base.sprite, an = !card ? base.anim : undefined;
     // size is measured on the still image; an animated base form uses its sheet (same pixel scale as the still)
-    if (an) { v.anim = { sheet: an.sheet, faceLeft: !!an.faceLeft }; v.body.setTexture(an.sheet, 0).setOrigin(an.ax / an.fw, an.ay / an.fh); v.body.play(`${an.sheet}_idle`); }
+    if (an) { v.anim = { sheet: an.sheet, faceLeft: !!an.faceLeft, has: { back: !!an.anims.back, die: !!an.anims.die } }; v.body.setTexture(an.sheet, 0).setOrigin(an.ax / an.fw, an.ay / an.fh); v.body.play(`${an.sheet}_idle`); }
     else { v.anim = undefined; v.body.anims.stop(); if (v.body.texture.key !== sprite) v.body.setTexture(sprite); v.body.setOrigin(0.5, 1); }
     const fit = this.fitScale(sprite, PLAYER_CORE, PLAYER_MAXW);
     v.scale = fit.scale; v.height = fit.height;
