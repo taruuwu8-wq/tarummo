@@ -98,19 +98,19 @@ const DESERT: PropSet = {
 };
 // draft sets: existing props recoloured (tint) per theme
 const MARSHY: PropSet = {
-  recolor: { hue: 80, sat: 0.5, light: 0.72 }, tint: 0xd8dcd0, trees: ['dead_tree', 'dead_tree', 'oak_b', 'pine', 'dead_tree'], bushes: ['bush_green_a', 'bush_green_b', 'bush_green_c'], rocks: ['rock_mid', 'rock_big'], rockSmall: 'rock_small',
-  spires: ['rock_spire'], ground: ['grass_a', 'grass_b', 'grass_c'], patches: ['bush_green_a', 'grass_fl1', 'mush_small'], extras: ['mush_red', 'mush_orange', 'mush_small', 'skull'],
-  groundSway: true, farTint: 0x9aa0a0,
+  trees: ['marsh_tree_isle', 'mush_glow_big', 'dead_tree', 'mush_glow_big'], bushes: ['reeds', 'reeds_mush', 'glow_grass'], rocks: ['moss_rock', 'moss_rock_b'], rockSmall: 'moss_rock_s',
+  spires: ['marsh_pond', 'boardwalk', 'marsh_bridge', 'marsh_tree_isle', 'marsh_rock_pool'], ground: ['mush_tiny', 'mush_glow_small', 'glow_grass'], patches: ['mush_purple', 'reeds', 'glow_grass', 'mush_glow_small'],
+  extras: ['log', 'stump_moss', 'mist', 'mush_purple'], groundSway: false, farTint: 0x9aa0a0, back: [0.3, 0.45, 0.8]
 };
-const SKYISH: PropSet = {   // pastel blossom isles
-  recolor: { hue: 338, sat: 0.45, light: 1.45 }, trees: ['oak_a', 'oak_b', 'oak_green'], bushes: ['bush_pink', 'bush_white'], rocks: ['rock_mid', 'rock_big'], rockSmall: 'rock_small',
-  spires: ['stone_pillar', 'stone_arch', 'ice_crystal_big', 'rock_spire'], ground: ['grass_fl1', 'grass_fl2', 'grass_c'], patches: ['fb_white', 'fb_pink', 'fl_white', 'fl_yellow', 'fb_mix'],
-  extras: ['ice_crystal_small', 'ice_shard'], groundSway: true, farTint: 0xd8dceb, back: [0.45, 0.55, 0.75],
+const SKYISH: PropSet = {
+  recolor: { hue: 338, sat: 0.45, light: 1.45 }, trees: ['oak_a', 'oak_b', 'sky_tree_isle', 'sky_crystal'], bushes: ['bush_pink', 'bush_white'], rocks: ['sky_crystal', 'sky_obelisk'], rockSmall: 'sky_gem',
+  spires: ['sky_falls', 'sky_crystal_isle', 'sky_tree_isle', 'sky_portal', 'sky_crystal'], ground: ['sky_shard', 'sky_shard_b', 'grass_c'], patches: ['fb_white', 'fb_pink', 'sky_gem_b', 'fl_white', 'sky_shard'],
+  extras: ['sky_gem', 'sky_obelisk', 'sky_portal'], groundSway: true, farTint: 0xd8dceb, back: [0.4, 0.5, 0.8]
 };
 const LAVAY: PropSet = {
-  tint: 0x7a625c, trees: ['dead_tree', 'dead_tree', 'sand_pillar'], bushes: ['dry_grass_b', 'desert_grass'], rocks: ['sand_rocks', 'sand_rock_big'], rockSmall: 'sand_rock_small',
-  spires: ['sand_tower', 'sand_pillar', 'rock_spire'], ground: ['dry_grass', 'sand_stone_small'], patches: ['dry_grass_b', 'sand_stone_small'], extras: ['skull', 'sand_slab'],
-  groundSway: false, farTint: 0x9a8a88, back: [0.25, 0.5, 0.85], spireScale: 1.3,
+  trees: ['lava_obelisk', 'lava_crystal', 'lava_pillar', 'lava_crystal_rock'], bushes: ['lava_crystal_pile', 'ember_shard'], rocks: ['lava_spike_rock', 'lava_crystal_pile'], rockSmall: 'ember_ball',
+  spires: ['lava_arch', 'lava_arch_b', 'lava_pillars', 'lava_float', 'lava_platform', 'lava_obelisk'], ground: ['ember_shard', 'ember_shard_b', 'ember_ball'], patches: ['ember_shard_b', 'lava_crystal_pile', 'ember_shard'],
+  extras: ['lava_ruin', 'lava_ruin_floor', 'ember_ball'], groundSway: false, farTint: 0x9a8a88, back: [0.25, 0.45, 0.85]
 };
 const TWI: PropSet = {
   recolor: { hue: 268, sat: 0.5, light: 0.85 }, tint: 0xd0cce4, trees: ['dead_tree', 'bare_tree_snow', 'oak_b', 'pine', 'oak_a'], bushes: ['bush_green_b', 'bush_snowy'], rocks: ['rock_big', 'rock_mid'], rockSmall: 'rock_small',
@@ -118,9 +118,9 @@ const TWI: PropSet = {
   extras: ['ice_shard', 'ice_crystal_small', 'skull'], groundSway: true, farTint: 0xb0b0c8,
 };
 const VOIDY: PropSet = {
-  recolor: { hue: 282, sat: 0.6, light: 0.6 }, tint: 0x9a88c4, trees: ['dead_tree', 'bare_tree_snow'], bushes: ['bush_snowy', 'bush_green_a'], rocks: ['snow_rock_big', 'rock_big'], rockSmall: 'rock_small',
-  spires: ['ice_crystal_big', 'stone_pillar', 'stone_arch', 'snow_cliff'], ground: ['ice_sprig', 'grass_c'], patches: ['ice_crystal_small', 'ice_shard'],
-  extras: ['ice_crystal_small', 'skull', 'ice_shard'], groundSway: false, farTint: 0x9a90b0, back: [0.35, 0.5, 0.8], spireScale: 1.2,
+  trees: ['void_tree', 'void_crystal', 'void_crystal_rock', 'void_tree'], bushes: ['void_crystal_rock', 'void_crystal'], rocks: ['void_slab', 'void_rock_float'], rockSmall: 'void_pebble',
+  spires: ['void_gate', 'void_crystal_isle', 'void_crystal_float', 'void_float', 'void_rune_plat', 'void_pillar'], ground: ['void_shard', 'void_shard_b', 'void_shard_c', 'void_pebble'], patches: ['void_shard_b', 'void_crystal', 'void_shard'],
+  extras: ['void_pillar', 'void_shard_c', 'void_rock_float'], groundSway: false, farTint: 0x9a90b0, back: [0.3, 0.45, 0.85]
 };
 export const PROP_SETS: Record<string, PropSet> = { grass: GREEN, stone: GREEN, snow: SNOWY, ash: DESERT, marsh: MARSHY, sky: SKYISH, lava: LAVAY, twilight: TWI, void: VOIDY };
 /** multiply two 0xRRGGBB tints */

@@ -31,6 +31,19 @@ PROPS = {
     'cactus_barrel': ('sd_12', 26), 'cactus_rock': ('sd_13', 72), 'cactus_round': ('sd_24', 28), 'cactus_small': ('sd_25', 22), 'dead_tree': ('sd_26', 98), 'desert_grass': ('sd_27', 30),
     'sand_rocks': ('sd_31', 62), 'skull': ('sd_32', 22), 'sand_stone_small': ('sd_33', 24), 'dry_grass': ('sd_34', 16), 'dune': ('sd_35', 40), 'sand_slab': ('sd_40', 36),
     'cactus_group': ('sd_41', 62), 'dune_b': ('sd_47', 42), 'sand_rock_small': ('sd_48', 30), 'cactus': ('sd_49', 46), 'dry_grass_b': ('sd_50', 20), 'dry_grass_c': ('sd_51', 18),
+    # four-theme sheet (marsh / sky / lava / void quadrants, prepped with tools/prep_sheet.py --holes 150)
+    'marsh_pond': ('marsh_00', 120), 'marsh_tree_isle': ('marsh_01', 126), 'marsh_bridge': ('marsh_02', 60), 'reeds_mush': ('marsh_03', 44), 'mush_tiny': ('marsh_04', 14),
+    'mush_purple': ('marsh_05', 32), 'mush_glow_big': ('marsh_06', 52), 'marsh_rock_pool': ('marsh_07', 32), 'moss_rock': ('marsh_08', 32), 'boardwalk': ('marsh_09', 80),
+    'reeds': ('marsh_10', 44), 'log': ('marsh_11', 32), 'stump_moss': ('marsh_12', 26), 'mist': ('marsh_13', 28), 'mush_glow_small': ('marsh_14', 18), 'glow_grass': ('marsh_15', 28),
+    'moss_rock_b': ('marsh_16', 26), 'moss_rock_s': ('marsh_17', 22),
+    'sky_falls': ('sky_00', 130), 'sky_crystal_isle': ('sky_03', 60), 'sky_crystal': ('sky_04', 56), 'sky_gem': ('sky_05', 20), 'sky_gem_b': ('sky_06', 18), 'sky_obelisk': ('sky_07', 48),
+    'sky_tree_isle': ('sky_08', 66), 'sky_portal': ('sky_10', 36), 'sky_shard': ('sky_12', 16), 'sky_shard_b': ('sky_13', 14),
+    'lava_float': ('lava_01', 46), 'ember_shard': ('lava_02', 16), 'lava_spike_rock': ('lava_03', 46), 'lava_platform': ('lava_04', 56), 'lava_ruin_floor': ('lava_05', 40),
+    'ember_shard_b': ('lava_06', 18), 'lava_pillar': ('lava_07', 48), 'lava_pillars': ('lava_08', 54), 'lava_ruin': ('lava_09', 46), 'lava_crystal_pile': ('lava_10', 42),
+    'lava_arch': ('lava_11', 96), 'lava_crystal_rock': ('lava_13', 62), 'ember_ball': ('lava_14', 16), 'lava_arch_b': ('lava_15', 92), 'lava_obelisk': ('lava_16', 76), 'lava_crystal': ('lava_17', 58),
+    'void_crystal_isle': ('void_00', 128), 'void_float': ('void_01', 48), 'void_shard': ('void_02', 14), 'void_rock_float': ('void_03', 28), 'void_pebble': ('void_04', 14),
+    'void_shard_b': ('void_06', 18), 'void_rune_plat': ('void_07', 52), 'void_shard_c': ('void_08', 16), 'void_pillar': ('void_10', 36), 'void_tree': ('void_11', 96),
+    'void_crystal_float': ('void_12', 80), 'void_gate': ('void_13', 100), 'void_slab': ('void_14', 42), 'void_crystal_rock': ('void_15', 40), 'void_crystal': ('void_16', 38),
     'palm': ('sd_30', 100), 'oak_green': ('sd_29', 96), 'bush_green_a': ('sd_37', 24), 'bush_green_b': ('sd_38', 30), 'bush_snowy': ('sd_39', 30), 'bush_green_c': ('sd_42', 36),
 }
 os.makedirs('public/props', exist_ok=True)

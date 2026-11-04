@@ -12,7 +12,7 @@ isometric pixel art game asset sheet, chibi RPG style, crisp pixels, light from 
 each object separated with plenty of empty space, transparent background, no text, no ground tiles under objects,
 ```
 
-## Sheet A: Shadow Marsh + Twilight Wastes
+## Sheet A: Twilight Wastes (Marsh done)
 **Marsh** (Lv22-30, ghosts & witches): twisted swamp trees (2-3), dead trunk/stump, mossy rocks (big/small), reeds & cattails,
 lily pads (flat), glowing mushrooms (blue/green), hanging-moss bush, broken wooden boardwalk piece, skull on a stick, lantern post
 ```
@@ -24,7 +24,7 @@ ruined arch, purple bushes, glowing night flowers, fallen knight's sword in ston
 ...twilight dusk props: purple-leaf trees, dead silver tree, violet crystal clusters (3 sizes), broken stone obelisk, ruined arch, purple bushes, glowing night flowers, sword stuck in stone
 ```
 
-## Sheet B: Sky Isles + Inferno Rift
+## Sheet B: DONE (Sky + Rift received)
 **Sky** (Lv30-38, angels): cherry-blossom trees (2), white marble pillars (whole/broken), floating cloud puff, golden statue,
 small temple shrine, white-gold crystal, flower bushes (pink/white), feather pile
 ```
@@ -36,7 +36,7 @@ lava pool (flat), ember brazier, demon horn bones, smoking vent, charred bush
 ...hellish volcanic props: black basalt rocks with glowing orange lava cracks (3 sizes), obsidian spikes, burnt dead tree, small lava pool, demonic brazier with fire, horned skull bones, smoking ground vent, charred bush
 ```
 
-## Sheet C: Void Abyss + dungeon kit
+## Sheet C: dungeon kit (Void done)
 **Void** (Lv52-60): floating dark rocks, violet void crystals, dead black tree, broken portal ring, eldritch tentacle plant, dark spores
 ```
 ...void abyss props: floating dark rock chunks, glowing violet void crystals, dead black tree, broken stone portal ring, eldritch tentacle plant, dark glowing spore pods

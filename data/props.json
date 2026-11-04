@@ -372,6 +372,242 @@
   "h": 18,
   "w": 19
  },
+ "marsh_pond": {
+  "h": 120,
+  "w": 250
+ },
+ "marsh_tree_isle": {
+  "h": 126,
+  "w": 120
+ },
+ "marsh_bridge": {
+  "h": 60,
+  "w": 108
+ },
+ "reeds_mush": {
+  "h": 44,
+  "w": 49
+ },
+ "mush_tiny": {
+  "h": 14,
+  "w": 17
+ },
+ "mush_purple": {
+  "h": 32,
+  "w": 38
+ },
+ "mush_glow_big": {
+  "h": 52,
+  "w": 36
+ },
+ "marsh_rock_pool": {
+  "h": 32,
+  "w": 48
+ },
+ "moss_rock": {
+  "h": 32,
+  "w": 49
+ },
+ "boardwalk": {
+  "h": 80,
+  "w": 70
+ },
+ "reeds": {
+  "h": 44,
+  "w": 53
+ },
+ "log": {
+  "h": 32,
+  "w": 42
+ },
+ "stump_moss": {
+  "h": 26,
+  "w": 31
+ },
+ "mist": {
+  "h": 28,
+  "w": 60
+ },
+ "mush_glow_small": {
+  "h": 18,
+  "w": 12
+ },
+ "glow_grass": {
+  "h": 28,
+  "w": 40
+ },
+ "moss_rock_b": {
+  "h": 26,
+  "w": 44
+ },
+ "moss_rock_s": {
+  "h": 22,
+  "w": 26
+ },
+ "sky_falls": {
+  "h": 130,
+  "w": 112
+ },
+ "sky_crystal_isle": {
+  "h": 60,
+  "w": 78
+ },
+ "sky_crystal": {
+  "h": 56,
+  "w": 42
+ },
+ "sky_gem": {
+  "h": 20,
+  "w": 14
+ },
+ "sky_gem_b": {
+  "h": 18,
+  "w": 13
+ },
+ "sky_obelisk": {
+  "h": 48,
+  "w": 18
+ },
+ "sky_tree_isle": {
+  "h": 66,
+  "w": 68
+ },
+ "sky_portal": {
+  "h": 36,
+  "w": 68
+ },
+ "sky_shard": {
+  "h": 16,
+  "w": 21
+ },
+ "sky_shard_b": {
+  "h": 14,
+  "w": 13
+ },
+ "lava_float": {
+  "h": 46,
+  "w": 42
+ },
+ "ember_shard": {
+  "h": 16,
+  "w": 10
+ },
+ "lava_spike_rock": {
+  "h": 46,
+  "w": 55
+ },
+ "lava_platform": {
+  "h": 56,
+  "w": 69
+ },
+ "lava_ruin_floor": {
+  "h": 40,
+  "w": 64
+ },
+ "ember_shard_b": {
+  "h": 18,
+  "w": 16
+ },
+ "lava_pillar": {
+  "h": 48,
+  "w": 26
+ },
+ "lava_pillars": {
+  "h": 54,
+  "w": 38
+ },
+ "lava_ruin": {
+  "h": 46,
+  "w": 65
+ },
+ "lava_crystal_pile": {
+  "h": 42,
+  "w": 51
+ },
+ "lava_arch": {
+  "h": 96,
+  "w": 70
+ },
+ "lava_crystal_rock": {
+  "h": 62,
+  "w": 53
+ },
+ "ember_ball": {
+  "h": 16,
+  "w": 14
+ },
+ "lava_arch_b": {
+  "h": 92,
+  "w": 74
+ },
+ "lava_obelisk": {
+  "h": 76,
+  "w": 34
+ },
+ "lava_crystal": {
+  "h": 58,
+  "w": 43
+ },
+ "void_crystal_isle": {
+  "h": 128,
+  "w": 108
+ },
+ "void_float": {
+  "h": 48,
+  "w": 56
+ },
+ "void_shard": {
+  "h": 14,
+  "w": 10
+ },
+ "void_rock_float": {
+  "h": 28,
+  "w": 27
+ },
+ "void_pebble": {
+  "h": 14,
+  "w": 18
+ },
+ "void_shard_b": {
+  "h": 18,
+  "w": 12
+ },
+ "void_rune_plat": {
+  "h": 52,
+  "w": 74
+ },
+ "void_shard_c": {
+  "h": 16,
+  "w": 10
+ },
+ "void_pillar": {
+  "h": 36,
+  "w": 26
+ },
+ "void_tree": {
+  "h": 96,
+  "w": 101
+ },
+ "void_crystal_float": {
+  "h": 80,
+  "w": 70
+ },
+ "void_gate": {
+  "h": 100,
+  "w": 105
+ },
+ "void_slab": {
+  "h": 42,
+  "w": 58
+ },
+ "void_crystal_rock": {
+  "h": 40,
+  "w": 52
+ },
+ "void_crystal": {
+  "h": 38,
+  "w": 38
+ },
  "palm": {
   "h": 100,
   "w": 62
