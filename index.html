@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Nostaru</title>
+  <style>
+    :root { --bg: #1b1f2a; --panel: rgba(20, 24, 36, 0.82); --line: #3a4260; --fg: #e8ecf5; --muted: #9aa3bd; --hp: #e5484d; --mp: #4f8cff; --xp: #9be7ff; --gold: #ffd23f; color-scheme: dark; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); overflow: hidden; font-family: system-ui, sans-serif; }
+    [hidden] { display: none !important; }
+    #game { position: fixed; inset: 0; }
+    #hud { position: fixed; inset: 0; pointer-events: none; z-index: 5; font-size: 12px; }
+    .frame { position: absolute; left: calc(10px + env(safe-area-inset-left, 0px)); top: calc(10px + env(safe-area-inset-top, 0px)); width: 210px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: grid; gap: 4px; }
+    .frame.target { left: auto; right: calc(10px + env(safe-area-inset-right, 0px)); width: 190px; }
+    .name { font-weight: 700; }
+    .bar { position: relative; height: 12px; background: #0c0f18; border-radius: 3px; overflow: hidden; }
+    .bar.mp { height: 6px; }
+    .bar i { position: absolute; inset: 0 auto 0 0; background: var(--hp); transition: width .15s; }
+    .bar.mp i { background: var(--mp); }
+    .frame:not(.target) .bar.hp i { background: #4fc96b; }
+    .bar span { position: relative; display: block; text-align: center; font-size: 10px; line-height: 12px; font-variant-numeric: tabular-nums; }
+    .xp { position: absolute; left: 0; right: 0; bottom: env(safe-area-inset-bottom, 0px); height: 14px; background: #0c0f18; }
+    .xp i { position: absolute; inset: 0 auto 0 0; background: var(--xp); opacity: .7; transition: width .2s; }
+    .xp span { position: relative; display: block; text-align: center; font-size: 10px; line-height: 14px; font-variant-numeric: tabular-nums; }
+    #auto { pointer-events: auto; position: absolute; right: calc(12px + env(safe-area-inset-right, 0px)); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); padding: 10px 16px; font: 700 13px system-ui, sans-serif; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
+    #auto.on { color: #1b1f2a; background: var(--gold); border-color: var(--gold); }
+    #auto:focus-visible, #classes button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    #pick { position: fixed; inset: 0; z-index: 10; display: grid; place-content: center; gap: 16px; padding: 16px; text-align: center; background: radial-gradient(circle at 50% 40%, #2a3350, var(--bg)); }
+    #pick h1 { margin: 0; font-size: 28px; letter-spacing: .04em; }
+    #pick p { margin: 0; color: var(--muted); }
+    #classes { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+    #classes button { width: 140px; display: grid; justify-items: center; gap: 4px; padding: 12px 8px; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; cursor: pointer; font: inherit; }
+    #classes button:hover { border-color: var(--gold); }
+    #classes img { height: 80px; image-rendering: auto; }
+    #classes small { color: var(--muted); font-size: 11px; }
+    #help { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); color: var(--muted); font-size: 11px; text-shadow: 0 1px 2px #000; white-space: nowrap; }
+    @media (max-width: 600px) { .frame { width: 150px; } .frame.target { width: 140px; } #help { display: none; } }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+  <div id="hud"></div>
+  <div id="pick">
+    <h1>Nostaru</h1>
+    <p>เลือกอาชีพ</p>
+    <div id="classes"></div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

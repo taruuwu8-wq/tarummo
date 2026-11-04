@@ -1,0 +1,125 @@
+{
+  "swordsman": {
+    "name": "Swordsman",
+    "sprite": "swordsman_m",
+    "height": 64,
+    "speed": 3.2,
+    "attackType": "melee",
+    "range": 1.3,
+    "attackMs": 850,
+    "base": {
+      "hp": 220,
+      "mp": 60,
+      "atk": 10,
+      "armor": {
+        "melee": 12,
+        "ranged": 10,
+        "magic": 6
+      },
+      "acc": 40,
+      "eva": 20,
+      "critRate": 0.08
+    },
+    "growth": {
+      "hp": 28,
+      "mp": 6,
+      "atk": 2.6,
+      "armor": {
+        "melee": 2.0,
+        "ranged": 1.6,
+        "magic": 1.0
+      },
+      "acc": 3,
+      "eva": 1.5
+    },
+    "weapon": {
+      "min": 14,
+      "max": 19,
+      "upgrade": 0,
+      "critDmg": 0.6
+    }
+  },
+  "archer": {
+    "name": "Archer",
+    "sprite": "archer_f",
+    "height": 64,
+    "speed": 3.4,
+    "attackType": "ranged",
+    "range": 5,
+    "attackMs": 1000,
+    "base": {
+      "hp": 170,
+      "mp": 80,
+      "atk": 9,
+      "armor": {
+        "melee": 8,
+        "ranged": 12,
+        "magic": 7
+      },
+      "acc": 55,
+      "eva": 35,
+      "critRate": 0.15
+    },
+    "growth": {
+      "hp": 20,
+      "mp": 8,
+      "atk": 2.4,
+      "armor": {
+        "melee": 1.2,
+        "ranged": 2.0,
+        "magic": 1.1
+      },
+      "acc": 4,
+      "eva": 3
+    },
+    "weapon": {
+      "min": 10,
+      "max": 18,
+      "upgrade": 0,
+      "critDmg": 0.8
+    }
+  },
+  "mage": {
+    "name": "Mage",
+    "sprite": "mage_f",
+    "height": 64,
+    "speed": 3.0,
+    "attackType": "magic",
+    "range": 4.5,
+    "attackMs": 1200,
+    "base": {
+      "hp": 150,
+      "mp": 140,
+      "atk": 12,
+      "armor": {
+        "melee": 6,
+        "ranged": 7,
+        "magic": 14
+      },
+      "acc": 45,
+      "eva": 18,
+      "critRate": 0.05,
+      "element": "fire",
+      "elemRate": 0.15
+    },
+    "growth": {
+      "hp": 17,
+      "mp": 14,
+      "atk": 3.0,
+      "armor": {
+        "melee": 0.9,
+        "ranged": 1.0,
+        "magic": 2.2
+      },
+      "acc": 3,
+      "eva": 1.2,
+      "elemRate": 0.008
+    },
+    "weapon": {
+      "min": 14,
+      "max": 20,
+      "upgrade": 0,
+      "critDmg": 0.5
+    }
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "_note": "Coefficients adapted from the structure of hatz2/nostale-dmg-calculator (MIT). All values are ours to tune.",
+  "flatAttack": 15,
+  "upgradeBonus": [
+    0,
+    0.1,
+    0.15,
+    0.22,
+    0.32,
+    0.43,
+    0.54,
+    0.65,
+    0.9,
+    1.2,
+    2.0
+  ],
+  "elementBonus": {
+    "fire": {
+      "none": 0.3,
+      "fire": 0,
+      "water": 1.0,
+      "light": 0,
+      "shadow": 0.5
+    },
+    "water": {
+      "none": 0.3,
+      "fire": 1.0,
+      "water": 0,
+      "light": 0.5,
+      "shadow": 0
+    },
+    "light": {
+      "none": 0.3,
+      "fire": 0.5,
+      "water": 0,
+      "light": 0,
+      "shadow": 2.0
+    },
+    "shadow": {
+      "none": 0.3,
+      "fire": 0,
+      "water": 0.5,
+      "light": 2.0,
+      "shadow": 0
+    }
+  },
+  "elementFlat": 30,
+  "hit": {
+    "base": 0.5,
+    "k": 40,
+    "min": 0.1,
+    "max": 0.98
+  },
+  "xpCurve": {
+    "a": 30,
+    "p": 1.7,
+    "b": 10
+  },
+  "respawnMs": {
+    "monster": 8000,
+    "player": 3000
+  }
+}

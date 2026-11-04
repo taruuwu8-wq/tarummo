@@ -1,0 +1,91 @@
+{
+  "slime": {
+    "name": "Pink Slime",
+    "sprite": "slime",
+    "height": 34,
+    "speed": 1.2,
+    "wanderRadius": 3,
+    "level": 1,
+    "hp": 120,
+    "xp": 8,
+    "attackType": "melee",
+    "range": 1.2,
+    "attackMs": 1600,
+    "atk": {
+      "min": 6,
+      "max": 9
+    },
+    "armor": {
+      "melee": 5,
+      "ranged": 5,
+      "magic": 4
+    },
+    "armorUpgrade": 0,
+    "acc": 20,
+    "eva": 10,
+    "critRate": 0.02,
+    "element": "water",
+    "res": {
+      "water": 0.1
+    }
+  },
+  "pumpkin": {
+    "name": "Pumpkin Imp",
+    "sprite": "pumpkin",
+    "height": 58,
+    "speed": 1.6,
+    "wanderRadius": 3,
+    "level": 3,
+    "hp": 260,
+    "xp": 22,
+    "attackType": "melee",
+    "range": 1.3,
+    "attackMs": 1400,
+    "atk": {
+      "min": 12,
+      "max": 17
+    },
+    "armor": {
+      "melee": 12,
+      "ranged": 10,
+      "magic": 8
+    },
+    "armorUpgrade": 0,
+    "acc": 32,
+    "eva": 18,
+    "critRate": 0.05,
+    "element": "shadow",
+    "res": {
+      "shadow": 0.15
+    }
+  },
+  "golem": {
+    "name": "Meadow Golem",
+    "sprite": "golem",
+    "height": 84,
+    "speed": 1.0,
+    "wanderRadius": 2,
+    "level": 6,
+    "hp": 1400,
+    "xp": 140,
+    "attackType": "melee",
+    "range": 1.6,
+    "attackMs": 2000,
+    "atk": {
+      "min": 22,
+      "max": 32
+    },
+    "armor": {
+      "melee": 30,
+      "ranged": 26,
+      "magic": 14
+    },
+    "armorUpgrade": 1,
+    "acc": 45,
+    "eva": 10,
+    "critRate": 0.05,
+    "element": "none",
+    "res": {},
+    "boss": true
+  }
+}
