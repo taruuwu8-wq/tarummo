@@ -19,15 +19,23 @@ const dither = (x: number, y: number) => BAYER[(y & 3) * 4 + (x & 3)];
 const rgb = (c: number) => [(c >> 16) & 255, (c >> 8) & 255, c & 255];
 const pick = (pal: number[][], v: number) => pal[Math.max(0, Math.min(pal.length - 1, Math.floor(v * pal.length)))];
 
-interface Theme { grass: number[]; dirt: number[]; sand: number; water: number[]; cliff: number[]; flowers: number[] }
+// Palettes are kept muted (lower saturation/contrast than the character sprites) so characters read first.
+interface Theme { grass: number[]; dirt: number[]; sand: number; water: number[]; cliff: number[]; flowers: number[]; flowerRate: number;
+  /** town: cobblestone pavers over the whole map except a grass border; fountain gets a stone rim instead of sand */
+  stone?: number[]; mortar?: number }
 const MEADOW: Theme = {
-  grass: [0x3f7a3a, 0x4d8f3f, 0x5ea546, 0x70b84e, 0x86c95a],
-  dirt: [0x7d5a3a, 0x93704a, 0xa9855a, 0xbd9a6a],
-  sand: 0xd8c48c,
-  water: [0x2f6fae, 0x3f86c6, 0x58a2dc, 0x8fd0f0],
-  cliff: [0x6a4a30, 0x5a3e28, 0x4a3220, 0x3a2818],
-  flowers: [0xffffff, 0xffe066, 0xff9fc8, 0xb7a2ff],
+  grass: [0x45703c, 0x507c43, 0x5b884a, 0x679352, 0x759f5c],
+  dirt: [0x76593e, 0x87694a, 0x977957, 0xa68865],
+  sand: 0xcdbd90,
+  water: [0x325f8e, 0x3c719f, 0x4c84b0, 0x86b8d4],
+  cliff: [0x5e4632, 0x503b2a, 0x423122, 0x34271b],
+  flowers: [0xeae6dc, 0xe8d27a, 0xe0a6bf, 0xb3a6d8], flowerRate: 0.007,
 };
+const TOWN: Theme = {
+  ...MEADOW, flowerRate: 0.004,
+  stone: [0x7d7870, 0x8b857b, 0x989186, 0xa59e92], mortar: 0x625e57,
+};
+export const THEMES: Record<string, Theme> = { grass: MEADOW, stone: TOWN };
 
 /** distance from p to segment ab */
 function segDist(px: number, py: number, ax: number, ay: number, bx: number, by: number) {
@@ -40,7 +48,7 @@ function segDist(px: number, py: number, ax: number, ay: number, bx: number, by:
  * Tile (x, y) has its centre at screen ((x-y)*TW/2, (x+y)*TH/2).
  */
 export function paintGround(scene: Phaser.Scene, map: MapData, isWater: (x: number, y: number) => boolean, TW: number, TH: number) {
-  const th = MEADOW, CLIFF = 40;
+  const th = THEMES[map.ground] ?? MEADOW, CLIFF = 40;
   const minX = -map.height * TW / 2 - TW / 2, maxX = map.width * TW / 2 + TW / 2;
   const minY = -TH / 2, maxY = (map.width + map.height) * TH / 2 + TH / 2 + CLIFF;
   const W = Math.ceil((maxX - minX) / PX), H = Math.ceil((maxY - minY) / PX);
@@ -56,6 +64,7 @@ export function paintGround(scene: Phaser.Scene, map: MapData, isWater: (x: numb
   const water: [number, number][] = [];
   for (let y = 0; y < map.height; y++) for (let x = 0; x < map.width; x++) if (isWater(x, y)) water.push([x, y]);
   const G = th.grass.map(rgb), D = th.dirt.map(rgb), WA = th.water.map(rgb), C = th.cliff.map(rgb), SA = rgb(th.sand);
+  const ST = th.stone?.map(rgb), MO = th.mortar != null ? rgb(th.mortar) : null;
 
   for (let cy = 0; cy < H; cy++) for (let cx = 0; cx < W; cx++) {
     const sx = minX + cx * PX + 1, sy = minY + cy * PX + 1, i = (cy * W + cx) * 4;
@@ -70,13 +79,19 @@ export function paintGround(scene: Phaser.Scene, map: MapData, isWater: (x: numb
       if (wf > 0.42) {
         const depth = Math.min(1, (wf - 0.42) * 1.4), ripple = Math.sin((fx * 1.3 + fy) * 6 + vnoise(fx * 2, fy * 2, 9) * 5);
         col = wf < 0.5 ? WA[0] : ripple > 0.93 && depth > 0.2 ? WA[3] : pick(WA.slice(0, 3), 1 - depth * 0.8 + dt * 0.3);
-      } else if (wf > 0.3) col = wf > 0.37 ? D[0] : SA;
+      } else if (wf > 0.3) col = ST ? (wf > 0.37 ? MO! : ST[3]) : wf > 0.37 ? D[0] : SA;   // town: stone fountain rim
       else {
         let pd = 9;
         for (const s of segs) pd = Math.min(pd, segDist(fx, fy, s[0], s[1], s[2], s[3]));
         const pw = 0.42 + (vnoise(fx * 1.7, fy * 1.7, 3) - 0.5) * 0.35;
         const n = fbm(fx * 0.32, fy * 0.32, 1) * 0.6 + fbm(fx * 1.6, fy * 1.6, 2) * 0.4;
-        if (pd < pw + dt * 0.12) col = pick(D, fbm(fx * 2.5, fy * 2.5, 4) + dt * 0.3);
+        const border = Math.min(fx + 0.5, fy + 0.5, map.width - 0.5 - fx, map.height - 0.5 - fy) + (vnoise(fx * 1.3, fy * 1.3, 6) - 0.5) * 0.9;
+        if (ST && MO && (border > 1.6 || pd < 0.7)) {
+          // cobblestone pavers aligned to the iso axes; offset rows, per-stone tone, bevel toward the bottom edge, worn cracks
+          const u = fx * 2.4, v = fy * 2.4, row = Math.floor(v), u2 = u + (row & 1) * 0.5, cell = Math.floor(u2), fu = u2 - cell, fv = v - row;
+          if (fu < 0.09 || fv < 0.12) col = hash(cell, row, 21) < 0.25 && border < 3 ? G[1] : MO;   // moss in the joints near the grass
+          else col = pick(ST, 0.25 + hash(cell, row, 22) * 0.55 + dt * 0.18 - fv * 0.25 - (fu > 0.9 ? 0.2 : 0) - (vnoise(fx * 6, fy * 6, 23) < 0.12 ? 0.3 : 0));
+        } else if (pd < pw + dt * 0.12) col = pick(D, fbm(fx * 2.5, fy * 2.5, 4) + dt * 0.3);
         else col = pick(G, n * 1.15 - 0.08 + dt * 0.22 - (pd < pw + 0.25 ? 0.18 : 0));
       }
     } else {
@@ -100,7 +115,7 @@ export function paintGround(scene: Phaser.Scene, map: MapData, isWater: (x: numb
     if (!isGrass(cx, cy)) continue;
     const h = hash(cx, cy, 11);
     // flowers grow in meadows (noise patches), almost none elsewhere
-    const patch = vnoise(cx * 0.035, cy * 0.07, 13), fl = patch > 0.66 ? 0.012 : 0.0008;
+    const patch = vnoise(cx * 0.035, cy * 0.07, 13), fl = patch > 0.66 ? th.flowerRate : th.flowerRate * 0.07;
     if (h < fl && isGrass(cx + 1, cy) && isGrass(cx - 1, cy) && isGrass(cx, cy - 1)) {
       const f = FL[Math.floor(vnoise(cx * 0.05, cy * 0.1, 14) * FL.length * 0.999)];
       put(cx, cy + 1, G[0]); put(cx - 1, cy, f); put(cx + 1, cy, f); put(cx, cy - 1, f); put(cx, cy, [255, 214, 90]);
@@ -142,7 +157,7 @@ export function makeProps(scene: Phaser.Scene) {
   const make = (key: string, w: number, h: number, draw: (c: CanvasRenderingContext2D) => void) => {
     const t = scene.textures.createCanvas(key, w, h)!; draw(t.getContext()); t.refresh(); t.setFilter(Phaser.Textures.FilterMode.NEAREST);
   };
-  const LEAF = [0x1f3d22, 0x2d5a2e, 0x3d7a3a, 0x4f9a44, 0x6cb85a, 0x8fd06a];
+  const LEAF = [0x22381f, 0x2f4f2c, 0x3d6438, 0x4b7843, 0x5e8b51, 0x76a062];
   for (let k = 0; k < 3; k++) make(`m_oak${k}`, 40, 52, c => {
     // trunk with bark shading, roots
     rect(c, 17, 30, 6, 20, 0x3a2616); rect(c, 18, 30, 4, 20, 0x5a3a22); rect(c, 18, 30, 1, 20, 0x74502e); rect(c, 15, 48, 10, 2, 0x3a2616);
@@ -167,6 +182,35 @@ export function makeProps(scene: Phaser.Scene) {
   make('m_cloud', 64, 32, c => {
     const gr = c.createRadialGradient(32, 16, 2, 32, 16, 30); gr.addColorStop(0, 'rgba(0,0,0,0.9)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
     c.setTransform(1, 0, 0, 0.5, 0, 8); c.fillStyle = gr; c.beginPath(); c.arc(32, 16, 30, 0, Math.PI * 2); c.fill();
+  });
+  // town props
+  make('m_lamp', 10, 40, c => {
+    rect(c, 4, 10, 2, 28, 0x2b2a30); rect(c, 4, 10, 1, 28, 0x4a4852); rect(c, 2, 37, 6, 3, 0x2b2a30);
+    rect(c, 2, 2, 6, 8, 0x2b2a30); rect(c, 3, 3, 4, 6, 0xffd77a); rect(c, 3, 3, 2, 3, 0xfff2c4); rect(c, 1, 1, 8, 2, 0x3a3842);
+  });
+  make('m_crate', 16, 16, c => {
+    rect(c, 1, 3, 14, 12, 0x4a3320); rect(c, 2, 4, 12, 10, 0x8a6440); rect(c, 2, 4, 12, 2, 0xa57a50); rect(c, 7, 4, 2, 10, 0x6d4d30); rect(c, 2, 8, 12, 1, 0x6d4d30);
+  });
+  make('m_barrel', 14, 18, c => {
+    rect(c, 2, 1, 10, 16, 0x3e2a1a); rect(c, 3, 2, 8, 14, 0x7a5434); rect(c, 3, 2, 3, 14, 0x956a42); rect(c, 2, 5, 10, 1, 0x55555e); rect(c, 2, 12, 10, 1, 0x55555e); rect(c, 4, 1, 6, 2, 0x5a3e26);
+  });
+  make('m_flowerpot', 14, 14, c => {
+    blob(c, 14, 10, [{ x: 4, y: 5, r: 4 }, { x: 9, y: 5, r: 4 }, { x: 7, y: 3, r: 3 }], LEAF, 61);
+    rect(c, 4, 4, 1, 1, 0xe0a6bf); rect(c, 8, 3, 1, 1, 0xe8d27a); rect(c, 10, 6, 1, 1, 0xe0a6bf);
+    rect(c, 2, 9, 10, 5, 0x6a3e2a); rect(c, 3, 9, 8, 1, 0x8e573a);
+  });
+  for (const [k, a, b2] of [['red', 0xa8453e, 0xe6ddd0], ['blue', 0x3e64a8, 0xe6ddd0], ['green', 0x3e8a5a, 0xe6ddd0]] as [string, number, number][]) make(`m_stall_${k}`, 40, 34, c => {
+    // striped awning on two posts over a counter (the NPC stands behind it)
+    rect(c, 3, 8, 2, 24, 0x4a3320); rect(c, 35, 8, 2, 24, 0x4a3320);
+    for (let i = 0; i < 8; i++) rect(c, 1 + i * 5, 2, 5, 7, i % 2 ? b2 : a);
+    rect(c, 1, 2, 38, 1, 0x2a1f18); rect(c, 1, 8, 38, 1, 0x2a1f18);
+    for (let i = 0; i < 8; i++) rect(c, 2 + i * 5, 9, 3, 1, i % 2 ? b2 : a);
+    rect(c, 2, 22, 36, 11, 0x4a3320); rect(c, 3, 23, 34, 9, 0x8a6440); rect(c, 3, 23, 34, 2, 0xa57a50); rect(c, 3, 27, 34, 1, 0x6d4d30);
+  });
+  // soft contact shadow under props (one texture, scaled per prop)
+  make('m_shadow', 32, 12, c => {
+    const gr = c.createRadialGradient(16, 6, 1, 16, 6, 16); gr.addColorStop(0, 'rgba(0,0,0,0.55)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    c.setTransform(1, 0, 0, 0.375, 0, 3.75); c.fillStyle = gr; c.beginPath(); c.arc(16, 6, 16, 0, Math.PI * 2); c.fill();
   });
   make('m_mote', 3, 3, c => { rect(c, 1, 0, 1, 3, 0xfff6c8); rect(c, 0, 1, 3, 1, 0xfff6c8); });
 }

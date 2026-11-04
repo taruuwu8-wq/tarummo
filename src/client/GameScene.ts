@@ -9,6 +9,8 @@ import { Hud } from './hud';
 import { paintGround, makeProps, scatter, PX } from './mapart';
 
 const TW = 64, TH = 32;
+/** visible body height / max width (px) for players + card forms, and for town NPCs (a bit smaller so they don't crowd) */
+const PLAYER_CORE = 56, PLAYER_MAXW = 60, NPC_CORE = 46, NPC_MAXW = 52;
 const defs = loadDefs();
 
 // Save on tab hide/close. Registered once; points at whichever scene is current.
@@ -182,16 +184,41 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Scale that gives every character the same visible body size: measure the "core" (rows at least 35% as wide as the
+   * widest row, so spiky hair, antennae, raised weapons and thin wing tips don't count), fit that to `core` px tall,
+   * and never let the whole sprite get wider than `maxW`. Cached per texture.
+   */
+  private sizeCache = new Map<string, { core: number; w: number; h: number }>();
+  private fitScale(key: string, core: number, maxW: number) {
+    let m = this.sizeCache.get(key);
+    if (!m) {
+      const src = this.textures.get(key).getSourceImage() as HTMLImageElement, w = src.width, h = src.height;
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      const ctx = cv.getContext('2d')!; ctx.drawImage(src, 0, 0);
+      const d = ctx.getImageData(0, 0, w, h).data, rows: number[] = [];
+      for (let y = 0; y < h; y++) { let n = 0; for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 40) n++; rows.push(n); }
+      const lim = Math.max(...rows) * 0.35, top = rows.findIndex(n => n >= lim);
+      let bot = h - 1; while (bot > 0 && rows[bot] < lim * 0.5) bot--;
+      m = { core: Math.max(8, bot - top + 1), w, h };
+      this.sizeCache.set(key, m);
+    }
+    const sc = Math.min(core / m.core, maxW / m.w);
+    return { scale: sc, height: m.h * sc };
+  }
+
   private makeView(e: Entity) {
     const d = e.kind === 'player' ? defs.classes[e.type] : defs.monsters[e.type];
     const body = this.add.image(0, 0, d.sprite).setOrigin(0.5, 1).setInteractive({ useHandCursor: e.kind === 'monster', pixelPerfect: false });
     body.setData('id', e.id);
-    const scale = d.height / body.height;
-    const shadow = this.add.ellipse(0, 0, body.width * scale * 0.6, 10, 0x000000, 0.28);
+    // players (and their card forms) share one body size; monsters keep their designed height
+    const fit = e.kind === 'player' ? this.fitScale(d.sprite, PLAYER_CORE, PLAYER_MAXW) : { scale: d.height / body.height, height: d.height };
+    const scale = fit.scale;
+    const shadow = this.add.ellipse(0, 0, Math.min(46, body.width * scale * 0.6), 10, 0x000000, 0.28);
     const bar = this.add.graphics();
     const tint = 'tint' in d && d.tint ? parseInt(d.tint as string, 16) : undefined;
     if (tint) body.setTint(tint);
-    this.views.set(e.id, { body, shadow, bar, scale, tint, phase: Math.random() * 6, lunge: 0, lungeDir: { x: 0, y: 0 }, height: d.height, hitT: 0, flipT: 0, popT: 1, dieT: 0, face: e.facing, step: 0 });
+    this.views.set(e.id, { body, shadow, bar, scale, tint, phase: Math.random() * 6, lunge: 0, lungeDir: { x: 0, y: 0 }, height: fit.height, hitT: 0, flipT: 0, popT: 1, dieT: 0, face: e.facing, step: 0 });
   }
 
   private syncView(e: Entity, alpha: number, now: number, dtMs: number) {
@@ -291,9 +318,10 @@ export class GameScene extends Phaser.Scene {
     if (key === v.formKey) return;
     v.formKey = key;
     const base = defs.classes[e.type];
-    const sprite = card ? card.sprite : base.sprite, height = card ? card.height : base.height;
+    const sprite = card ? card.sprite : base.sprite;
     if (v.body.texture.key !== sprite) { v.body.setTexture(sprite); }
-    v.scale = height / v.body.height; v.height = height;
+    const fit = this.fitScale(sprite, PLAYER_CORE, PLAYER_MAXW);
+    v.scale = fit.scale; v.height = fit.height;
     v.aura?.destroy(); v.aura = undefined;
     if (card) v.aura = this.add.ellipse(0, 0, 56, 26, parseInt(card.aura, 16), 0.35).setDepth(2).setStrokeStyle(2, parseInt(card.aura, 16), 0.9);
     v.mount?.destroy(); v.mount = undefined; v.dust?.destroy(); v.dust = undefined; v.mountLook = mount?.look;
@@ -585,36 +613,83 @@ export class GameScene extends Phaser.Scene {
     for (const c of this.clouds) { c.x += dtMs * 0.012; c.y += dtMs * 0.004; if (c.x > b.x1 + 300) { c.x = b.x0 - 300; c.y = b.y0 + Math.random() * (b.y1 - b.y0); } }
   }
 
-  /** v2 look: painted ground, shaded swaying props, border forest, cloud shadows, floating motes. */
+  /** v2 look: painted ground, props grouped in clusters with contact shadows, border forest, ambient. */
   private drawGroundV2(map: MapData) {
     const g = paintGround(this, map, (x, y) => this.world.isWater(x, y), TW, TH);
     this.add.image(g.x, g.y, g.key).setOrigin(0, 0).setScale(PX).setDepth(0);
     makeProps(this);
-    const h = (x: number, y: number) => (((x * 73856093) ^ (y * 19349663)) >>> 0) % 1000 / 1000;
-    const tree = (fx: number, fy: number, sway = 0.025) => {
-      const { sx, sy } = toScreen(fx, fy), k = h(Math.round(fx * 7), Math.round(fy * 5));
-      const key = k < 0.22 ? 'm_pine' : `m_oak${Math.floor(k * 3)}`;
-      const o = this.add.image(sx, sy + 4, key).setOrigin(0.5, 1).setScale(PX * (0.9 + k * 0.25)).setDepth(10 + sy).setFlipX(k > 0.5);
-      this.sway.push({ o, ph: k * 6.28, amp: sway });
+    const h = (x: number, y: number) => (((Math.round(x * 13) * 73856093) ^ (Math.round(y * 17) * 19349663)) >>> 0) % 1000 / 1000;
+    const prop = (key: string, fx: number, fy: number, o: { scale?: number; sway?: number; flip?: boolean; shadow?: number; tint?: number; above?: number } = {}) => {
+      const { sx, sy } = toScreen(fx, fy);
+      const img = this.add.image(sx, sy + 4, key).setOrigin(0.5, 1).setScale(PX * (o.scale ?? 1)).setDepth(10 + sy + (o.above ?? 0)).setFlipX(!!o.flip);
+      if (o.tint) img.setTint(o.tint);
+      if (o.shadow) this.add.image(sx, sy + 3, 'm_shadow').setScale(o.shadow / 32, o.shadow / 80).setDepth(1.5);
+      if (o.sway) this.sway.push({ o: img, ph: h(fx, fy) * 6.28, amp: o.sway });
+      return img;
+    };
+    const tuft = (fx: number, fy: number) => prop('m_tuft', fx, fy, { sway: 0.14, scale: 0.8 + h(fy, fx) * 0.4, flip: h(fx, fy) > 0.5 });
+    const tree = (fx: number, fy: number, far = false) => {
+      const k = h(fx, fy), key = k < 0.22 ? 'm_pine' : `m_oak${Math.floor(k * 3)}`;
+      prop(key, fx, fy, { scale: (far ? 0.75 : 0.8) + k * 0.18, sway: far ? 0.014 : 0.022, flip: k > 0.5, shadow: far ? 0 : 48, tint: far ? 0xaab0b8 : undefined });
+      if (!far) { tuft(fx - 0.35, fy + 0.25); if (k > 0.45) prop('m_bush', fx + 0.4, fy + 0.1, { shadow: 26, scale: 0.8 }); }
     };
     for (const [x, y] of map.trees) tree(x, y);
-    // border forest along the two back edges frames the map without hiding anything
-    for (let i = -1; i <= map.width; i += 1.3) tree(i + (h(i * 10, 1) - 0.5) * 0.6, -1.1 - h(i * 10, 2) * 0.9, 0.018);
-    for (let i = -1; i <= map.height; i += 1.3) tree(-1.1 - h(1, i * 10) * 0.9, i + (h(2, i * 10) - 0.5) * 0.6, 0.018);
-    for (const [x, y] of map.rocks) { const { sx, sy } = toScreen(x, y); this.add.image(sx, sy + 4, 'm_rock').setOrigin(0.5, 1).setScale(PX).setDepth(10 + sy).setFlipX(h(x, y) > 0.5); }
-    const blocked = (x: number, y: number) => !this.world.walkable(x, y) || this.world.isWater(x, y);
-    for (const [x, y] of scatter(map, blocked, 14, 3)) { const { sx, sy } = toScreen(x, y); this.add.image(sx, sy + 3, 'm_bush').setOrigin(0.5, 1).setScale(PX).setDepth(10 + sy); }
-    for (const [x, y] of scatter(map, blocked, 90, 5)) {
-      const { sx, sy } = toScreen(x, y), o = this.add.image(sx, sy + 2, 'm_tuft').setOrigin(0.5, 1).setScale(PX).setDepth(9 + sy);
-      this.sway.push({ o, ph: (x + y) * 1.7, amp: 0.14 });
+    // border forest along the two back edges, dimmed so it recedes behind the play area
+    for (let i = -1; i <= map.width; i += 1.3) tree(i + (h(i, 1) - 0.5) * 0.6, -1.1 - h(i, 2) * 0.9, true);
+    for (let i = -1; i <= map.height; i += 1.3) tree(-1.1 - h(1, i) * 0.9, i + (h(2, i) - 0.5) * 0.6, true);
+    // rocks as clusters: a big one, a small one beside it, grass at the foot
+    for (const [x, y] of map.rocks) {
+      const f = h(x, y) > 0.5;
+      prop('m_rock', x, y, { flip: f, shadow: 40 });
+      prop('m_rock', x + (f ? -0.45 : 0.45), y + 0.35, { scale: 0.55, flip: !f, shadow: 22 });
+      tuft(x + (f ? 0.4 : -0.4), y + 0.3);
     }
+    const blocked = (x: number, y: number) => !this.world.walkable(x, y) || this.world.isWater(x, y) || map.npcs.some(n => Math.hypot(n.x - x, n.y - y) < 2);
+    // bush clumps (2-3 bushes + tufts) instead of single bushes sprinkled everywhere
+    for (const [x, y] of scatter(map, blocked, map.ground === 'stone' ? 0 : 6, 3)) {
+      prop('m_bush', x, y, { shadow: 30 }); prop('m_bush', x + 0.5, y + 0.3, { scale: 0.75, flip: true, shadow: 24 });
+      if (h(x, y) > 0.4) prop('m_bush', x - 0.3, y + 0.5, { scale: 0.6, shadow: 18 });
+      tuft(x + 0.2, y + 0.7); tuft(x - 0.5, y + 0.1);
+    }
+    for (const [x, y] of scatter(map, blocked, map.ground === 'stone' ? 10 : 40, 5)) tuft(x, y);
+    if (map.ground === 'stone') this.townDecor(map, prop);
     const c0 = toScreen(0, map.height), c1 = toScreen(map.width, 0), c2 = toScreen(map.width, map.height);
     this.bounds = { x0: c0.sx, x1: c1.sx, y0: 0, y1: c2.sy };
-    for (let i = 0; i < 3; i++) this.clouds.push(this.add.image(c0.sx + (c1.sx - c0.sx) * (i / 3), c2.sy * (0.2 + i * 0.3), 'm_cloud').setScale(9, 7).setAlpha(0.13).setDepth(1));
+    for (let i = 0; i < 3; i++) this.clouds.push(this.add.image(c0.sx + (c1.sx - c0.sx) * (i / 3), c2.sy * (0.2 + i * 0.3), 'm_cloud').setScale(9, 7).setAlpha(0.1).setDepth(1));
     this.add.particles(0, 0, 'm_mote', {
-      x: { min: c0.sx, max: c1.sx }, y: { min: 0, max: c2.sy }, lifespan: 7000, frequency: 160, quantity: 1,
-      speedX: { min: -6, max: 6 }, speedY: { min: -12, max: -4 }, scale: { min: 1, max: 2 }, alpha: { onUpdate: (_p: unknown, _k: string, t: number) => Math.sin(t * Math.PI) * 0.85 }, blendMode: 'ADD',
+      x: { min: c0.sx, max: c1.sx }, y: { min: 0, max: c2.sy }, lifespan: 7000, frequency: 320, quantity: 1,
+      speedX: { min: -6, max: 6 }, speedY: { min: -12, max: -4 }, scale: { min: 1, max: 1.6 }, alpha: { onUpdate: (_p: unknown, _k: string, t: number) => Math.sin(t * Math.PI) * 0.6 }, blendMode: 'ADD',
     }).setDepth(9000);
+  }
+
+  /** Town plaza: fountain spout, lamps around it, a stall in front of each merchant, crates/barrels by the others. */
+  private townDecor(map: MapData, prop: (key: string, fx: number, fy: number, o?: { scale?: number; flip?: boolean; shadow?: number; above?: number }) => Phaser.GameObjects.Image) {
+    const water = map.water;
+    if (water.length) {
+      const cx = water.reduce((a, w) => a + w[0], 0) / water.length, cy = water.reduce((a, w) => a + w[1], 0) / water.length;
+      if (!this.textures.exists('m_spout')) {
+        const t = this.textures.createCanvas('m_spout', 14, 30)!, c = t.getContext();
+        const R = (x: number, y: number, w: number, hh: number, col: string) => { c.fillStyle = col; c.fillRect(x, y, w, hh); };
+        R(4, 8, 6, 20, '#5d5952'); R(5, 8, 3, 20, '#8b857b'); R(1, 26, 12, 4, '#5d5952'); R(2, 26, 10, 1, '#a59e92'); R(2, 4, 10, 4, '#5d5952'); R(3, 4, 8, 1, '#a59e92'); R(5, 1, 4, 3, '#8b857b');
+        t.refresh(); t.setFilter(Phaser.Textures.FilterMode.NEAREST);
+      }
+      prop('m_spout', cx, cy, { shadow: 30 });
+      const { sx, sy } = toScreen(cx, cy);
+      this.add.particles(sx, sy - 52, 'dust', { lifespan: 700, frequency: 45, speedX: { min: -38, max: 38 }, speedY: { min: -70, max: -30 }, gravityY: 220,
+        scale: { start: 0.45, end: 0.15 }, alpha: { start: 0.8, end: 0 }, tint: 0xbfe3ff }).setDepth(10 + sy + 0.5);
+      // lamps only at the fountain's screen-left/right sides: the back one hid the healer, the front one the fountain
+      for (const [dx, dy] of [[2.6, -2.6], [-2.6, 2.6]]) prop('m_lamp', cx + dx, cy + dy, { shadow: 16 });
+      for (const [dx, dy] of [[-1.6, 0], [1.6, 0], [0, -1.6], [0, 1.6]]) prop('m_flowerpot', cx + dx, cy + dy, { shadow: 18 });
+    }
+    const stall: Record<string, string> = { shop: 'red', craft: 'green', rarer: 'blue' };
+    for (const n of map.npcs) {
+      if (stall[n.id]) prop(`m_stall_${stall[n.id]}`, n.x + 0.45, n.y + 0.45, { shadow: 70, above: 1 });
+      else if (n.id === 'healer') { prop('m_flowerpot', n.x - 0.6, n.y + 0.45, { shadow: 18 }); prop('m_flowerpot', n.x + 0.45, n.y - 0.6, { shadow: 18 }); }
+      else if (n.id !== 'debug') {
+        prop('m_crate', n.x - 0.55, n.y + 0.5, { shadow: 22 }); prop('m_barrel', n.x + 0.55, n.y - 0.45, { shadow: 18 });
+        prop('m_crate', n.x - 0.7, n.y + 0.05, { scale: 0.7, shadow: 14 });
+      }
+    }
   }
 
   private drawGround(map: MapData) {
@@ -705,9 +780,10 @@ export class GameScene extends Phaser.Scene {
       const d = defs.npcs[n.id], { sx, sy } = toScreen(n.x, n.y);
       this.add.ellipse(sx, sy + 1, 36, 10, 0x000000, 0.28).setDepth(2);
       const img = this.add.image(sx, sy + 3, d.sprite).setOrigin(0.5, 1).setInteractive({ useHandCursor: true });
-      img.setScale(d.height / img.height).setDepth(10 + sy).setData('npc', n.id);
+      const fit = this.fitScale(d.sprite, NPC_CORE, NPC_MAXW);
+      img.setScale(fit.scale).setDepth(10 + sy).setData('npc', n.id);
       this.tweens.add({ targets: img, scaleY: img.scaleY * 1.025, yoyo: true, repeat: -1, duration: 1100, ease: 'Sine.easeInOut' });
-      this.label(sx, sy - d.height - 6, `${d.name} · ${d.title}`, '#ffe9a8');
+      this.label(sx, sy - fit.height - 4, `${d.name} · ${d.title}`, '#ffe9a8');
     }
   }
 
