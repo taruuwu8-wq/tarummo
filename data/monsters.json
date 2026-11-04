@@ -27,7 +27,33 @@
     "element": "water",
     "res": {
       "water": 0.1
-    }
+    },
+    "gold": [
+      2,
+      5
+    ],
+    "drops": [
+      [
+        "slime_jelly",
+        0.5
+      ],
+      [
+        "hp_potion",
+        0.12
+      ],
+      [
+        "straw_hat",
+        0.04
+      ],
+      [
+        "cloth_tunic",
+        0.04
+      ],
+      [
+        "slime_charm",
+        0.015
+      ]
+    ]
   },
   "pumpkin": {
     "name": "Pumpkin Imp",
@@ -57,7 +83,45 @@
     "element": "shadow",
     "res": {
       "shadow": 0.15
-    }
+    },
+    "gold": [
+      5,
+      12
+    ],
+    "drops": [
+      [
+        "pumpkin_seed",
+        0.5
+      ],
+      [
+        "hp_potion",
+        0.15
+      ],
+      [
+        "mp_potion",
+        0.12
+      ],
+      [
+        "leather_armor",
+        0.03
+      ],
+      [
+        "pumpkin_hat",
+        0.02
+      ],
+      [
+        "iron_sword",
+        0.02
+      ],
+      [
+        "hunter_bow",
+        0.02
+      ],
+      [
+        "ember_staff",
+        0.02
+      ]
+    ]
   },
   "golem": {
     "name": "Meadow Golem",
@@ -86,6 +150,37 @@
     "critRate": 0.05,
     "element": "none",
     "res": {},
-    "boss": true
+    "boss": true,
+    "gold": [
+      60,
+      100
+    ],
+    "drops": [
+      [
+        "golem_shard",
+        1.0,
+        2
+      ],
+      [
+        "golem_core",
+        0.15
+      ],
+      [
+        "stone_plate",
+        0.2
+      ],
+      [
+        "golem_blade",
+        0.15
+      ],
+      [
+        "golem_bow",
+        0.15
+      ],
+      [
+        "golem_staff",
+        0.15
+      ]
+    ]
   }
 }

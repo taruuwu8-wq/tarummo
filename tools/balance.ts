@@ -5,13 +5,13 @@ import { rollAttack, xpToNext, type Balance } from '../src/core/combat.ts';
 import { playerStats, monsterStats, type ClassDef, type MonsterDef } from '../src/core/stats.ts';
 
 const j = (p: string) => JSON.parse(readFileSync(new URL(`../data/${p}`, import.meta.url), 'utf8'));
-const B: Balance = j('balance.json'), C: Record<string, ClassDef> = j('classes.json'), M: Record<string, MonsterDef> = j('monsters.json');
+const B: Balance = j('balance.json'), C: Record<string, ClassDef> = j('classes.json'), M: Record<string, MonsterDef> = j('monsters.json'), I = j('items.json');
 let s = 12345; const rng = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
 
 const N = 1000;
 console.log('class      lv monster   | sec-to-kill  dmg-taken  win%  | xp/min');
 for (const [cid, c] of Object.entries(C)) for (const lv of [1, 3, 6]) for (const [mid, m] of Object.entries(M)) {
-  const p = playerStats(c, lv), ms = monsterStats(m);
+  const p = playerStats(c, lv, [I[c.starterWeapon]]), ms = monsterStats(m);
   let tSum = 0, taken = 0, wins = 0;
   for (let i = 0; i < N; i++) {
     let php = p.maxHp, mhp = m.hp, t = 0, pNext = 0, mNext = m.range < c.range ? 1500 : 0; // ranged gets a head start

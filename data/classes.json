@@ -32,12 +32,7 @@
       "acc": 3,
       "eva": 1.5
     },
-    "weapon": {
-      "min": 14,
-      "max": 19,
-      "upgrade": 0,
-      "critDmg": 0.6
-    }
+    "starterWeapon": "wooden_sword"
   },
   "archer": {
     "name": "Archer",
@@ -72,12 +67,7 @@
       "acc": 4,
       "eva": 3
     },
-    "weapon": {
-      "min": 10,
-      "max": 18,
-      "upgrade": 0,
-      "critDmg": 0.8
-    }
+    "starterWeapon": "short_bow"
   },
   "mage": {
     "name": "Mage",
@@ -115,11 +105,6 @@
       "eva": 1.2,
       "elemRate": 0.008
     },
-    "weapon": {
-      "min": 14,
-      "max": 20,
-      "upgrade": 0,
-      "critDmg": 0.5
-    }
+    "starterWeapon": "apprentice_staff"
   }
 }

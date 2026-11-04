@@ -4,10 +4,14 @@ import meadow from '../../data/meadow.json';
 import balance from '../../data/balance.json';
 import classes from '../../data/classes.json';
 import monsters from '../../data/monsters.json';
+import items from '../../data/items.json';
+import skills from '../../data/skills.json';
+import type { SaveData } from '../sim/world';
+import { writeSave } from './save';
 import { Hud } from './hud';
 
 const TW = 64, TH = 32;
-const defs = { balance, classes, monsters } as unknown as Defs;
+const defs = { balance, classes, monsters, items, skills } as unknown as Defs;
 
 const toScreen = (x: number, y: number) => ({ sx: (x - y) * (TW / 2), sy: (x + y) * (TH / 2) });
 const toTile = (sx: number, sy: number) => ({
@@ -36,10 +40,10 @@ export class GameScene extends Phaser.Scene {
     for (const d of [...Object.values(defs.classes), ...Object.values(defs.monsters)]) this.load.image(d.sprite, `sprites/${d.sprite}.png`);
   }
 
-  create(data: { cls: string }) {
+  create(data: { cls: string; save?: SaveData }) {
     const map = meadow as unknown as MapData;
     this.world = new World(map, defs, Date.now() & 0xffff);
-    this.player = this.world.spawnPlayer(data.cls ?? 'swordsman');
+    this.player = this.world.spawnPlayer(data.cls ?? 'swordsman', data.save);
 
     this.drawGround(map);
     this.hover = this.add.graphics().setDepth(1);
@@ -51,7 +55,11 @@ export class GameScene extends Phaser.Scene {
     cam.setZoom(window.innerWidth < 600 ? 1.15 : 1.5);
     cam.startFollow(this.views.get(this.player.id)!.body, true, 0.12, 0.12);
 
-    this.hud = new Hud(on => this.world.apply({ kind: 'auto', id: this.player.id, on }));
+    this.hud = new Hud(this.world, this.player, defs.items, i => this.world.apply(i));
+    const save = () => writeSave(this.world.save(this.player));
+    this.time.addEvent({ delay: 5000, loop: true, callback: save });
+    window.addEventListener('pagehide', save);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
 
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => this.drawHover(p));
     this.input.on('pointerdown', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
@@ -78,7 +86,7 @@ export class GameScene extends Phaser.Scene {
     for (const e of this.world.entities.values()) this.syncView(e, alpha, now, dtMs);
     this.drawTargetRing();
     const tgt = this.player.target != null ? this.world.entities.get(this.player.target) ?? null : null;
-    this.hud.update(this.player, this.world.xpNeeded(this.player), tgt);
+    this.hud.update(this.world.xpNeeded(this.player), tgt);
   }
 
   private makeView(e: Entity) {
@@ -139,12 +147,40 @@ export class GameScene extends Phaser.Scene {
     } else if (ev.t === 'xp' && ev.id === this.player.id) {
       const { sx, sy } = toScreen(this.player.x, this.player.y);
       this.floatText(sx, sy - 80, `+${ev.amount} XP`, '#9be7ff', 13);
+    } else if (ev.t === 'skill') {
+      this.skillFx(ev.skill, ev.x, ev.y, ev.aoe);
+    } else if (ev.t === 'heal') {
+      const e = this.world.entities.get(ev.to)!, { sx, sy } = toScreen(e.x, e.y);
+      this.floatText(sx, sy - 75, `+${ev.amount}`, ev.mp ? '#7fb2ff' : '#6ff08f', 15);
+    } else if (ev.t === 'loot' && ev.id === this.player.id) {
+      const d = defs.items[ev.item];
+      this.hud.toast(ev.sold ? `ขายอัตโนมัติ ${d.name} +${d.price * ev.qty} G` : `ได้รับ ${d.icon} ${d.name}${ev.qty > 1 ? ' ×' + ev.qty : ''}`, ev.sold ? 'muted' : d.rarity);
+    } else if (ev.t === 'gold' && ev.id === this.player.id) {
+      const { sx, sy } = toScreen(this.player.x, this.player.y);
+      this.floatText(sx + 18, sy - 62, `+${ev.amount} G`, '#ffd23f', 12);
+    } else if (ev.t === 'msg' && ev.id === this.player.id) {
+      this.hud.toast(ev.text, 'warn');
     } else if (ev.t === 'level' && ev.id === this.player.id) {
       const { sx, sy } = toScreen(this.player.x, this.player.y);
       this.floatText(sx, sy - 95, `LEVEL UP! Lv ${ev.level}`, '#ffe066', 20, 1600);
       const g = this.add.graphics().setDepth(3).setPosition(sx, sy);
       g.lineStyle(3, 0xffe066, 1).strokeEllipse(0, 0, 50, 25);
       this.tweens.add({ targets: g, scale: 2.4, alpha: 0, duration: 700, onComplete: () => g.destroy() });
+    }
+  }
+
+  private skillFx(skill: string, x: number, y: number, aoe: number) {
+    const { sx, sy } = toScreen(x, y);
+    const color = /fire|flame/.test(skill) ? 0xff7a2f : /ice/.test(skill) ? 0x7fd6ff : /second/.test(skill) ? 0x6ff08f : 0xfff1a8;
+    const g = this.add.graphics().setDepth(3).setPosition(sx, sy);
+    if (aoe) {
+      g.fillStyle(color, 0.25).fillEllipse(0, 0, aoe * TW * 2, aoe * TH * 2);
+      g.lineStyle(3, color, 0.9).strokeEllipse(0, 0, aoe * TW * 2, aoe * TH * 2);
+      g.setScale(0.3);
+      this.tweens.add({ targets: g, scale: 1, alpha: 0, duration: 450, ease: 'Cubic.easeOut', onComplete: () => g.destroy() });
+    } else {
+      g.lineStyle(3, color, 1).strokeEllipse(0, -24, 44, 44);
+      this.tweens.add({ targets: g, scale: 1.6, alpha: 0, duration: 380, onComplete: () => g.destroy() });
     }
   }
 
