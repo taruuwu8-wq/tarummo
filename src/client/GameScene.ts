@@ -6,7 +6,8 @@ import { writeSave, readStash, writeStash, readUnlocks, writeUnlocks } from './s
 import type { Net } from './net';
 import type { Intent } from '../sim/world';
 import { Hud } from './hud';
-import { paintGround, makeProps, scatter, PX } from './mapart';
+import { paintGround, makeProps, scatter, PX, MARGIN } from './mapart';
+import PROPS from '../../data/props.json';
 
 const TW = 64, TH = 32;
 /** visible body height / max width (px) for players + card forms, and for town NPCs (a bit smaller so they don't crowd) */
@@ -60,6 +61,7 @@ export class GameScene extends Phaser.Scene {
 
   preload() {
     for (const d of [...Object.values(defs.classes), ...Object.values(defs.monsters), ...Object.values(defs.cards), ...Object.values(defs.npcs)]) if (d.sprite) this.load.image(d.sprite, `sprites/${d.sprite}.png`);
+    for (const id of Object.keys(PROPS)) if (id !== '_note') this.load.image(`p_${id}`, `props/${id}.png`);
   }
 
   private leaving = false;
@@ -613,57 +615,108 @@ export class GameScene extends Phaser.Scene {
     for (const c of this.clouds) { c.x += dtMs * 0.012; c.y += dtMs * 0.004; if (c.x > b.x1 + 300) { c.x = b.x0 - 300; c.y = b.y0 + Math.random() * (b.y1 - b.y0); } }
   }
 
-  /** v2 look: painted ground, props grouped in clusters with contact shadows, border forest, ambient. */
+  /** v2 look: painted ground (with an unwalkable decorated margin), sheet props in clusters with contact shadows. */
   private drawGroundV2(map: MapData) {
     const g = paintGround(this, map, (x, y) => this.world.isWater(x, y), TW, TH);
     this.add.image(g.x, g.y, g.key).setOrigin(0, 0).setScale(PX).setDepth(0);
     makeProps(this);
-    const h = (x: number, y: number) => (((Math.round(x * 13) * 73856093) ^ (Math.round(y * 17) * 19349663)) >>> 0) % 1000 / 1000;
-    const prop = (key: string, fx: number, fy: number, o: { scale?: number; sway?: number; flip?: boolean; shadow?: number; tint?: number; above?: number } = {}) => {
-      const { sx, sy } = toScreen(fx, fy);
-      const img = this.add.image(sx, sy + 4, key).setOrigin(0.5, 1).setScale(PX * (o.scale ?? 1)).setDepth(10 + sy + (o.above ?? 0)).setFlipX(!!o.flip);
-      if (o.tint) img.setTint(o.tint);
-      if (o.shadow) this.add.image(sx, sy + 3, 'm_shadow').setScale(o.shadow / 32, o.shadow / 80).setDepth(1.5);
-      if (o.sway) this.sway.push({ o: img, ph: h(fx, fy) * 6.28, amp: o.sway });
-      return img;
+    const h = (x: number, y: number, s = 0) => ((((Math.round(x * 13) + s * 31) * 73856093) ^ (Math.round(y * 17) * 19349663)) >>> 0) % 1000 / 1000;
+    const pickOf = <T,>(arr: T[], x: number, y: number, s = 0) => arr[Math.floor(h(x, y, s) * arr.length) % arr.length];
+    const P = PROPS as unknown as Record<string, { h: number; w: number }>;
+    // margin props are baked into one texture (bake != null): they never meet a player, and ~1000 live images was too many
+    let bake: Phaser.GameObjects.Image[] | null = null;
+    const img = (x: number, y: number, key: string) => { if (!bake) return this.add.image(x, y, key); const o = this.make.image({ x, y, key }, false); bake.push(o); return o; };
+    const prop = (id: string, fx: number, fy: number, o: { scale?: number; sway?: number; flip?: boolean; shadow?: number; tint?: number; above?: number } = {}) => {
+      const { sx, sy } = toScreen(fx, fy), sc = o.scale ?? 1;
+      const sw = o.shadow ?? 0.7;
+      if (sw > 0) img(sx, sy + 3, 'm_shadow').setScale(P[id].w * sc * sw / 32, P[id].w * sc * sw / 80).setDepth(1.5);
+      const im = img(sx, sy + 4, `p_${id}`).setOrigin(0.5, 0.96).setScale(0.5 * sc).setDepth(10 + sy + (o.above ?? 0)).setFlipX(o.flip ?? h(fx, fy, 7) > 0.5);
+      if (o.tint) im.setTint(o.tint);
+      if (o.sway && !bake) this.sway.push({ o: im, ph: h(fx, fy) * 6.28, amp: o.sway });
+      return im;
     };
-    const tuft = (fx: number, fy: number) => prop('m_tuft', fx, fy, { sway: 0.14, scale: 0.8 + h(fy, fx) * 0.4, flip: h(fx, fy) > 0.5 });
-    const tree = (fx: number, fy: number, far = false) => {
-      const k = h(fx, fy), key = k < 0.22 ? 'm_pine' : `m_oak${Math.floor(k * 3)}`;
-      prop(key, fx, fy, { scale: (far ? 0.75 : 0.8) + k * 0.18, sway: far ? 0.014 : 0.022, flip: k > 0.5, shadow: far ? 0 : 48, tint: far ? 0xaab0b8 : undefined });
-      if (!far) { tuft(fx - 0.35, fy + 0.25); if (k > 0.45) prop('m_bush', fx + 0.4, fy + 0.1, { shadow: 26, scale: 0.8 }); }
+    const GRASS = ['grass_a', 'grass_b', 'grass_c', 'grass_fl1', 'grass_fl2'], FLOW = ['fl_white', 'fl_pink', 'fl_purple', 'fl_yellow', 'fb_white', 'fb_pink', 'fb_blue', 'fb_mix'];
+    const MUSH = ['mush_red', 'mush_small', 'mush_orange'], TREES = ['oak_a', 'oak_b', 'oak_a', 'pine'];
+    const grass = (x: number, y: number) => prop(pickOf(GRASS, x, y, 1), x, y, { sway: 0.1, scale: 0.8 + h(x, y, 2) * 0.4, shadow: 0 });
+    const tree = (x: number, y: number, far = false) => {
+      prop(pickOf(TREES, x, y, 3), x, y, { scale: (far ? 0.85 : 0.9) + h(x, y, 4) * 0.2, sway: far ? 0.012 : 0.018, tint: far ? 0xb4bac2 : undefined });
+      if (!far) { grass(x - 0.4, y + 0.3); if (h(x, y, 5) > 0.5) prop(pickOf(['bush_white', 'bush_pink'], x, y), x + 0.45, y + 0.15, { scale: 0.85 }); }
     };
-    for (const [x, y] of map.trees) tree(x, y);
-    // border forest along the two back edges, dimmed so it recedes behind the play area
-    for (let i = -1; i <= map.width; i += 1.3) tree(i + (h(i, 1) - 0.5) * 0.6, -1.1 - h(i, 2) * 0.9, true);
-    for (let i = -1; i <= map.height; i += 1.3) tree(-1.1 - h(1, i) * 0.9, i + (h(2, i) - 0.5) * 0.6, true);
-    // rocks as clusters: a big one, a small one beside it, grass at the foot
-    for (const [x, y] of map.rocks) {
-      const f = h(x, y) > 0.5;
-      prop('m_rock', x, y, { flip: f, shadow: 40 });
-      prop('m_rock', x + (f ? -0.45 : 0.45), y + 0.35, { scale: 0.55, flip: !f, shadow: 22 });
-      tuft(x + (f ? 0.4 : -0.4), y + 0.3);
+    const rocks = (x: number, y: number) => {
+      prop(h(x, y, 6) > 0.4 ? 'rock_mid' : 'rock_big', x, y, { scale: 0.85 });
+      prop('rock_small', x + 0.5, y + 0.4, { scale: 0.6 }); grass(x - 0.45, y + 0.35);
+    };
+    const flowers = (x: number, y: number) => {   // a patch: 2-3 flower clumps, grass, sometimes a mushroom
+      const f = pickOf(FLOW, x, y, 8);
+      prop(f, x, y, { sway: 0.06, shadow: 0 }); prop(f, x + 0.35, y + 0.3, { sway: 0.06, scale: 0.8, shadow: 0 });
+      if (h(x, y, 9) > 0.5) prop(pickOf(FLOW, x, y, 10), x - 0.3, y + 0.35, { sway: 0.06, scale: 0.75, shadow: 0 });
+      if (h(x, y, 11) > 0.75) prop(pickOf(MUSH, x, y, 12), x + 0.1, y - 0.35, { shadow: 0.5 });
+      grass(x + 0.5, y - 0.1);
+    };
+    // blocking trees on the two front edges would hide players walking along them: low bushes there instead
+    for (const [x, y] of map.trees) { if (x >= map.width - 2 || y >= map.height - 2) prop(pickOf(['bush_white', 'bush_pink'], x, y), x, y); else tree(x, y); }
+    for (const [x, y] of map.rocks) rocks(x, y);
+    const blocked = (x: number, y: number) => !this.world.walkable(x, y) || this.world.isWater(x, y) || map.npcs.some(n => Math.hypot(n.x - x, n.y - y) < 2.2);
+    const town = map.ground === 'stone';
+    for (const [x, y] of scatter(map, blocked, town ? 0 : 9, 3)) flowers(x, y);
+    for (const [x, y] of scatter(map, blocked, town ? 6 : 28, 5)) grass(x, y);
+    if (!town) for (const [x, y] of scatter(map, blocked, 4, 13)) prop(pickOf(MUSH, x, y), x, y, { shadow: 0.5 });
+    // ---- margin (unwalkable): dense forest behind the two back edges, only low props in front so nothing hides players
+    const M = MARGIN, W = map.width, H = map.height;
+    bake = [];
+    const houses = town ? this.townHouses(map, img) : [];
+    const nearHouse = (x: number, y: number) => houses.some(([hx, hy, r]) => Math.hypot(hx - x, hy - y) < r);
+    for (let y = -M; y < H + M; y += 1.25) for (let x = -M; x < W + M; x += 1.25) {
+      const jx = x + (h(x, y, 14) - 0.5) * 0.8, jy = y + (h(x, y, 15) - 0.5) * 0.8;
+      const out = Math.max(-0.6 - jx, -0.6 - jy, jx - W + 0.4, jy - H + 0.4);
+      if (out <= 0.2 || nearHouse(jx, jy)) continue;
+      const back = jx < -0.5 || jy < -0.5, front = jx > W - 0.5 || jy > H - 0.5, k = h(jx, jy, 16);
+      if (back && !front) {
+        if (k < 0.62) tree(jx, jy, out > 1.5);
+        else if (k < 0.72) rocks(jx, jy);
+        else if (k < 0.76 && !town) prop('rock_spire', jx, jy, { scale: 0.9 });
+        else if (k < 0.9) flowers(jx, jy);
+        else grass(jx, jy);
+      } else {
+        if (k < 0.3) prop(pickOf(['bush_white', 'bush_pink'], jx, jy), jx, jy, { scale: 0.9 });
+        else if (k < 0.55) flowers(jx, jy);
+        else if (k < 0.65) prop('rock_small', jx, jy);
+        else if (k < 0.92) grass(jx, jy);
+      }
     }
-    const blocked = (x: number, y: number) => !this.world.walkable(x, y) || this.world.isWater(x, y) || map.npcs.some(n => Math.hypot(n.x - x, n.y - y) < 2);
-    // bush clumps (2-3 bushes + tufts) instead of single bushes sprinkled everywhere
-    for (const [x, y] of scatter(map, blocked, map.ground === 'stone' ? 0 : 6, 3)) {
-      prop('m_bush', x, y, { shadow: 30 }); prop('m_bush', x + 0.5, y + 0.3, { scale: 0.75, flip: true, shadow: 24 });
-      if (h(x, y) > 0.4) prop('m_bush', x - 0.3, y + 0.5, { scale: 0.6, shadow: 18 });
-      tuft(x + 0.2, y + 0.7); tuft(x - 0.5, y + 0.1);
+    {
+      const PAD = 200, tex = this.textures.get(g.key).getSourceImage(), rw = tex.width * PX, rh = tex.height * PX + PAD;
+      const rt = this.add.renderTexture(g.x, g.y - PAD, rw, rh).setOrigin(0, 0).setDepth(1.6);
+      rt.beginDraw();
+      for (const o of bake.sort((a, b) => a.depth - b.depth)) rt.batchDraw(o, o.x - g.x, o.y - g.y + PAD);
+      rt.endDraw();
+      for (const o of bake) o.destroy();
+      bake = null;
     }
-    for (const [x, y] of scatter(map, blocked, map.ground === 'stone' ? 10 : 40, 5)) tuft(x, y);
-    if (map.ground === 'stone') this.townDecor(map, prop);
-    const c0 = toScreen(0, map.height), c1 = toScreen(map.width, 0), c2 = toScreen(map.width, map.height);
+    if (town) this.townDecor(map, prop);
+    const c0 = toScreen(0, H), c1 = toScreen(W, 0), c2 = toScreen(W, H);
     this.bounds = { x0: c0.sx, x1: c1.sx, y0: 0, y1: c2.sy };
-    for (let i = 0; i < 3; i++) this.clouds.push(this.add.image(c0.sx + (c1.sx - c0.sx) * (i / 3), c2.sy * (0.2 + i * 0.3), 'm_cloud').setScale(9, 7).setAlpha(0.1).setDepth(1));
+    for (let i = 0; i < 3; i++) this.clouds.push(this.add.image(c0.sx + (c1.sx - c0.sx) * (i / 3), c2.sy * (0.2 + i * 0.3), 'm_cloud').setScale(9, 7).setAlpha(0.08).setDepth(1));
     this.add.particles(0, 0, 'm_mote', {
       x: { min: c0.sx, max: c1.sx }, y: { min: 0, max: c2.sy }, lifespan: 7000, frequency: 320, quantity: 1,
       speedX: { min: -6, max: 6 }, speedY: { min: -12, max: -4 }, scale: { min: 1, max: 1.6 }, alpha: { onUpdate: (_p: unknown, _k: string, t: number) => Math.sin(t * Math.PI) * 0.6 }, blendMode: 'ADD',
     }).setDepth(9000);
   }
 
-  /** Town plaza: fountain spout, lamps around it, a stall in front of each merchant, crates/barrels by the others. */
-  private townDecor(map: MapData, prop: (key: string, fx: number, fy: number, o?: { scale?: number; flip?: boolean; shadow?: number; above?: number }) => Phaser.GameObjects.Image) {
+  /** Houses sit in the back margin (scenery, not walkable). Returns [x, y, keep-clear radius] so trees avoid them. */
+  private townHouses(map: MapData, img: (x: number, y: number, key: string) => Phaser.GameObjects.Image): [number, number, number][] {
+    const list: [string, number, number][] = [['house_tree', -2.6, 3.5], ['house_blue', -2.3, 11], ['house_vine', 4.5, -2.3], ['house_mill', 12, -2.6]];
+    for (const [id, x, y] of list) {
+      const { sx, sy } = toScreen(x, y);
+      img(sx, sy + 14, 'm_shadow').setScale(5.5, 2.2).setDepth(1.5);
+      img(sx, sy + 20, `p_${id}`).setOrigin(0.5, 0.92).setScale(0.5).setDepth(10 + sy);
+    }
+    void map;
+    return list.map(([, x, y]) => [x, y, 3.2]);
+  }
+
+  /** Town plaza: fountain spout, lamps, benches; a stall or tent by each merchant, crates/barrels/cart by the others. */
+  private townDecor(map: MapData, prop: (id: string, fx: number, fy: number, o?: { scale?: number; flip?: boolean; shadow?: number; above?: number; sway?: number }) => Phaser.GameObjects.Image) {
     const water = map.water;
     if (water.length) {
       const cx = water.reduce((a, w) => a + w[0], 0) / water.length, cy = water.reduce((a, w) => a + w[1], 0) / water.length;
@@ -673,22 +726,24 @@ export class GameScene extends Phaser.Scene {
         R(4, 8, 6, 20, '#5d5952'); R(5, 8, 3, 20, '#8b857b'); R(1, 26, 12, 4, '#5d5952'); R(2, 26, 10, 1, '#a59e92'); R(2, 4, 10, 4, '#5d5952'); R(3, 4, 8, 1, '#a59e92'); R(5, 1, 4, 3, '#8b857b');
         t.refresh(); t.setFilter(Phaser.Textures.FilterMode.NEAREST);
       }
-      prop('m_spout', cx, cy, { shadow: 30 });
       const { sx, sy } = toScreen(cx, cy);
+      this.add.image(sx, sy + 4, 'm_spout').setOrigin(0.5, 1).setScale(PX).setDepth(10 + sy);
       this.add.particles(sx, sy - 52, 'dust', { lifespan: 700, frequency: 45, speedX: { min: -38, max: 38 }, speedY: { min: -70, max: -30 }, gravityY: 220,
         scale: { start: 0.45, end: 0.15 }, alpha: { start: 0.8, end: 0 }, tint: 0xbfe3ff }).setDepth(10 + sy + 0.5);
-      // lamps only at the fountain's screen-left/right sides: the back one hid the healer, the front one the fountain
-      for (const [dx, dy] of [[2.6, -2.6], [-2.6, 2.6]]) prop('m_lamp', cx + dx, cy + dy, { shadow: 16 });
-      for (const [dx, dy] of [[-1.6, 0], [1.6, 0], [0, -1.6], [0, 1.6]]) prop('m_flowerpot', cx + dx, cy + dy, { shadow: 18 });
+      for (const [dx, dy] of [[2.6, -2.6], [-2.6, 2.6]]) prop('lamp', cx + dx, cy + dy, { shadow: 0.5 });
+      for (const [dx, dy] of [[-1.7, 0.2], [0.2, -1.7]]) prop('flower_bush', cx + dx, cy + dy);
+      prop('bench', cx + 2.1, cy + 0.6); prop('bench', cx + 0.6, cy + 2.1, { flip: true });
     }
-    const stall: Record<string, string> = { shop: 'red', craft: 'green', rarer: 'blue' };
+    const p = map.portals[0];
+    if (p) { prop('signpost', p.x - 1.2, p.y - 0.8); prop('banner', p.x + 0.9, p.y - 1.1); }
     for (const n of map.npcs) {
-      if (stall[n.id]) prop(`m_stall_${stall[n.id]}`, n.x + 0.45, n.y + 0.45, { shadow: 70, above: 1 });
-      else if (n.id === 'healer') { prop('m_flowerpot', n.x - 0.6, n.y + 0.45, { shadow: 18 }); prop('m_flowerpot', n.x + 0.45, n.y - 0.6, { shadow: 18 }); }
-      else if (n.id !== 'debug') {
-        prop('m_crate', n.x - 0.55, n.y + 0.5, { shadow: 22 }); prop('m_barrel', n.x + 0.55, n.y - 0.45, { shadow: 18 });
-        prop('m_crate', n.x - 0.7, n.y + 0.05, { scale: 0.7, shadow: 14 });
-      }
+      const X = n.x, Y = n.y;
+      if (n.id === 'shop') prop('stall_red', X + 0.4, Y + 0.4, { above: 1 });
+      else if (n.id === 'rarer') prop('stall_blue', X + 0.4, Y + 0.4, { above: 1 });
+      else if (n.id === 'craft') { prop('tent', X - 0.7, Y - 0.6); prop('stump_axe', X + 0.6, Y + 0.6); }
+      else if (n.id === 'smith') { prop('hay_crates', X - 0.75, Y + 0.3); prop('barrel_stone', X + 0.5, Y - 0.6); }
+      else if (n.id === 'stash') { prop('cart', X + 0.2, Y - 0.9); prop('crate', X - 0.7, Y + 0.4); }
+      else if (n.id === 'healer') { prop('flower_bush', X - 0.7, Y + 0.4); prop('pot_stand', X + 0.5, Y - 0.7); }
     }
   }
 
