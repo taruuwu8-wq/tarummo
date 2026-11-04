@@ -1,7 +1,7 @@
 // Authoritative world simulation. Client sends intents, reads entities + events.
 // Runs unchanged on a Node server later.
 import { findPath, Tile } from './path';
-import { rollAttack, xpToNext, Balance, CombatStats, Skill, BASIC, Element, AttackType } from '../core/combat';
+import { rollAttack, damageRange, xpToNext, Balance, CombatStats, Skill, BASIC, Element, AttackType } from '../core/combat';
 import { playerStats, monsterStats, ClassDef, MonsterDef, ItemDef, Slot, Worn, Bonus } from '../core/stats';
 
 export const TICK_MS = 100;
@@ -119,8 +119,11 @@ export const INV_SIZE = 30;
 export const STASH_SIZE = 60;
 /** Players within this many tiles of a kill share its XP, gold and (own) drop rolls. */
 export const SHARE_RANGE = 12;
+export type GearSet = Partial<Record<Slot, InvSlot>>;
+const SET_SLOTS: Slot[] = ['weapon', 'offhand', 'armor', 'hat', 'charm'];
+const setKey = (st: InvSlot) => `${st.item}|${st.up ?? 0}|${st.rare ?? 0}|${JSON.stringify(st.opts ?? [])}`;
 export const SLOTS: Slot[] = ['weapon', 'offhand', 'armor', 'hat', 'charm', 'card', 'mount'];
-export interface SaveData { quest?: QuestState; autoQuest?: boolean; rested?: number; lastSeen?: number; autoStats?: AutoStats & { elapsed?: number }; autoOn?: boolean; autoCfg?: AutoCfg; autoAnchor?: Tile | null; autoTrip?: AutoTrip | null; bars?: Record<string, BarRef[]>; barKnown?: Record<string, string[]>; transformed?: boolean; mounted?: boolean; map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean }
+export interface SaveData { quest?: QuestState; autoQuest?: boolean; rested?: number; lastSeen?: number; autoStats?: AutoStats & { elapsed?: number }; autoOn?: boolean; autoCfg?: AutoCfg; autoAnchor?: Tile | null; autoTrip?: AutoTrip | null; bars?: Record<string, BarRef[]>; barKnown?: Record<string, string[]>; transformed?: boolean; mounted?: boolean; map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean; gearSet?: GearSet | null }
 
 export interface Entity {
   id: number; kind: 'player' | 'monster'; type: string; name: string;
@@ -135,6 +138,8 @@ export interface Entity {
   // player
   level: number; xp: number; auto: boolean;
   gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot>>; autoSell: boolean; transformed: boolean;
+  /** gear worn before the last auto-equip / set swap, so the player can compare and switch back */
+  gearSet: GearSet | null;
   cooldowns: Record<string, number>; pendingSkill: string | null; talkTo: string | null;
   lastHit: number;
   rested: number;
@@ -161,6 +166,8 @@ export type Intent =
   | { kind: 'skill'; id: number; skill: string; target?: number }
   | { kind: 'equip'; id: number; index: number }
   | { kind: 'unequip'; id: number; slot: Slot }
+  | { kind: 'autoGear'; id: number }
+  | { kind: 'swapSet'; id: number }
   | { kind: 'use'; id: number; index: number }
   | { kind: 'sell'; id: number; index: number }
   | { kind: 'autoSell'; id: number; on: boolean }
@@ -314,7 +321,7 @@ export class World {
       hp: 1, maxHp: 1, mp: 0, maxMp: 0, stats: undefined as unknown as CombatStats, speed: 1, range: 1, attackMs: 1000,
       target: null, nextAttack: 0, repathAt: 0, lastHurt: -1e9, dead: false, respawnAt: 0,
       idleTicks: 0, xpReward: 0, level: 1, xp: 0, auto: false,
-      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, cooldowns: {}, pendingSkill: null, talkTo: null, lastHit: -1e9, rested: 0, quest: { main: 0, prog: 0, daily: { day: '', prog: 0, done: false } }, autoQuest: false, autoCfg: defaultAutoCfg(), autoAnchor: null, autoTrip: null, autoStats: { since: 0, xp: 0, gold: 0, kills: 0, items: {} }, mounted: false, aggro: 0, noRespawn: false, nextBlast: 0, bars: {}, barKnown: {}, passive: { lifesteal: 0 }, extra: NO_EXTRA(), statuses: [], prot: {}, onHit: [], nextSummon: 0,
+      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, gearSet: null, cooldowns: {}, pendingSkill: null, talkTo: null, lastHit: -1e9, rested: 0, quest: { main: 0, prog: 0, daily: { day: '', prog: 0, done: false } }, autoQuest: false, autoCfg: defaultAutoCfg(), autoAnchor: null, autoTrip: null, autoStats: { since: 0, xp: 0, gold: 0, kills: 0, items: {} }, mounted: false, aggro: 0, noRespawn: false, nextBlast: 0, bars: {}, barKnown: {}, passive: { lifesteal: 0 }, extra: NO_EXTRA(), statuses: [], prot: {}, onHit: [], nextSummon: 0,
     };
   }
 
@@ -326,7 +333,7 @@ export class World {
       save = JSON.parse(JSON.stringify(save).replace(/"(i:|s:)?(glass_orb|star_orb|orb_bolt|orb_frost)"/g, (_, pre, id) => `"${pre ?? ''}${RENAMED[id]}"`)) as SaveData;
       const equip: Partial<Record<Slot, InvSlot>> = {};
       for (const [k, v] of Object.entries(save.equip)) if (v) equip[k as Slot] = typeof v === 'string' ? { item: v, qty: 1, up: 0 } : v;  // v1 saves stored ids
-      Object.assign(e, { xp: save.xp, gold: save.gold, inv: save.inv.filter(s => this.defs.items[s.item]), equip, autoSell: save.autoSell, bars: save.bars ?? {}, barKnown: save.barKnown ?? {} });
+      Object.assign(e, { xp: save.xp, gold: save.gold, inv: save.inv.filter(s => this.defs.items[s.item]), equip, autoSell: save.autoSell, bars: save.bars ?? {}, barKnown: save.barKnown ?? {}, gearSet: save.gearSet ?? null });
       const cfg = { ...defaultAutoCfg(), ...(save.autoCfg ?? {}) };
       if (!save.autoCfg && save.autoSell) cfg.loot.gear.common = 'sell';
       if (cfg.range === 8) cfg.range = 12;   // old default
@@ -525,7 +532,7 @@ export class World {
   }
 
   save(e: Entity): SaveData {
-    return { quest: e.quest, autoQuest: e.autoQuest, rested: Math.round(e.rested), lastSeen: Date.now(), autoStats: { ...e.autoStats, elapsed: this.now - e.autoStats.since }, autoOn: e.auto, autoCfg: e.autoCfg, autoAnchor: e.autoAnchor, autoTrip: e.autoTrip, bars: e.bars, barKnown: e.barKnown, transformed: e.transformed, mounted: e.mounted, map: this.map.id, cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell };
+    return { quest: e.quest, autoQuest: e.autoQuest, rested: Math.round(e.rested), lastSeen: Date.now(), autoStats: { ...e.autoStats, elapsed: this.now - e.autoStats.since }, autoOn: e.auto, autoCfg: e.autoCfg, autoAnchor: e.autoAnchor, autoTrip: e.autoTrip, bars: e.bars, barKnown: e.barKnown, transformed: e.transformed, mounted: e.mounted, map: this.map.id, cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell, gearSet: e.gearSet };
   }
 
   /** 'base' or the active card id; each form keeps its own hotbar */
@@ -743,6 +750,52 @@ export class World {
     this.recalc(p);
   }
 
+  // ---- gear sets ----
+  private wornSet(p: Entity): GearSet { const s: GearSet = {}; for (const sl of SET_SLOTS) if (p.equip[sl]) s[sl] = p.equip[sl]; return s; }
+  private canWear(p: Entity, st: InvSlot) { const d = this.defs.items[st.item]; return SET_SLOTS.includes(d.slot as Slot) && (!d.class || d.class === p.type) && (d.level ?? 1) <= p.level; }
+  /** Rough combat power with `set` worn instead of the current gear (entity is restored). Avg hit vs an unarmored dummy, avg DEF, HP. */
+  gearPreview(e: Entity, set?: GearSet) {
+    const keep = { equip: e.equip, stats: e.stats, maxHp: e.maxHp, maxMp: e.maxMp, hp: e.hp, mp: e.mp, passive: e.passive, onHit: e.onHit, range: e.range, prot: e.prot, extra: e.extra };
+    if (set) { e.equip = { ...e.equip }; for (const sl of SET_SLOTS) { if (set[sl]) e.equip[sl] = set[sl]; else delete e.equip[sl]; } this.recalc(e); }
+    const s = e.stats;
+    const dummy: CombatStats = { ...s, armor: { melee: 0, ranged: 0, magic: 0 }, armorUpgrade: 0, res: {}, race: undefined, element: 'none', critRateRed: 0, critDmgRed: 0, dmgTakenRed: 0 };
+    const r = damageRange(this.defs.balance, s, dummy), cr = Math.min(1, s.critRate);
+    const dmg = (r.min + r.max) / 2 * (1 - cr) + (r.critMin + r.critMax) / 2 * cr;
+    const def = (s.armor.melee + s.armor.ranged + s.armor.magic) / 3, hp = e.maxHp;
+    Object.assign(e, keep);
+    return { dmg: Math.round(dmg), def: Math.round(def), hp, power: Math.round(dmg * 2 + def + hp / 10) };
+  }
+  /** Wear the strongest wearable item per slot (two passes: option lines interact); the old set is remembered. */
+  private autoGear(p: Entity) {
+    const before = this.wornSet(p); let changed = false;
+    for (let pass = 0; pass < 2; pass++) for (const sl of SET_SLOTS) {
+      let best = this.gearPreview(p).power, bi = -1;
+      p.inv.forEach((st, i) => {
+        if (this.defs.items[st.item].slot !== sl || !this.canWear(p, st)) return;
+        const pw = this.gearPreview(p, { ...this.wornSet(p), [sl]: st }).power;
+        if (pw > best) { best = pw; bi = i; }
+      });
+      if (bi >= 0) { this.equip(p, bi); changed = true; }
+    }
+    if (changed) p.gearSet = before;
+    this.events.push({ t: 'msg', id: p.id, text: changed ? 'ใส่ของที่ดีที่สุดแล้ว · บันทึกเซตเดิมไว้ให้เทียบ' : 'ใส่ของที่ดีที่สุดอยู่แล้ว' });
+  }
+  /** Swap to the remembered set; what was worn becomes the remembered set. */
+  private swapSet(p: Entity) {
+    const want = p.gearSet; if (!want) return;
+    const before = this.wornSet(p); let miss = 0;
+    for (const sl of SET_SLOTS) {
+      const w = want[sl], cur = p.equip[sl];
+      if (!w) { if (cur) this.unequip(p, sl); continue; }   // that set had this slot empty
+      if (cur && setKey(cur) === setKey(w)) continue;
+      const i = p.inv.findIndex(x => setKey(x) === setKey(w));
+      if (i < 0 || !this.canWear(p, p.inv[i])) { miss++; continue; }
+      this.equip(p, i);
+    }
+    p.gearSet = before;
+    this.events.push({ t: 'msg', id: p.id, text: miss ? `สลับเซตแล้ว · หาไม่เจอ ${miss} ชิ้น (ขาย/ตีบวก/ฝากคลังไปแล้ว?)` : 'สลับเซตแล้ว' });
+  }
+
   private unequip(p: Entity, slot: Slot) {
     const st = p.equip[slot]; if (!st) return;
     if (slot === 'card' && p.transformed) { this.events.push({ t: 'msg', id: p.id, text: 'คืนร่างก่อนถอดการ์ด' }); return; }
@@ -928,6 +981,8 @@ export class World {
     }
     else if (intent.kind === 'equip') this.equip(e, intent.index);
     else if (intent.kind === 'unequip') this.unequip(e, intent.slot);
+    else if (intent.kind === 'autoGear') this.autoGear(e);
+    else if (intent.kind === 'swapSet') this.swapSet(e);
     else if (intent.kind === 'use') this.use(e, intent.index);
     else if (intent.kind === 'sell') this.sell(e, intent.index);
     else if (intent.kind === 'autoSell') e.autoSell = intent.on;

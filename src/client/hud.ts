@@ -53,6 +53,7 @@ export class Hud {
         <div id="sellbox" hidden></div>
         <div class="equip" id="equip"></div>
         <div class="stats" id="stats"></div>
+        <div class="gearset" id="gearset"></div>
         <div class="tabs">${(['gear', 'card', 'use', 'enh', 'mat', 'drop'] as Tab[]).map(t => `<button type="button" data-tab="${t}">${{ gear: 'อุปกรณ์', card: 'การ์ด', use: 'ของใช้', enh: 'ของตีบวก', mat: 'วัตถุดิบ', drop: 'ดรอปมอน' }[t]}</button>`).join('')}</div>
         <div class="grid" id="grid"></div>
         <div class="detail" id="detail"></div>
@@ -302,7 +303,7 @@ export class Hud {
 
   private renderBag() {
     const p = this.p;
-    const sig = JSON.stringify([p.inv, p.equip, p.level, p.gold, this.tab, this.sel, p.transformed]);
+    const sig = JSON.stringify([p.inv, p.equip, p.level, p.gold, this.tab, this.sel, p.transformed, p.gearSet]);
     if (sig === this.invSig) return;
     this.invSig = sig;
     this.el.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === this.tab));
@@ -314,6 +315,14 @@ export class Hud {
     this.$('equip').querySelectorAll<HTMLButtonElement>('[data-slot]').forEach(b => b.addEventListener('click', () => { const sl = b.dataset.slot as Slot; if (p.equip[sl]) { this.sel = sl; this.invSig = ''; } }));
     const s = p.stats;
     this.$('stats').innerHTML = `<span>ATK ${s.baseAtk + s.weapon.min}–${s.baseAtk + s.weapon.max}</span><span>DEF ${s.armor.melee}/${s.armor.ranged}/${s.armor.magic}</span><span>ACC ${s.acc}</span><span>EVA ${s.eva}</span><span>CRIT ${Math.round(s.critRate * 100)}%</span>${s.elemRate ? `<span>ธาตุ ${Math.round(s.elemRate * 100)}%</span>` : ''}`;
+
+    // auto-equip + compare with the remembered set
+    const w0 = this.world, now = w0.gearPreview(p), old = p.gearSet ? w0.gearPreview(p, p.gearSet) : null;
+    const row = (t: string, g: typeof now, o?: typeof now) => `<span><b>${t}</b> พลัง ${g.power}${o ? ` <em class="${g.power >= o.power ? 'up' : 'dn'}">${g.power >= o.power ? '▲' : '▼'}${Math.abs(g.power - o.power)}</em>` : ''} · ⚔${g.dmg} 🛡${g.def} ❤${g.hp}</span>`;
+    this.$('gearset').innerHTML = `<button type="button" id="autogear" class="pill">⚡ ใส่ของดีสุด</button>`
+      + (old ? `<div class="cmp">${row('ตอนนี้', now, old)}${row('เซตเดิม', old)}</div><button type="button" id="swapset" class="pill">⇄ ใช้เซตเดิม</button>` : `<small class="muted">พลัง ${now.power}</small>`);
+    document.getElementById('autogear')?.addEventListener('click', () => this.send({ kind: 'autoGear', id: p.id }));
+    document.getElementById('swapset')?.addEventListener('click', () => this.send({ kind: 'swapSet', id: p.id }));
 
     const tabOf = (d: ItemDef): Tab => d.slot === 'card' ? 'card' : SLOTS.includes(d.slot as Slot) ? 'gear' : d.slot === 'use' ? 'use' : d.slot === 'shell' ? (d.tab ?? 'enh') : d.tab ?? 'mat';
     const inTab = (d: ItemDef) => tabOf(d) === this.tab;
