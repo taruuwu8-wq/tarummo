@@ -23,6 +23,8 @@ export interface CombatStats {
   attackType: AttackType;
   baseAtk: number;
   weapon: { min: number; max: number; upgrade: number; critDmg: number };
+  /** secondary weapon (crossbow / dagger / orb); skills with offhand: true use it */
+  offhand?: { min: number; max: number; upgrade: number; critDmg: number };
   armor: Record<AttackType, number>;
   armorUpgrade: number;
   acc: number; eva: number; critRate: number;
@@ -31,7 +33,7 @@ export interface CombatStats {
   dmgPct: number;                              // 0.1 = +10% damage
 }
 
-export interface Skill { mult: number; flat: number; element?: Element; attackType?: AttackType }
+export interface Skill { mult: number; flat: number; element?: Element; attackType?: AttackType; offhand?: boolean }
 export const BASIC: Skill = { mult: 1, flat: 0 };
 
 export interface DamageRange { min: number; max: number; critMin: number; critMax: number }
@@ -46,10 +48,11 @@ export function hitChance(b: Balance, acc: number, eva: number) {
 
 export function damageRange(b: Balance, a: CombatStats, d: CombatStats, skill: Skill = BASIC): DamageRange {
   const type = skill.attackType ?? a.attackType;
-  const wMul = 1 + upg(b, a.weapon.upgrade - d.armorUpgrade);
-  const atkMin = a.baseAtk + skill.flat + a.weapon.min * wMul + b.flatAttack;
-  const atkMax = a.baseAtk + skill.flat + a.weapon.max * wMul + b.flatAttack;
-  const def = d.armor[type] * (1 + upg(b, d.armorUpgrade - a.weapon.upgrade));
+  const w = (skill.offhand && a.offhand) || a.weapon;
+  const wMul = 1 + upg(b, w.upgrade - d.armorUpgrade);
+  const atkMin = a.baseAtk + skill.flat + w.min * wMul + b.flatAttack;
+  const atkMax = a.baseAtk + skill.flat + w.max * wMul + b.flatAttack;
+  const def = d.armor[type] * (1 + upg(b, d.armorUpgrade - w.upgrade));
 
   const elem = skill.element ?? a.element;
   let eMul = 0;
@@ -59,7 +62,7 @@ export function damageRange(b: Balance, a: CombatStats, d: CombatStats, skill: S
   }
   const morale = a.level - d.level;
   const k = (1 + a.dmgPct) * skill.mult;
-  const critMul = 1 + a.weapon.critDmg;
+  const critMul = 1 + w.critDmg;
   const total = (atk: number, crit: boolean) => {
     const phys = Math.max(0, atk - def) * (crit ? critMul : 1);
     const el = (atk + b.elementFlat) * eMul;

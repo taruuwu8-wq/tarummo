@@ -46,6 +46,18 @@
       {
         "item": "magic_carpet",
         "price": 1500
+      },
+      {
+        "item": "steel_crossbow",
+        "price": 250
+      },
+      {
+        "item": "shadow_dagger",
+        "price": 250
+      },
+      {
+        "item": "star_orb",
+        "price": 250
       }
     ]
   },

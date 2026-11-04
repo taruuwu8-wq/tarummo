@@ -1,17 +1,175 @@
 {
   "swordsman": [
-    { "id": "power_strike", "name": "Power Strike", "icon": "💥", "mp": 10, "cooldownMs": 4000,  "mult": 1.8, "flat": 10 },
-    { "id": "whirlwind",    "name": "Whirlwind",    "icon": "🌀", "mp": 18, "cooldownMs": 8000,  "mult": 1.1, "flat": 0, "aoe": 1.8, "self": true },
-    { "id": "second_wind",  "name": "Second Wind",  "icon": "💚", "mp": 20, "cooldownMs": 20000, "heal": 0.3 }
+    {
+      "id": "power_strike",
+      "name": "Power Strike",
+      "icon": "💥",
+      "mp": 10,
+      "cooldownMs": 4000,
+      "unlock": 1,
+      "mult": 1.8,
+      "flat": 10
+    },
+    {
+      "id": "crossbow_shot",
+      "name": "Crossbow Shot",
+      "icon": "🏹",
+      "mp": 8,
+      "cooldownMs": 3500,
+      "unlock": 3,
+      "mult": 1.5,
+      "flat": 5,
+      "offhand": true,
+      "range": 5
+    },
+    {
+      "id": "whirlwind",
+      "name": "Whirlwind",
+      "icon": "🌀",
+      "mp": 18,
+      "cooldownMs": 8000,
+      "unlock": 6,
+      "mult": 1.1,
+      "flat": 0,
+      "aoe": 1.8,
+      "self": true
+    },
+    {
+      "id": "second_wind",
+      "name": "Second Wind",
+      "icon": "💚",
+      "mp": 20,
+      "cooldownMs": 20000,
+      "unlock": 10,
+      "heal": 0.3
+    },
+    {
+      "id": "blade_storm",
+      "name": "Blade Storm",
+      "icon": "⚔️",
+      "mp": 30,
+      "cooldownMs": 14000,
+      "unlock": 15,
+      "mult": 1.8,
+      "flat": 10,
+      "aoe": 2.2,
+      "self": true
+    }
   ],
   "archer": [
-    { "id": "piercing_shot","name": "Piercing Shot","icon": "🎯", "mp": 10, "cooldownMs": 4000,  "mult": 2.0, "flat": 5 },
-    { "id": "double_shot",  "name": "Double Shot",  "icon": "➶",  "mp": 14, "cooldownMs": 6000,  "mult": 0.9, "flat": 0, "hits": 2 },
-    { "id": "arrow_rain",   "name": "Arrow Rain",   "icon": "🌧️", "mp": 22, "cooldownMs": 9000,  "mult": 0.9, "flat": 0, "aoe": 1.6 }
+    {
+      "id": "piercing_shot",
+      "name": "Piercing Shot",
+      "icon": "🎯",
+      "mp": 10,
+      "cooldownMs": 4000,
+      "unlock": 1,
+      "mult": 2.0,
+      "flat": 5
+    },
+    {
+      "id": "dagger_slash",
+      "name": "Dagger Slash",
+      "icon": "🗡️",
+      "mp": 8,
+      "cooldownMs": 3500,
+      "unlock": 3,
+      "mult": 1.6,
+      "flat": 5,
+      "offhand": true,
+      "range": 1.4
+    },
+    {
+      "id": "double_shot",
+      "name": "Double Shot",
+      "icon": "➶",
+      "mp": 14,
+      "cooldownMs": 6000,
+      "unlock": 6,
+      "mult": 0.9,
+      "flat": 0,
+      "hits": 2
+    },
+    {
+      "id": "arrow_rain",
+      "name": "Arrow Rain",
+      "icon": "🌧️",
+      "mp": 22,
+      "cooldownMs": 9000,
+      "unlock": 10,
+      "mult": 0.9,
+      "flat": 0,
+      "aoe": 1.6
+    },
+    {
+      "id": "eagle_eye",
+      "name": "Eagle Eye",
+      "icon": "🦅",
+      "mp": 26,
+      "cooldownMs": 14000,
+      "unlock": 15,
+      "mult": 3.2,
+      "flat": 20
+    }
   ],
   "mage": [
-    { "id": "fireball",     "name": "Fireball",     "icon": "🔥", "mp": 12, "cooldownMs": 3000,  "mult": 1.6, "flat": 10, "element": "fire" },
-    { "id": "ice_lance",    "name": "Ice Lance",    "icon": "❄️", "mp": 16, "cooldownMs": 6000,  "mult": 2.0, "flat": 10, "element": "water" },
-    { "id": "flame_burst",  "name": "Flame Burst",  "icon": "☄️", "mp": 26, "cooldownMs": 9000,  "mult": 1.2, "flat": 0, "aoe": 2.0, "element": "fire" }
+    {
+      "id": "fireball",
+      "name": "Fireball",
+      "icon": "🔥",
+      "mp": 12,
+      "cooldownMs": 3000,
+      "unlock": 1,
+      "mult": 1.6,
+      "flat": 10,
+      "element": "fire"
+    },
+    {
+      "id": "orb_bolt",
+      "name": "Orb Bolt",
+      "icon": "🔮",
+      "mp": 8,
+      "cooldownMs": 3000,
+      "unlock": 3,
+      "mult": 1.5,
+      "flat": 5,
+      "offhand": true
+    },
+    {
+      "id": "ice_lance",
+      "name": "Ice Lance",
+      "icon": "❄️",
+      "mp": 16,
+      "cooldownMs": 6000,
+      "unlock": 6,
+      "mult": 2.0,
+      "flat": 10,
+      "element": "water"
+    },
+    {
+      "id": "flame_burst",
+      "name": "Flame Burst",
+      "icon": "☄️",
+      "mp": 26,
+      "cooldownMs": 9000,
+      "unlock": 10,
+      "mult": 1.2,
+      "flat": 0,
+      "aoe": 2.0,
+      "element": "fire"
+    },
+    {
+      "id": "arcane_nova",
+      "name": "Arcane Nova",
+      "icon": "✨",
+      "mp": 34,
+      "cooldownMs": 14000,
+      "unlock": 15,
+      "mult": 1.8,
+      "flat": 10,
+      "aoe": 2.5,
+      "self": true,
+      "element": "light"
+    }
   ]
 }

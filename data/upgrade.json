@@ -2,6 +2,7 @@
   "_note": "Upgrade +0 -> +10 for weapon/armor. Fail = lose gold+materials only, never the item.",
   "slots": [
     "weapon",
+    "offhand",
     "armor",
     "card"
   ],
@@ -54,7 +55,7 @@
     4
   ],
   "cardXpPerLevel": 60,
-  "cardMaxLevel": 10,
+  "cardMaxLevel": 15,
   "giftCardAtLevel": 3,
   "card": {
     "_note": "Card upgrade: separate cost table. Each + adds perUp stats on top of the card bonus.",

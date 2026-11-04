@@ -287,5 +287,92 @@
       "color": "0xc0392b",
       "sprite": null
     }
+  },
+  "wooden_crossbow": {
+    "name": "Wooden Crossbow",
+    "slot": "offhand",
+    "rarity": "common",
+    "icon": "🏹",
+    "level": 1,
+    "class": "swordsman",
+    "price": 5,
+    "weapon": {
+      "min": 8,
+      "max": 12,
+      "critDmg": 0.5
+    }
+  },
+  "steel_crossbow": {
+    "name": "Steel Crossbow",
+    "slot": "offhand",
+    "rarity": "uncommon",
+    "icon": "🏹",
+    "level": 5,
+    "class": "swordsman",
+    "price": 60,
+    "weapon": {
+      "min": 14,
+      "max": 20,
+      "critDmg": 0.6
+    }
+  },
+  "hunting_dagger": {
+    "name": "Hunting Dagger",
+    "slot": "offhand",
+    "rarity": "common",
+    "icon": "🗡️",
+    "level": 1,
+    "class": "archer",
+    "price": 5,
+    "weapon": {
+      "min": 9,
+      "max": 13,
+      "critDmg": 0.7
+    }
+  },
+  "shadow_dagger": {
+    "name": "Shadow Dagger",
+    "slot": "offhand",
+    "rarity": "uncommon",
+    "icon": "🗡️",
+    "level": 5,
+    "class": "archer",
+    "price": 60,
+    "weapon": {
+      "min": 15,
+      "max": 21,
+      "critDmg": 0.9
+    }
+  },
+  "glass_orb": {
+    "name": "Glass Orb",
+    "slot": "offhand",
+    "rarity": "common",
+    "icon": "🔮",
+    "level": 1,
+    "class": "mage",
+    "price": 5,
+    "weapon": {
+      "min": 10,
+      "max": 14,
+      "critDmg": 0.4
+    }
+  },
+  "star_orb": {
+    "name": "Star Orb",
+    "slot": "offhand",
+    "rarity": "uncommon",
+    "icon": "🔮",
+    "level": 5,
+    "class": "mage",
+    "price": 60,
+    "weapon": {
+      "min": 16,
+      "max": 22,
+      "critDmg": 0.5
+    },
+    "bonus": {
+      "elemRate": 0.03
+    }
   }
 }

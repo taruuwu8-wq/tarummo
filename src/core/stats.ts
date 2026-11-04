@@ -7,9 +7,9 @@ export interface ClassDef {
   attackType: AttackType; range: number; attackMs: number;
   base: { hp: number; mp: number; atk: number; armor: Armor; acc: number; eva: number; critRate: number; element?: Element; elemRate?: number };
   growth: { hp: number; mp: number; atk: number; armor: Armor; acc: number; eva: number; elemRate?: number };
-  starterWeapon: string;
+  starterWeapon: string; starterOffhand: string;
 }
-export type Slot = 'weapon' | 'armor' | 'hat' | 'charm' | 'card' | 'mount';
+export type Slot = 'weapon' | 'offhand' | 'armor' | 'hat' | 'charm' | 'card' | 'mount';
 export interface Bonus { hp?: number; mp?: number; atk?: number; armor?: number; acc?: number; eva?: number; critRate?: number; elemRate?: number; dmgPct?: number }
 export interface ItemDef {
   name: string; slot: Slot | 'use' | 'mat'; element?: Element; rarity: 'common' | 'uncommon' | 'rare' | 'epic'; icon: string;
@@ -35,8 +35,10 @@ export function playerStats(c: ClassDef, level: number, gear: Worn[] = []): { st
   const L = level - 1, g = c.growth, b = c.base;
   const sum: Required<Bonus> = { hp: 0, mp: 0, atk: 0, armor: 0, acc: 0, eva: 0, critRate: 0, elemRate: 0, dmgPct: 0 };
   let w = FISTS, wUp = 0, aUp = 0, element: Element = b.element ?? 'none';
+  let off: typeof FISTS | null = null, oUp = 0;
   for (const { def: it, up } of gear) {
-    if (it.weapon) { w = it.weapon; wUp = up; }
+    if (it.weapon && it.slot === 'offhand') { off = it.weapon; oUp = up; }
+    else if (it.weapon) { w = it.weapon; wUp = up; }
     if (it.slot === 'armor') aUp = up;
     if (it.element) element = it.element;
     for (const k in it.bonus ?? {}) sum[k as keyof Bonus] += it.bonus![k as keyof Bonus]!;
@@ -48,7 +50,9 @@ export function playerStats(c: ClassDef, level: number, gear: Worn[] = []): { st
     maxMp: Math.round(b.mp + g.mp * L + sum.mp),
     stats: {
       level, attackType: c.attackType, baseAtk: Math.round(b.atk + g.atk * L + sum.atk),
-      weapon: { min: w.min, max: w.max, critDmg: w.critDmg, upgrade: wUp }, armor, armorUpgrade: aUp,
+      weapon: { min: w.min, max: w.max, critDmg: w.critDmg, upgrade: wUp },
+      offhand: off ? { min: off.min, max: off.max, critDmg: off.critDmg, upgrade: oUp } : undefined,
+      armor, armorUpgrade: aUp,
       acc: Math.round(b.acc + g.acc * L + sum.acc), eva: Math.round(b.eva + g.eva * L + sum.eva), critRate: b.critRate + sum.critRate,
       element, elemRate: (b.elemRate ?? 0) + (g.elemRate ?? 0) * L + sum.elemRate,
       res: {}, dmgPct: sum.dmgPct,

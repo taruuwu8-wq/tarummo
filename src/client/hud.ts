@@ -1,10 +1,11 @@
 // DOM HUD: player/target frames, skill bar, inventory panel, toasts.
 import type { Entity, World, Intent, SkillDef, InvSlot } from '../sim/world';
 import { SLOTS } from '../sim/world';
+import { Hotbar } from './hotbar';
 import type { ItemDef, Slot } from '../core/stats';
 
 type Tab = 'gear' | 'card' | 'use' | 'mat';
-const SLOT_TH: Record<Slot, string> = { weapon: 'อาวุธ', armor: 'เกราะ', hat: 'หมวก', charm: 'ชาร์ม', card: 'การ์ด', mount: 'พาหนะ' };
+const SLOT_TH: Record<Slot, string> = { weapon: 'อาวุธ', armor: 'เกราะ', hat: 'หมวก', charm: 'ชาร์ม', card: 'การ์ด', mount: 'พาหนะ', offhand: 'อาวุธรอง' };
 const RARITY_TH: Record<string, string> = { common: 'ธรรมดา', uncommon: 'ดี', rare: 'หายาก', epic: 'ตำนาน' };
 
 export class Hud {
@@ -13,7 +14,7 @@ export class Hud {
   private tab: Tab = 'gear';
   private invSig = '';
   private sel: number | Slot | null = null;
-  private skillSig = '';
+  private hot!: Hotbar;
   private npc: string | null = null;
   private npcSig = '';
   private onKey: (e: KeyboardEvent) => void;
@@ -26,13 +27,13 @@ export class Hud {
         <div class="gold" id="pg"></div></div>
       <div class="frame target" id="tf" hidden><div class="name" id="tn"></div><div class="bar hp"><i id="thp"></i><span id="thpt"></span></div></div>
       <div id="toasts"></div>
-      <div id="bar">
-        <span id="skills"></span>
-        <button type="button" class="sk" id="tf-btn" title="แปลงร่าง (T)"><span class="ic">✨</span><span class="key">T</span><i class="cd"></i></button>
-        <button type="button" class="sk" id="potion" title="HP Potion"><span class="ic">🧪</span><span class="key">Q</span><span class="mpc" id="potq"></span><i class="cd"></i></button>
-        <button type="button" class="sk" id="mountbtn" title="ขี่พาหนะ (R)"><span class="ic">🐎</span><span class="key">R</span></button>
-        <button type="button" class="sk wide" id="bagbtn" title="กระเป๋า"><span class="ic">🎒</span><span class="key">I</span></button>
-        <button type="button" class="sk wide" id="auto">AUTO<br>OFF</button>
+      <div id="side">
+        <button type="button" class="sb" id="bagbtn" title="กระเป๋า (I)"><span class="ic">🎒</span><span class="key">I</span></button>
+        <button type="button" class="sb" id="skillbtn" title="สกิล (K)"><span class="ic">📖</span><span class="key">K</span></button>
+        <button type="button" class="sb" id="cardbtn" title="สลับการ์ด (C)"><span class="ic">🃏</span><span class="key">C</span></button>
+        <button type="button" class="sb" id="tf-btn" title="แปลงร่าง (T)"><span class="ic">✨</span><span class="key">T</span><i class="cd"></i></button>
+        <button type="button" class="sb" id="mountbtn" title="ขี่พาหนะ (R)"><span class="ic">🐎</span><span class="key">R</span></button>
+        <button type="button" class="sb wide" id="auto">AUTO<br>OFF</button>
       </div>
       <div id="bag" hidden>
         <div class="bag-head"><b>กระเป๋า</b><button type="button" id="bagx" aria-label="ปิด">✕</button></div>
@@ -49,10 +50,11 @@ export class Hud {
       <div id="banner"></div>
       <div class="xp"><i id="pxp"></i><span id="pxpt"></span></div>`;
 
-    this.$('skills').addEventListener('click', e => { const b = (e.target as HTMLElement).closest<HTMLElement>('[data-sk]'); if (b) this.cast(b.dataset.sk!); });
+    this.hot = new Hotbar(this.el, world, p, items, send, (t, c) => this.toast(t, c));
+    this.$('skillbtn').addEventListener('click', () => this.hot.toggle('skillwin'));
+    this.$('cardbtn').addEventListener('click', () => this.hot.toggle('cardpop'));
     this.$('tf-btn').addEventListener('click', () => send({ kind: 'transform', id: p.id }));
     this.$('mountbtn').addEventListener('click', () => send({ kind: 'mount', id: p.id }));
-    this.$('potion').addEventListener('click', () => this.potion());
     this.$('bagbtn').addEventListener('click', () => this.toggleBag());
     this.$('bagx').addEventListener('click', () => this.toggleBag(false));
     this.$('auto').addEventListener('click', () => this.toggleAuto());
@@ -68,13 +70,14 @@ export class Hud {
     this.onKey = e => {
       if (e.repeat || (e.target as HTMLElement)?.tagName === 'INPUT') return;
       if (e.key === 'Enter') { chatIn.focus(); e.preventDefault(); return; }
-      const n = Number(e.key), skills = this.world.skillsOf(this.p);
-      if (n >= 1 && n <= skills.length) this.cast(skills[n - 1].id);
+      const k = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].indexOf(e.key);
+      if (k >= 0) this.hot.press(k);
+      else if (e.key === 'k' || e.key === 'K') this.hot.toggle('skillwin');
+      else if (e.key === 'c' || e.key === 'C') this.hot.toggle('cardpop');
       else if (e.key === 't' || e.key === 'T') this.send({ kind: 'transform', id: this.p.id });
       else if (e.key === 'r' || e.key === 'R') this.send({ kind: 'mount', id: this.p.id });
-      else if (e.key === 'q' || e.key === 'Q') this.potion();
       else if (e.key === 'i' || e.key === 'I') this.toggleBag();
-      else if (e.key === 'Escape') { this.toggleBag(false); this.closeNpc(); }
+      else if (e.key === 'Escape') { this.toggleBag(false); this.closeNpc(); this.hot.toggle('skillwin', false); this.hot.toggle('cardpop', false); }
     };
     window.addEventListener('keydown', this.onKey);
     this.$('npc').addEventListener('click', e => this.onNpcClick(e));
@@ -143,7 +146,7 @@ export class Hud {
       body = `<b>คลังกลาง (${this.world.stash.length}/60) · คลิกเพื่อหยิบ</b><div class="grid">${this.world.stash.map((st, i) => cell(st, i, 'take')).join('') || '<span class="muted">ว่าง</span>'}</div>
         <b>กระเป๋า · คลิกเพื่อฝาก</b><div class="grid">${p.inv.map((st, i) => cell(st, i, 'put')).join('') || '<span class="muted">ว่าง</span>'}</div>`;
     } else if (d.role === 'debug') {
-      body = [['level', '+1 เลเวล'], ['level5', '+5 เลเวล'], ['gold', '+10,000 G'], ['mats', 'วัตถุดิบตีบวก ×30'], ['card', 'การ์ดสุ่มของอาชีพ']]
+      body = [['level', '+1 เลเวล'], ['level5', '+5 เลเวล'], ['gold', '+10,000 G'], ['mats', 'วัตถุดิบตีบวก ×30'], ['card', 'การ์ดสุ่มของอาชีพ'], ['job', 'การ์ดที่ใส่ Job +3']]
         .map(([w, t]) => `<button type="button" class="big" data-act="dbg" data-w="${w}">${t}</button>`).join('');
     } else {
       body = `<button type="button" class="big" data-act="heal">${p.hp >= p.maxHp ? 'HP/MP เต็มแล้ว' : 'ฟื้นฟู HP/MP (ฟรี)'}</button>`;
@@ -154,7 +157,6 @@ export class Hud {
 
   private $(id: string) { return document.getElementById(id)!; }
   private cast(skill: string) { this.send({ kind: 'skill', id: this.p.id, skill }); }
-  private potion() { const i = this.p.inv.findIndex(s => this.items[s.item].heal?.hp); if (i >= 0) this.send({ kind: 'use', id: this.p.id, index: i }); else this.toast('ไม่มี HP Potion'); }
   private toggleBag(force?: boolean) { const b = this.$('bag'); b.hidden = force === undefined ? !b.hidden : !force; this.invSig = ''; }
   private toggleAuto() {
     this.auto = !this.auto;
@@ -187,26 +189,12 @@ export class Hud {
     }
     // skill bar follows the active form
     const now = this.world.now;
-    const sks = this.world.skillsOf(p), sig = sks.map(k => k.id).join();
-    if (sig !== this.skillSig) {
-      this.skillSig = sig;
-      this.$('skills').innerHTML = sks.map((s, i) => `<button type="button" class="sk" data-sk="${s.id}" title="${s.name} · MP ${s.mp}"><span class="ic">${s.icon}</span><span class="key">${i + 1}</span><span class="mpc">${s.mp}</span><i class="cd"></i></button>`).join('');
-    }
+    this.hot.update();
     const tb = this.$('tf-btn'), card = p.equip.card;
     tb.classList.toggle('on', p.transformed); tb.classList.toggle('nomp', !card);
     (tb.querySelector('.ic') as HTMLElement).textContent = card ? this.items[card.item].icon : '✨';
     const tl = Math.max(0, (p.cooldowns['transform'] ?? 0) - now);
     (tb.querySelector('.cd') as HTMLElement).style.height = `${Math.min(1, tl / 10000) * 100}%`;
-    for (const s of this.world.skillsOf(p)) {
-      const b = this.el.querySelector<HTMLElement>(`[data-sk="${s.id}"]`)!;
-      const left = Math.max(0, (p.cooldowns[s.id] ?? 0) - now);
-      (b.querySelector('.cd') as HTMLElement).style.height = `${(left / s.cooldownMs) * 100}%`;
-      b.classList.toggle('nomp', p.mp < s.mp);
-      b.classList.toggle('queued', p.pendingSkill === s.id);
-    }
-    const pl = Math.max(0, (p.cooldowns['potion'] ?? 0) - now);
-    (this.$('potion').querySelector('.cd') as HTMLElement).style.height = `${(pl / 1500) * 100}%`;
-    this.$('potq').textContent = String(p.inv.filter(s => this.items[s.item].heal?.hp).reduce((a, s) => a + s.qty, 0));
     const mb = this.$('mountbtn'), mt = p.equip.mount;
     mb.classList.toggle('on', p.mounted); mb.classList.toggle('nomp', !mt);
     (mb.querySelector('.ic') as HTMLElement).textContent = mt ? this.items[mt.item].icon : '🐎';
@@ -267,7 +255,7 @@ export class Hud {
       const u = this.world.defs.upgrade, lv = st.lv ?? 1;
       const pu = Object.entries(u.card.perUp).map(([k, v]) => `${k.toUpperCase()} +${k === 'elemRate' ? Math.round(v * (st.up ?? 0) * 100) + '%' : v * (st.up ?? 0)}`).join(' · ');
       extra += `<div class="muted">${(st.up ?? 0) > 0 ? `ตีบวก +${st.up}: ${pu}<br>` : ''}${card.role} · การ์ด Lv ${lv}${lv < u.cardMaxLevel ? ` (${st.xp ?? 0}/${u.cardXpPerLevel * lv} XP ตอนแปลงร่าง)` : ' (สูงสุด)'} · โบนัส +${(lv - 1) * 10}%</div>
-        <div class="muted">สกิล: ${card.skills.map((k, i) => `${k.icon} ${k.name}${i >= 2 && lv < 3 ? ' (ปลดล็อก Lv3)' : ''}`).join(' · ')}</div>`;
+        <div class="muted">สกิล: ${card.skills.map(k => `${k.icon} ${k.name}${k.unlock > lv ? ` (Job ${k.unlock})` : ''}`).join(' · ')}</div>`;
     }
     det.innerHTML = `<div><b class="${d.rarity}-t">${d.icon} ${d.name}${st.up ? ' +' + st.up : ''}</b> <small class="muted">${RARITY_TH[d.rarity]}${req ? ' · ต้องการ ' + req : ''}${worn ? ' · สวมอยู่' : ''}</small></div>
       <div class="muted">${lines.join(' · ') || 'วัตถุดิบ ใช้ตีบวกอุปกรณ์'}</div>${extra}

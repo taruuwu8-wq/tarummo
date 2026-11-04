@@ -32,7 +32,8 @@
       "acc": 3,
       "eva": 1.5
     },
-    "starterWeapon": "wooden_sword"
+    "starterWeapon": "wooden_sword",
+    "starterOffhand": "wooden_crossbow"
   },
   "archer": {
     "name": "Archer",
@@ -67,7 +68,8 @@
       "acc": 4,
       "eva": 3
     },
-    "starterWeapon": "short_bow"
+    "starterWeapon": "short_bow",
+    "starterOffhand": "hunting_dagger"
   },
   "mage": {
     "name": "Mage",
@@ -105,6 +107,7 @@
       "eva": 1.2,
       "elemRate": 0.008
     },
-    "starterWeapon": "apprentice_staff"
+    "starterWeapon": "apprentice_staff",
+    "starterOffhand": "glass_orb"
   }
 }

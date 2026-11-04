@@ -1,5 +1,5 @@
 {
-  "_note": "Spirit Cards. bonus scales +10% per card level. Skill 3 unlocks at card Lv 3. Sprites picked at random from the AI sheet for now.",
+  "_note": "Spirit Cards: 6 actives unlock at job (card) Lv 1/2/4/6/9/12, passives at 5/10. usesOffhand: the offhand becomes the main weapon while transformed (and vice versa).",
   "crimson_knight": {
     "name": "Crimson Knight",
     "class": "swordsman",
@@ -25,7 +25,8 @@
         "cooldownMs": 3500,
         "mult": 1.9,
         "flat": 10,
-        "element": "fire"
+        "element": "fire",
+        "unlock": 1
       },
       {
         "id": "blazing_spin",
@@ -37,7 +38,8 @@
         "flat": 0,
         "aoe": 2.0,
         "self": true,
-        "element": "fire"
+        "element": "fire",
+        "unlock": 2
       },
       {
         "id": "inferno_strike",
@@ -47,7 +49,64 @@
         "cooldownMs": 12000,
         "mult": 3.0,
         "flat": 20,
+        "element": "fire",
+        "unlock": 4
+      },
+      {
+        "id": "ember_rush",
+        "name": "Ember Rush",
+        "icon": "🔥",
+        "mp": 16,
+        "cooldownMs": 5000,
+        "unlock": 6,
+        "mult": 1.6,
+        "flat": 10,
+        "element": "fire",
+        "hits": 2
+      },
+      {
+        "id": "flame_guard",
+        "name": "Flame Guard",
+        "icon": "❤️‍🔥",
+        "mp": 20,
+        "cooldownMs": 18000,
+        "unlock": 9,
+        "heal": 0.25
+      },
+      {
+        "id": "phoenix_fall",
+        "name": "Phoenix Fall",
+        "icon": "🐦‍🔥",
+        "mp": 40,
+        "cooldownMs": 16000,
+        "unlock": 12,
+        "mult": 2.4,
+        "flat": 20,
+        "aoe": 2.4,
+        "self": true,
         "element": "fire"
+      }
+    ],
+    "passives": [
+      {
+        "id": "blazing_heart",
+        "name": "Blazing Heart",
+        "icon": "❤️",
+        "unlock": 5,
+        "type": "stat",
+        "desc": "ดาเมจ +10%",
+        "bonus": {
+          "dmgPct": 0.1
+        }
+      },
+      {
+        "id": "ember_blood",
+        "name": "Ember Blood",
+        "icon": "🩸",
+        "unlock": 10,
+        "type": "lifesteal",
+        "desc": "ดูดเลือด 4% ของดาเมจ",
+        "pct": 0.04
       }
     ]
   },
@@ -73,7 +132,8 @@
         "mp": 10,
         "cooldownMs": 4000,
         "mult": 1.5,
-        "flat": 10
+        "flat": 10,
+        "unlock": 1
       },
       {
         "id": "quake_wave",
@@ -84,7 +144,8 @@
         "mult": 0.9,
         "flat": 0,
         "aoe": 2.2,
-        "self": true
+        "self": true,
+        "unlock": 2
       },
       {
         "id": "fortify",
@@ -92,9 +153,69 @@
         "icon": "💚",
         "mp": 25,
         "cooldownMs": 18000,
-        "heal": 0.45
+        "heal": 0.45,
+        "unlock": 4
+      },
+      {
+        "id": "crossbow_volley",
+        "name": "Crossbow Volley",
+        "icon": "🏹",
+        "mp": 14,
+        "cooldownMs": 5000,
+        "unlock": 6,
+        "mult": 1.2,
+        "flat": 5,
+        "hits": 2,
+        "offhand": true
+      },
+      {
+        "id": "bastion",
+        "name": "Bastion",
+        "icon": "🛡️",
+        "mp": 18,
+        "cooldownMs": 15000,
+        "unlock": 9,
+        "heal": 0.3
+      },
+      {
+        "id": "earthshaker",
+        "name": "Earthshaker",
+        "icon": "🌋",
+        "mp": 34,
+        "cooldownMs": 14000,
+        "unlock": 12,
+        "mult": 1.8,
+        "flat": 10,
+        "aoe": 2.4,
+        "self": true
       }
-    ]
+    ],
+    "passives": [
+      {
+        "id": "iron_skin",
+        "name": "Iron Skin",
+        "icon": "🪨",
+        "unlock": 5,
+        "type": "stat",
+        "desc": "DEF +20",
+        "bonus": {
+          "armor": 20
+        }
+      },
+      {
+        "id": "last_stand",
+        "name": "Last Stand",
+        "icon": "🏰",
+        "unlock": 10,
+        "type": "lowhp",
+        "desc": "HP ต่ำกว่า 30% รับดาเมจลด 25%",
+        "threshold": 0.3,
+        "reduce": 0.25
+      }
+    ],
+    "usesOffhand": true,
+    "attackType": "ranged",
+    "range": 5
   },
   "wind_ranger": {
     "name": "Wind Ranger",
@@ -119,7 +240,8 @@
         "mp": 10,
         "cooldownMs": 3500,
         "mult": 2.2,
-        "flat": 5
+        "flat": 5,
+        "unlock": 1
       },
       {
         "id": "triple_arrow",
@@ -129,7 +251,8 @@
         "cooldownMs": 6000,
         "mult": 0.9,
         "flat": 0,
-        "hits": 3
+        "hits": 3,
+        "unlock": 2
       },
       {
         "id": "storm_rain",
@@ -139,7 +262,63 @@
         "cooldownMs": 10000,
         "mult": 1.2,
         "flat": 0,
-        "aoe": 2.0
+        "aoe": 2.0,
+        "unlock": 4
+      },
+      {
+        "id": "cyclone_shot",
+        "name": "Cyclone Shot",
+        "icon": "🌀",
+        "mp": 16,
+        "cooldownMs": 6000,
+        "unlock": 6,
+        "mult": 1.3,
+        "flat": 0,
+        "aoe": 1.6
+      },
+      {
+        "id": "swift_step",
+        "name": "Swift Step",
+        "icon": "💨",
+        "mp": 14,
+        "cooldownMs": 16000,
+        "unlock": 9,
+        "heal": 0.2
+      },
+      {
+        "id": "sky_piercer",
+        "name": "Sky Piercer",
+        "icon": "🌠",
+        "mp": 36,
+        "cooldownMs": 15000,
+        "unlock": 12,
+        "mult": 3.6,
+        "flat": 20
+      }
+    ],
+    "passives": [
+      {
+        "id": "tailwind",
+        "name": "Tailwind",
+        "icon": "🍃",
+        "unlock": 5,
+        "type": "stat",
+        "desc": "EVA +15 · CRIT +5%",
+        "bonus": {
+          "eva": 15,
+          "critRate": 0.05
+        }
+      },
+      {
+        "id": "hunters_mark",
+        "name": "Hunter's Mark",
+        "icon": "🎯",
+        "unlock": 10,
+        "type": "stat",
+        "desc": "ดาเมจ +12%",
+        "bonus": {
+          "dmgPct": 0.12
+        }
       }
     ]
   },
@@ -167,7 +346,8 @@
         "cooldownMs": 3500,
         "mult": 1.8,
         "flat": 5,
-        "element": "light"
+        "element": "light",
+        "unlock": 1
       },
       {
         "id": "healing_bloom",
@@ -175,7 +355,8 @@
         "icon": "🌸",
         "mp": 22,
         "cooldownMs": 14000,
-        "heal": 0.4
+        "heal": 0.4,
+        "unlock": 2
       },
       {
         "id": "vine_burst",
@@ -186,9 +367,68 @@
         "mult": 1.0,
         "flat": 0,
         "aoe": 1.8,
+        "element": "light",
+        "unlock": 4
+      },
+      {
+        "id": "root_strike",
+        "name": "Root Strike",
+        "icon": "🌿",
+        "mp": 12,
+        "cooldownMs": 4000,
+        "unlock": 6,
+        "mult": 1.7,
+        "flat": 10,
         "element": "light"
+      },
+      {
+        "id": "sunbeam",
+        "name": "Sunbeam",
+        "icon": "☀️",
+        "mp": 18,
+        "cooldownMs": 7000,
+        "unlock": 9,
+        "mult": 1.4,
+        "flat": 5,
+        "aoe": 1.8,
+        "self": true,
+        "element": "light"
+      },
+      {
+        "id": "grove_blessing",
+        "name": "Grove Blessing",
+        "icon": "🌳",
+        "mp": 30,
+        "cooldownMs": 20000,
+        "unlock": 12,
+        "heal": 0.5
       }
-    ]
+    ],
+    "passives": [
+      {
+        "id": "bark_skin",
+        "name": "Bark Skin",
+        "icon": "🪵",
+        "unlock": 5,
+        "type": "stat",
+        "desc": "HP +150",
+        "bonus": {
+          "hp": 150
+        }
+      },
+      {
+        "id": "natures_gift",
+        "name": "Nature's Gift",
+        "icon": "🍀",
+        "unlock": 10,
+        "type": "lifesteal",
+        "desc": "ดูดเลือด 5%",
+        "pct": 0.05
+      }
+    ],
+    "usesOffhand": true,
+    "attackType": "melee",
+    "range": 1.4
   },
   "ember_witch": {
     "name": "Ember Witch",
@@ -214,7 +454,8 @@
         "cooldownMs": 3000,
         "mult": 2.0,
         "flat": 10,
-        "element": "fire"
+        "element": "fire",
+        "unlock": 1
       },
       {
         "id": "fire_nova",
@@ -226,7 +467,8 @@
         "flat": 0,
         "aoe": 2.0,
         "self": true,
-        "element": "fire"
+        "element": "fire",
+        "unlock": 2
       },
       {
         "id": "meteor",
@@ -237,7 +479,65 @@
         "mult": 1.6,
         "flat": 10,
         "aoe": 2.2,
+        "element": "fire",
+        "unlock": 4
+      },
+      {
+        "id": "cinder_bolt",
+        "name": "Cinder Bolt",
+        "icon": "🔥",
+        "mp": 10,
+        "cooldownMs": 2500,
+        "unlock": 6,
+        "mult": 1.4,
+        "flat": 5,
         "element": "fire"
+      },
+      {
+        "id": "hex_flame",
+        "name": "Hex Flame",
+        "icon": "🕯️",
+        "mp": 18,
+        "cooldownMs": 7000,
+        "unlock": 9,
+        "mult": 1.2,
+        "flat": 0,
+        "hits": 3,
+        "element": "fire"
+      },
+      {
+        "id": "inferno",
+        "name": "Inferno",
+        "icon": "🌋",
+        "mp": 44,
+        "cooldownMs": 16000,
+        "unlock": 12,
+        "mult": 2.2,
+        "flat": 20,
+        "aoe": 2.6,
+        "element": "fire"
+      }
+    ],
+    "passives": [
+      {
+        "id": "pyromancy",
+        "name": "Pyromancy",
+        "icon": "🔥",
+        "unlock": 5,
+        "type": "stat",
+        "desc": "ธาตุ +10%",
+        "bonus": {
+          "elemRate": 0.1
+        }
+      },
+      {
+        "id": "soul_burn",
+        "name": "Soul Burn",
+        "icon": "👻",
+        "unlock": 10,
+        "type": "lifesteal",
+        "desc": "ดูดเลือด 4%",
+        "pct": 0.04
       }
     ]
   },
@@ -266,7 +566,8 @@
         "cooldownMs": 3000,
         "mult": 1.8,
         "flat": 10,
-        "element": "water"
+        "element": "water",
+        "unlock": 1
       },
       {
         "id": "ice_barrier",
@@ -274,7 +575,8 @@
         "icon": "🧊",
         "mp": 24,
         "cooldownMs": 16000,
-        "heal": 0.35
+        "heal": 0.35,
+        "unlock": 2
       },
       {
         "id": "blizzard",
@@ -285,8 +587,71 @@
         "mult": 1.2,
         "flat": 0,
         "aoe": 2.4,
+        "element": "water",
+        "unlock": 4
+      },
+      {
+        "id": "orb_frost",
+        "name": "Frost Orb",
+        "icon": "🔮",
+        "mp": 10,
+        "cooldownMs": 3000,
+        "unlock": 6,
+        "mult": 1.6,
+        "flat": 5,
+        "element": "water",
+        "offhand": true
+      },
+      {
+        "id": "frost_nova",
+        "name": "Frost Nova",
+        "icon": "💠",
+        "mp": 22,
+        "cooldownMs": 8000,
+        "unlock": 9,
+        "mult": 1.3,
+        "flat": 0,
+        "aoe": 2.0,
+        "self": true,
+        "element": "water"
+      },
+      {
+        "id": "absolute_zero",
+        "name": "Absolute Zero",
+        "icon": "🧊",
+        "mp": 40,
+        "cooldownMs": 16000,
+        "unlock": 12,
+        "mult": 2.6,
+        "flat": 20,
+        "aoe": 2.2,
         "element": "water"
       }
-    ]
+    ],
+    "passives": [
+      {
+        "id": "frozen_heart",
+        "name": "Frozen Heart",
+        "icon": "💙",
+        "unlock": 5,
+        "type": "stat",
+        "desc": "MP +100 · DEF +10",
+        "bonus": {
+          "mp": 100,
+          "armor": 10
+        }
+      },
+      {
+        "id": "glacial_shell",
+        "name": "Glacial Shell",
+        "icon": "🧊",
+        "unlock": 10,
+        "type": "lowhp",
+        "desc": "HP ต่ำกว่า 35% รับดาเมจลด 30%",
+        "threshold": 0.35,
+        "reduce": 0.3
+      }
+    ],
+    "usesOffhand": true
   }
 }

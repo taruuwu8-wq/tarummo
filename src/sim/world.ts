@@ -1,7 +1,7 @@
 // Authoritative world simulation. Client sends intents, reads entities + events.
 // Runs unchanged on a Node server later.
 import { findPath, Tile } from './path';
-import { rollAttack, xpToNext, Balance, CombatStats, Skill, BASIC, Element } from '../core/combat';
+import { rollAttack, xpToNext, Balance, CombatStats, Skill, BASIC, Element, AttackType } from '../core/combat';
 import { playerStats, monsterStats, ClassDef, MonsterDef, ItemDef, Slot, Worn, Bonus } from '../core/stats';
 
 export const TICK_MS = 100;
@@ -26,7 +26,13 @@ export interface NpcDef {
 export interface SkillDef {
   id: string; name: string; icon: string; mp: number; cooldownMs: number;
   mult?: number; flat?: number; element?: Element; aoe?: number; self?: boolean; hits?: number; heal?: number;
+  /** class skills: character level; card skills: card (job) level */
+  unlock: number; offhand?: boolean; range?: number;
 }
+export interface PassiveDef { id: string; name: string; icon: string; unlock: number; desc: string; type: 'stat' | 'lifesteal' | 'lowhp'; bonus?: Bonus; pct?: number; threshold?: number; reduce?: number }
+/** hotbar entry: 's:<skillId>' or 'i:<itemId>' */
+export type BarRef = string | null;
+export const BAR_SIZE = 10;
 export interface Defs {
   balance: Balance & { respawnMs: { monster: number; player: number } };
   classes: Record<string, ClassDef>; monsters: Record<string, MonsterDef>;
@@ -35,7 +41,8 @@ export interface Defs {
 }
 export interface CardDef {
   name: string; class: string; role: string; sprite: string; height: number; icon: string; rarity: ItemDef['rarity'];
-  aura: string; element?: Element; bonus: Bonus; skills: SkillDef[];
+  aura: string; element?: Element; bonus: Bonus; skills: SkillDef[]; passives: PassiveDef[];
+  usesOffhand?: boolean; attackType?: AttackType; range?: number;
 }
 export interface UpgradeCfg {
   slots: Slot[]; successRate: number[]; gold: number[]; material: string[]; materialQty: number[]; maxUp: number;
@@ -50,8 +57,8 @@ export const INV_SIZE = 30;
 export const STASH_SIZE = 60;
 /** Players within this many tiles of a kill share its XP, gold and (own) drop rolls. */
 export const SHARE_RANGE = 12;
-export const SLOTS: Slot[] = ['weapon', 'armor', 'hat', 'charm', 'card', 'mount'];
-export interface SaveData { transformed?: boolean; mounted?: boolean; map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean }
+export const SLOTS: Slot[] = ['weapon', 'offhand', 'armor', 'hat', 'charm', 'card', 'mount'];
+export interface SaveData { bars?: Record<string, BarRef[]>; barKnown?: Record<string, string[]>; transformed?: boolean; mounted?: boolean; map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean }
 
 export interface Entity {
   id: number; kind: 'player' | 'monster'; type: string; name: string;
@@ -68,6 +75,8 @@ export interface Entity {
   gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot>>; autoSell: boolean; transformed: boolean;
   cooldowns: Record<string, number>; pendingSkill: string | null; talkTo: string | null;
   mounted: boolean; aggro: number; noRespawn: boolean; nextBlast: number; room?: number;
+  bars: Record<string, BarRef[]>; barKnown: Record<string, string[]>;
+  passive: { lifesteal: number; lowhp?: { threshold: number; reduce: number } };
 }
 
 export type Intent =
@@ -88,8 +97,10 @@ export type Intent =
   | { kind: 'chat'; id: number; text: string }
   | { kind: 'stashPut'; id: number; index: number }
   | { kind: 'stashTake'; id: number; index: number }
-  | { kind: 'debug'; id: number; what: 'level' | 'level5' | 'gold' | 'mats' | 'card' }
-  | { kind: 'mount'; id: number };
+  | { kind: 'debug'; id: number; what: 'level' | 'level5' | 'gold' | 'mats' | 'card' | 'job' }
+  | { kind: 'mount'; id: number }
+  | { kind: 'setBar'; id: number; slot: number; ref: BarRef }
+  | { kind: 'switchCard'; id: number; index: number };
 
 export type GameEvent =
   | { t: 'attack'; from: number; to: number; ranged: boolean }
@@ -198,7 +209,7 @@ export class World {
       hp: 1, maxHp: 1, mp: 0, maxMp: 0, stats: undefined as unknown as CombatStats, speed: 1, range: 1, attackMs: 1000,
       target: null, nextAttack: 0, repathAt: 0, lastHurt: -1e9, dead: false, respawnAt: 0,
       idleTicks: 0, xpReward: 0, level: 1, xp: 0, auto: false,
-      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, cooldowns: {}, pendingSkill: null, talkTo: null, mounted: false, aggro: 0, noRespawn: false, nextBlast: 0,
+      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, cooldowns: {}, pendingSkill: null, talkTo: null, mounted: false, aggro: 0, noRespawn: false, nextBlast: 0, bars: {}, barKnown: {}, passive: { lifesteal: 0 },
     };
   }
 
@@ -209,12 +220,14 @@ export class World {
     if (save) {
       const equip: Partial<Record<Slot, InvSlot>> = {};
       for (const [k, v] of Object.entries(save.equip)) if (v) equip[k as Slot] = typeof v === 'string' ? { item: v, qty: 1, up: 0 } : v;  // v1 saves stored ids
-      Object.assign(e, { xp: save.xp, gold: save.gold, inv: save.inv.filter(s => this.defs.items[s.item]), equip, autoSell: save.autoSell });
-    } else { e.equip = { weapon: { item: c.starterWeapon, qty: 1, up: 0 } }; e.inv = [{ item: 'hp_potion', qty: 3 }]; }
+      Object.assign(e, { xp: save.xp, gold: save.gold, inv: save.inv.filter(s => this.defs.items[s.item]), equip, autoSell: save.autoSell, bars: save.bars ?? {}, barKnown: save.barKnown ?? {} });
+      if (!e.equip.offhand && !e.inv.some(s => s.item === c.starterOffhand)) e.equip.offhand = { item: c.starterOffhand, qty: 1, up: 0 };  // older saves
+    } else { e.equip = { weapon: { item: c.starterWeapon, qty: 1, up: 0 }, offhand: { item: c.starterOffhand, qty: 1, up: 0 } }; e.inv = [{ item: 'hp_potion', qty: 3 }]; }
     this.applyLevel(e, save?.level ?? 1);
     if (save?.transformed && e.equip.card) { e.transformed = true; this.recalc(e); e.hp = e.maxHp; e.mp = e.maxMp; }
     if (save?.mounted && e.equip.mount) e.mounted = true;
     if (vitals) { e.hp = Math.max(1, Math.min(e.maxHp, vitals.hp)); e.mp = Math.min(e.maxMp, vitals.mp); }
+    this.ensureBar(e);
     this.entities.set(e.id, e);
     return e;
   }
@@ -249,19 +262,61 @@ export class World {
         gear.push({ def: { ...this.defs.items[st.item], bonus: b }, up: 0 });
       } else gear.push({ def: this.defs.items[st.item], up: st.up ?? 0 });
     }
-    const p = playerStats(this.defs.classes[e.type], e.level, gear);
+    // card passives: stat ones join the gear sum, the others become flags
+    const card = e.transformed && e.equip.card ? this.defs.cards[e.equip.card.item] : undefined;
+    e.passive = { lifesteal: 0 };
+    for (const ps of card ? this.unlockedPassives(e) : []) {
+      if (ps.type === 'stat') gear.push({ def: { name: ps.name, slot: 'charm', rarity: 'common', icon: '', price: 0, bonus: ps.bonus }, up: 0 });
+      else if (ps.type === 'lifesteal') e.passive.lifesteal += ps.pct ?? 0;
+      else if (ps.type === 'lowhp') e.passive.lowhp = { threshold: ps.threshold ?? 0.3, reduce: ps.reduce ?? 0.2 };
+    }
+    const cls = this.defs.classes[e.type];
+    const p = playerStats(cls, e.level, gear);
+    if (card?.usesOffhand && p.stats.offhand) [p.stats.weapon, p.stats.offhand] = [p.stats.offhand, p.stats.weapon];
+    p.stats.attackType = card?.attackType ?? cls.attackType;
+    e.range = card?.range ?? cls.range;
     Object.assign(e, { stats: p.stats, maxHp: p.maxHp, maxMp: p.maxMp });
     e.hp = Math.min(e.hp, e.maxHp); e.mp = Math.min(e.mp, e.maxMp);
   }
 
   save(e: Entity): SaveData {
-    return { transformed: e.transformed, mounted: e.mounted, map: this.map.id, cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell };
+    return { bars: e.bars, barKnown: e.barKnown, transformed: e.transformed, mounted: e.mounted, map: this.map.id, cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell };
   }
 
-  skillsOf(e: Entity): SkillDef[] {
+  /** 'base' or the active card id; each form keeps its own hotbar */
+  formOf(e: Entity) { return e.transformed && e.equip.card ? e.equip.card.item : 'base'; }
+
+  /** All active skills of the current form, unlocked or not (for the skills window). */
+  allSkillsOf(e: Entity): SkillDef[] {
     const card = e.transformed ? e.equip.card : undefined;
-    if (card) return this.defs.cards[card.item].skills.filter((_, i) => i < 2 || (card.lv ?? 1) >= 3);
-    return this.defs.skills[e.type] ?? [];
+    return card ? this.defs.cards[card.item].skills : this.defs.skills[e.type] ?? [];
+  }
+  unlockLevel(e: Entity) { const c = e.transformed ? e.equip.card : undefined; return c ? c.lv ?? 1 : e.level; }
+  /** Unlocked active skills of the current form. */
+  skillsOf(e: Entity): SkillDef[] { const lv = this.unlockLevel(e); return this.allSkillsOf(e).filter(k => k.unlock <= lv); }
+  unlockedPassives(e: Entity): PassiveDef[] {
+    const c = e.transformed ? e.equip.card : undefined;
+    return c ? (this.defs.cards[c.item].passives ?? []).filter(p => p.unlock <= (c.lv ?? 1)) : [];
+  }
+  barOf(e: Entity): BarRef[] { return e.bars[this.formOf(e)] ?? []; }
+  /** Skills on the current hotbar (in bar order) that are unlocked: what Auto may use. */
+  barSkills(e: Entity): SkillDef[] {
+    const un = this.skillsOf(e);
+    return this.barOf(e).filter((r): r is string => !!r && r.startsWith('s:')).map(r => un.find(k => k.id === r.slice(2))).filter((k): k is SkillDef => !!k);
+  }
+
+  /** Create the form's bar if missing and drop newly unlocked skills into empty slots. */
+  ensureBar(e: Entity) {
+    if (e.kind !== 'player') return;
+    const f = this.formOf(e);
+    if (!e.bars[f]) { e.bars[f] = Array(BAR_SIZE).fill(null); e.bars[f][8] = 'i:hp_potion'; e.bars[f][9] = 'i:mp_potion'; }
+    const known = (e.barKnown[f] ??= []);
+    for (const k of this.skillsOf(e)) {
+      if (known.includes(k.id)) continue;
+      known.push(k.id);
+      const i = e.bars[f].indexOf(null);
+      if (i >= 0 && !e.bars[f].includes('s:' + k.id)) e.bars[f][i] = 's:' + k.id;
+    }
   }
 
   cardOf(e: Entity) { const c = e.transformed ? e.equip.card : undefined; return c ? this.defs.cards[c.item] : undefined; }
@@ -290,6 +345,23 @@ export class World {
     this.recalc(p);
   }
 
+  /** Quick card swap. While transformed you stay transformed in the new card (shares the transform cooldown). */
+  private switchCard(p: Entity, index: number) {
+    const st = p.inv[index]; if (!st || this.defs.items[st.item]?.slot !== 'card') return;
+    if (this.defs.items[st.item].class !== p.type) { this.events.push({ t: 'msg', id: p.id, text: 'การ์ดนี้ไม่ใช่ของอาชีพเรา' }); return; }
+    if (p.transformed && (p.cooldowns['transform'] ?? 0) > this.now) { this.events.push({ t: 'msg', id: p.id, text: `รออีก ${Math.ceil(((p.cooldowns['transform'] ?? 0) - this.now) / 1000)} วิ` }); return; }
+    const old = p.equip.card;
+    p.inv.splice(index, 1); if (old) p.inv.splice(index, 0, old);
+    p.equip.card = st; p.pendingSkill = null;
+    if (p.transformed) {
+      p.cooldowns['transform'] = this.now + 10000;
+      const hpPct = p.hp / p.maxHp, mpPct = p.mp / p.maxMp;
+      this.recalc(p); p.hp = Math.round(p.maxHp * hpPct); p.mp = Math.round(p.maxMp * mpPct);
+      this.ensureBar(p);
+      this.events.push({ t: 'transform', id: p.id, on: true });
+    }
+  }
+
   private transform(p: Entity) {
     if (!p.equip.card) { this.events.push({ t: 'msg', id: p.id, text: 'ยังไม่ได้ใส่ Spirit Card' }); return; }
     if ((p.cooldowns['transform'] ?? 0) > this.now) { this.events.push({ t: 'msg', id: p.id, text: `รออีก ${Math.ceil(((p.cooldowns['transform'] ?? 0) - this.now) / 1000)} วิ` }); return; }
@@ -299,6 +371,7 @@ export class World {
     const hpPct = p.hp / p.maxHp, mpPct = p.mp / p.maxMp;
     this.recalc(p);
     p.hp = Math.round(p.maxHp * hpPct); p.mp = Math.round(p.maxMp * mpPct);
+    this.ensureBar(p);
     this.events.push({ t: 'transform', id: p.id, on: p.transformed });
   }
 
@@ -306,10 +379,16 @@ export class World {
   private debug(p: Entity, what: string) {
     if (what === 'level' || what === 'level5') {
       for (let i = 0; i < (what === 'level' ? 1 : 5); i++) { this.applyLevel(p, p.level + 1); this.events.push({ t: 'level', id: p.id, level: p.level }); }
+      this.ensureBar(p);
       p.xp = 0;
     } else if (what === 'gold') { p.gold += 10000; this.events.push({ t: 'gold', id: p.id, amount: 10000 }); }
     else if (what === 'mats') for (const m of ['slime_jelly', 'pumpkin_seed', 'golem_shard']) this.grantItem(p, m, 30);
     else if (what === 'card') this.grantItem(p, this.randomCardFor(p.type));
+    else if (what === 'job' && p.equip.card) {
+      const c = p.equip.card; c.lv = Math.min(this.defs.upgrade.cardMaxLevel, (c.lv ?? 1) + 3); c.xp = 0;
+      this.events.push({ t: 'cardLevel', id: p.id, card: c.item, lv: c.lv });
+      this.recalc(p); this.ensureBar(p);
+    }
   }
 
   private randomCardFor(cls: string) {
@@ -380,6 +459,16 @@ export class World {
     const e = this.entities.get(intent.id);
     if (!e || e.dead) return;
     if (intent.kind === 'move') { e.target = null; e.talkTo = null; this.pathTo(e, intent.to); }
+    else if (intent.kind === 'setBar') {
+      const f = this.formOf(e); this.ensureBar(e);
+      const ok = intent.ref === null || /^([si]):[\w-]+$/.test(intent.ref);
+      if (ok && intent.slot >= 0 && intent.slot < BAR_SIZE) {
+        const bar = e.bars[f], prev = bar.indexOf(intent.ref);
+        if (intent.ref && prev >= 0) bar[prev] = bar[intent.slot];   // dragging within the bar swaps
+        bar[intent.slot] = intent.ref;
+      }
+    }
+    else if (intent.kind === 'switchCard') this.switchCard(e, intent.index);
     else if (intent.kind === 'mount') {
       if (!e.equip.mount) { this.events.push({ t: 'msg', id: e.id, text: 'ยังไม่ได้ใส่พาหนะ (ซื้อที่ร้าน Mira)' }); return; }
       e.mounted = !e.mounted; e.target = null; e.pendingSkill = null;
@@ -550,7 +639,8 @@ export class World {
     const t = this.entities.get(e.target);
     if (!t || t.dead) { e.target = null; return; }
     const d = this.dist(e, t);
-    if (d <= e.range) {
+    const pend = e.pendingSkill ? this.skillsOf(e).find(k => k.id === e.pendingSkill) : undefined;
+    if (d <= (pend?.range ?? e.range)) {
       e.path = [];
       if (Math.abs((t.x - t.y) - (e.x - e.y)) > 0.05) e.facing = (t.x - t.y) > (e.x - e.y) ? 1 : -1;
       if (this.now < e.nextAttack) return;
@@ -568,7 +658,10 @@ export class World {
 
   private strike(e: Entity, t: Entity, sk: Skill) {
     const r = rollAttack(this.defs.balance, e.stats, t.stats, this.rng, sk);
+    const lh = t.passive?.lowhp;
+    if (lh && r.hit && t.hp / t.maxHp < lh.threshold) r.dmg = Math.max(1, Math.round(r.dmg * (1 - lh.reduce)));
     this.events.push({ t: 'dmg', to: t.id, amount: r.dmg, crit: r.crit, miss: !r.hit });
+    if (e.passive?.lifesteal && r.hit) e.hp = Math.min(e.maxHp, e.hp + r.dmg * e.passive.lifesteal);
     this.hurt(t, r.dmg, e);
   }
 
@@ -586,8 +679,8 @@ export class World {
     }
     const at = sk.self || !t ? e : t;
     this.events.push({ t: 'skill', from: e.id, skill: sk.id, x: at.x, y: at.y, aoe: sk.aoe ?? 0 });
-    if (t) this.events.push({ t: 'attack', from: e.id, to: t.id, ranged: e.range > 2 && !sk.self });
-    const cs: Skill = { mult: sk.mult ?? 1, flat: sk.flat ?? 0, element: sk.element };
+    if (t) this.events.push({ t: 'attack', from: e.id, to: t.id, ranged: (sk.range ?? e.range) > 2 && !sk.self });
+    const cs: Skill = { mult: sk.mult ?? 1, flat: sk.flat ?? 0, element: sk.element, offhand: sk.offhand };
     const victims = sk.aoe
       ? [...this.entities.values()].filter(o => o.kind === 'monster' && !o.dead && Math.hypot(o.x - at.x, o.y - at.y) <= sk.aoe!)
       : t ? [t] : [];
@@ -636,6 +729,7 @@ export class World {
       p.xp -= this.xpNeeded(p);
       this.applyLevel(p, p.level + 1);
       this.events.push({ t: 'level', id: p.id, level: p.level });
+      this.ensureBar(p);
       if (p.level === this.defs.upgrade.giftCardAtLevel) {
         this.events.push({ t: 'msg', id: p.id, text: `ครบ Lv ${p.level}! ได้รับ Spirit Card` });
         this.grantItem(p, this.randomCardFor(p.type));
@@ -648,7 +742,7 @@ export class World {
       while ((card.lv ?? 1) < u.cardMaxLevel && card.xp >= u.cardXpPerLevel * (card.lv ?? 1)) {
         card.xp -= u.cardXpPerLevel * (card.lv ?? 1); card.lv = (card.lv ?? 1) + 1;
         this.events.push({ t: 'cardLevel', id: p.id, card: card.item, lv: card.lv });
-        this.recalc(p);
+        this.recalc(p); this.ensureBar(p);
       }
     }
   }
@@ -676,7 +770,7 @@ export class World {
     // skills in bar order; heal only when hurt; whirlwind only when the target is close
     if (e.target != null && !e.pendingSkill) {
       const t = this.entities.get(e.target);
-      for (const sk of this.skillsOf(e)) {
+      for (const sk of this.barSkills(e)) {
         if (!this.skillReady(e, sk)) continue;
         if (sk.heal && e.hp > e.maxHp * 0.5) continue;
         if (sk.self && sk.aoe && (!t || this.dist(e, t) > sk.aoe)) continue;
