@@ -6,6 +6,7 @@ import { writeSave, readStash, writeStash, readUnlocks, writeUnlocks } from './s
 import type { Net } from './net';
 import type { Intent } from '../sim/world';
 import { Hud } from './hud';
+import { paintGround, makeProps, scatter, PX } from './mapart';
 
 const TW = 64, TH = 32;
 const defs = loadDefs();
@@ -34,6 +35,8 @@ interface View {
   bubble?: Phaser.GameObjects.Text; bubbleUntil?: number;
   formKey?: string; tint?: number; stKey?: string; stIcons?: Phaser.GameObjects.Text; mount?: Phaser.GameObjects.Image; mountLook?: string; dust?: Phaser.GameObjects.Particles.ParticleEmitter;
   scale: number; phase: number; lunge: number; lungeDir: { x: number; y: number }; height: number;
+  /** procedural animation state: hit recoil, turn squish, spawn pop, death fall (all 1 → 0 or 0 → 1), last step index */
+  hitT: number; flipT: number; popT: number; dieT: number; face: number; step: number;
 }
 
 export class GameScene extends Phaser.Scene {
@@ -45,6 +48,11 @@ export class GameScene extends Phaser.Scene {
   private marker!: Phaser.GameObjects.Graphics;
   private ring!: Phaser.GameObjects.Graphics;
   private hud!: Hud;
+  private puffs?: Phaser.GameObjects.Particles.ParticleEmitter;
+  /** swaying decor (v2 maps) and drifting cloud shadows */
+  private sway: { o: Phaser.GameObjects.Image; ph: number; amp: number }[] = [];
+  private clouds: Phaser.GameObjects.Image[] = [];
+  private bounds = { x0: 0, x1: 0, y0: 0, y1: 0 };
 
   constructor() { super('game'); }
 
@@ -63,7 +71,7 @@ export class GameScene extends Phaser.Scene {
   private gated: { objs: Phaser.GameObjects.GameObject[] }[] = [];
 
   create(data: SceneData) {
-    this.views.clear(); this.names.clear(); this.autoRing = undefined; this.doorViews = []; this.gated = []; this.portalLabels = []; this.acc = 0; this.leaving = false; this.net = data.net;
+    this.views.clear(); this.names.clear(); this.autoRing = undefined; this.doorViews = []; this.gated = []; this.portalLabels = []; this.sway = []; this.clouds = []; this.acc = 0; this.leaving = false; this.net = data.net;
     (window as unknown as { __scene: GameScene }).__scene = this;  // handy for automated playtests
     const net = data.net;
     const map = MAPS[net ? net.map : data.map ?? data.save?.map ?? 'town'] ?? MAPS.town;
@@ -84,6 +92,10 @@ export class GameScene extends Phaser.Scene {
     const sg = this.make.graphics({}, false);
     sg.fillStyle(0xffffff, 1).fillPoints([{ x: 4, y: 0 }, { x: 5, y: 3 }, { x: 8, y: 4 }, { x: 5, y: 5 }, { x: 4, y: 8 }, { x: 3, y: 5 }, { x: 0, y: 4 }, { x: 3, y: 3 }], true);
     sg.generateTexture('spark', 8, 8); sg.destroy();
+    if (!this.textures.exists('dust')) { const dg = this.make.graphics({}, false); dg.fillStyle(0xffffff, 1).fillCircle(4, 4, 4); dg.generateTexture('dust', 8, 8); dg.destroy(); }
+    // footstep dust, shared by everyone (explode() on each landing)
+    this.puffs = this.add.particles(0, 0, 'dust', { emitting: false, lifespan: 380, speedX: { min: -28, max: 28 }, speedY: { min: -14, max: -4 },
+      scale: { start: 0.7, end: 0 }, alpha: { start: 0.45, end: 0 }, tint: 0xe6d8b8 }).setDepth(8);
     this.drawGround(map);
     this.hover = this.add.graphics().setDepth(1);
     this.marker = this.add.graphics().setDepth(1).setAlpha(0);
@@ -134,6 +146,7 @@ export class GameScene extends Phaser.Scene {
     if (this.leaving) return;
     const alpha = Math.min(1, this.acc / TICK_MS), now = this.time.now / 1000;
     for (const e of this.world.entities.values()) { if (!this.views.has(e.id)) this.makeView(e); this.syncView(e, alpha, now, dtMs); }
+    this.animDecor(now, dtMs);
     for (const [id, v] of this.views) if (!this.world.entities.has(id)) {
       v.body.destroy(); v.shadow.destroy(); v.bar.destroy(); v.stIcons?.destroy(); v.bubble?.destroy(); v.rareSparks?.destroy(); v.pillar?.destroy(); v.aura?.destroy(); v.sparks?.destroy(); v.ring?.destroy(); v.wings?.destroy(); v.mount?.destroy(); v.dust?.destroy();
       this.views.delete(id); this.names.get(id)?.destroy(); this.names.delete(id);
@@ -178,24 +191,53 @@ export class GameScene extends Phaser.Scene {
     const bar = this.add.graphics();
     const tint = 'tint' in d && d.tint ? parseInt(d.tint as string, 16) : undefined;
     if (tint) body.setTint(tint);
-    this.views.set(e.id, { body, shadow, bar, scale, tint, phase: Math.random() * 6, lunge: 0, lungeDir: { x: 0, y: 0 }, height: d.height });
+    this.views.set(e.id, { body, shadow, bar, scale, tint, phase: Math.random() * 6, lunge: 0, lungeDir: { x: 0, y: 0 }, height: d.height, hitT: 0, flipT: 0, popT: 1, dieT: 0, face: e.facing, step: 0 });
   }
 
   private syncView(e: Entity, alpha: number, now: number, dtMs: number) {
     const v = this.views.get(e.id)!;
     const { sx, sy } = toScreen(e.px + (e.x - e.px) * alpha, e.py + (e.y - e.py) * alpha);
-    const t = now * (e.moving ? 9 : 2.2) + v.phase;
-    let bob = 0, sqx = 1, sqy = 1;
-    if (e.moving) { bob = -Math.abs(Math.sin(t)) * 5; sqy = 1 + Math.abs(Math.sin(t)) * 0.04; }
-    else { sqy = 1 + Math.sin(t) * 0.025; sqx = 1 - Math.sin(t) * 0.015; }
-    v.lunge = Math.max(0, v.lunge - dtMs / 180);
+    // ---- procedural animation (single still sprite): breathe, hop-walk with lean + squash, wind-up lunge, recoil, turn, pop, fall ----
+    const dt = dtMs / 1000;
+    const held = !e.dead && (e.statuses ?? []).some(st => (st.type === 'freeze' || st.type === 'stun') && st.until > this.world.now);
+    let bob = 0, sqx = 1, sqy = 1, rot = 0, shake = 0;
+    if (held) { /* frozen / stunned: no motion */ }
+    else if (e.moving) {
+      const t = now * 9 + v.phase, s = Math.abs(Math.sin(t)), land = Math.pow(1 - s, 6);
+      bob = -s * 6;
+      sqy = 1 + s * 0.05 - land * 0.09; sqx = 1 - s * 0.03 + land * 0.08;
+      rot = e.facing * 0.06 + Math.sin(t) * 0.035;
+      const step = Math.floor(t / Math.PI);
+      if (step !== v.step) { v.step = step; if (!e.mounted && !e.dead) this.puffs?.explode(2, sx, sy + 2); }
+    } else {
+      const b = Math.sin(now * 2.2 + v.phase);
+      sqy = 1 + b * 0.03; sqx = 1 - b * 0.018; rot = Math.sin(now * 0.9 + v.phase * 1.3) * 0.02;
+    }
+    v.lunge = Math.max(0, v.lunge - dtMs / 260);
     const l = Math.sin(v.lunge * Math.PI) * 10;
+    if (v.lunge > 0) {
+      const p = 1 - v.lunge, dir = Math.sign(v.lungeDir.x) || e.facing;
+      rot += p < 0.3 ? -dir * 0.16 * (p / 0.3) : dir * 0.2 * Math.sin((p - 0.3) / 0.7 * Math.PI);
+      sqx *= 1 + Math.sin(p * Math.PI) * 0.08; sqy *= 1 - Math.sin(p * Math.PI) * 0.04;
+    }
+    if (v.hitT > 0) {
+      v.hitT = Math.max(0, v.hitT - dt / 0.25);
+      shake = Math.sin(v.hitT * 40) * 4 * v.hitT; sqy *= 1 - v.hitT * 0.08; sqx *= 1 + v.hitT * 0.06; rot -= e.facing * v.hitT * 0.12;
+    }
+    if (v.face !== e.facing) { v.face = e.facing; v.flipT = 1; }
+    v.flipT = Math.max(0, v.flipT - dt / 0.14);
+    v.popT = Math.max(0, v.popT - dt / 0.35);
+    const k = 1 - v.popT, pop = 1 + 2.7 * Math.pow(k - 1, 3) + 1.7 * Math.pow(k - 1, 2);   // easeOutBack 0 → 1
+    v.dieT = e.dead ? Math.min(1, v.dieT + dt / 0.4) : 0;
+    if (v.dieT > 0) rot = e.facing * 1.35 * (1 - Math.pow(1 - v.dieT, 3));
     if (e.kind === 'player') this.syncForm(e, v);
     const lift = e.mounted ? -10 + Math.sin(now * 3) * 2 : 0;
-    if (e.mounted) bob *= 0.3;
-    const x = sx + v.lungeDir.x * l, y = sy + 3 + bob + lift + v.lungeDir.y * l;
+    if (e.mounted) { bob *= 0.3; rot *= 0.3; }
+    const x = sx + v.lungeDir.x * l + shake, y = sy + 3 + bob + lift + v.lungeDir.y * l + v.dieT * 4;
+    v.body.setRotation(rot);
+    sqx *= pop * (1 - v.flipT * 0.8); sqy *= pop;
     v.body.setPosition(x, y).setScale(v.scale * sqx * e.facing, v.scale * sqy);
-    v.shadow.setPosition(sx, sy + 1).setScale(1 + bob / 30);
+    v.shadow.setPosition(sx, sy + 1).setScale((1 + bob / 30) * pop);
     v.body.setDepth(10 + sy); v.shadow.setDepth(2);
     if (v.mount) v.mount.setPosition(sx, y + 4).setDepth(v.body.depth - 0.2).setScale(v.mountLook === 'cloud' ? 1 + Math.sin(now * 5) * 0.03 : 1).setVisible(!e.dead);
     if (v.dust) { v.dust.setPosition(sx, sy + 2).setDepth(v.body.depth - 0.3); v.dust.emitting = e.moving && !e.dead; }
@@ -388,12 +430,13 @@ export class GameScene extends Phaser.Scene {
       const txt = ev.miss ? 'MISS' : String(ev.amount);
       const color = ev.miss ? '#c9d1e0' : e.kind === 'player' ? '#ff6b6b' : ev.crit ? '#ffd23f' : '#ffffff';
       this.floatText(sx, sy - v.height - 6, txt + (ev.crit ? '!' : ''), color, ev.crit ? 20 : 15);
-      if (!ev.miss) { v.body.setTintFill(0xffffff); this.time.delayedCall(70, () => v.body.setTint(0xff8080)); this.time.delayedCall(170, () => { v.body.clearTint(); if (v.tint) v.body.setTint(v.tint); v.stKey = undefined; }); }
+      if (!ev.miss) { v.hitT = 1; v.body.setTintFill(0xffffff); this.time.delayedCall(70, () => v.body.setTint(0xff8080)); this.time.delayedCall(170, () => { v.body.clearTint(); if (v.tint) v.body.setTint(v.tint); v.stKey = undefined; }); }
     } else if (ev.t === 'die') {
       const v = this.views.get(ev.id); if (!v) return;   // died the tick it spawned (no sprite yet)
       this.tweens.add({ targets: v.body, alpha: 0, duration: 450 });
     } else if (ev.t === 'respawn') {
       const v = this.views.get(ev.id); if (!v) return;
+      v.popT = 1; v.dieT = 0;
       v.body.setAlpha(0); this.tweens.add({ targets: v.body, alpha: 1, duration: 400 });
     } else if (ev.t === 'xp' && ev.id === this.player.id) {
       const { sx, sy } = toScreen(this.player.x, this.player.y);
@@ -536,7 +579,46 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Ground is baked into one texture; trees/rocks are shared textures. Graphics objects re-tessellate every frame.
+  private animDecor(now: number, dtMs: number) {
+    for (const s of this.sway) s.o.setRotation(Math.sin(now * 1.4 + s.ph) * s.amp + Math.sin(now * 0.37 + s.ph * 2) * s.amp * 0.5);
+    const b = this.bounds;
+    for (const c of this.clouds) { c.x += dtMs * 0.012; c.y += dtMs * 0.004; if (c.x > b.x1 + 300) { c.x = b.x0 - 300; c.y = b.y0 + Math.random() * (b.y1 - b.y0); } }
+  }
+
+  /** v2 look: painted ground, shaded swaying props, border forest, cloud shadows, floating motes. */
+  private drawGroundV2(map: MapData) {
+    const g = paintGround(this, map, (x, y) => this.world.isWater(x, y), TW, TH);
+    this.add.image(g.x, g.y, g.key).setOrigin(0, 0).setScale(PX).setDepth(0);
+    makeProps(this);
+    const h = (x: number, y: number) => (((x * 73856093) ^ (y * 19349663)) >>> 0) % 1000 / 1000;
+    const tree = (fx: number, fy: number, sway = 0.025) => {
+      const { sx, sy } = toScreen(fx, fy), k = h(Math.round(fx * 7), Math.round(fy * 5));
+      const key = k < 0.22 ? 'm_pine' : `m_oak${Math.floor(k * 3)}`;
+      const o = this.add.image(sx, sy + 4, key).setOrigin(0.5, 1).setScale(PX * (0.9 + k * 0.25)).setDepth(10 + sy).setFlipX(k > 0.5);
+      this.sway.push({ o, ph: k * 6.28, amp: sway });
+    };
+    for (const [x, y] of map.trees) tree(x, y);
+    // border forest along the two back edges frames the map without hiding anything
+    for (let i = -1; i <= map.width; i += 1.3) tree(i + (h(i * 10, 1) - 0.5) * 0.6, -1.1 - h(i * 10, 2) * 0.9, 0.018);
+    for (let i = -1; i <= map.height; i += 1.3) tree(-1.1 - h(1, i * 10) * 0.9, i + (h(2, i * 10) - 0.5) * 0.6, 0.018);
+    for (const [x, y] of map.rocks) { const { sx, sy } = toScreen(x, y); this.add.image(sx, sy + 4, 'm_rock').setOrigin(0.5, 1).setScale(PX).setDepth(10 + sy).setFlipX(h(x, y) > 0.5); }
+    const blocked = (x: number, y: number) => !this.world.walkable(x, y) || this.world.isWater(x, y);
+    for (const [x, y] of scatter(map, blocked, 14, 3)) { const { sx, sy } = toScreen(x, y); this.add.image(sx, sy + 3, 'm_bush').setOrigin(0.5, 1).setScale(PX).setDepth(10 + sy); }
+    for (const [x, y] of scatter(map, blocked, 90, 5)) {
+      const { sx, sy } = toScreen(x, y), o = this.add.image(sx, sy + 2, 'm_tuft').setOrigin(0.5, 1).setScale(PX).setDepth(9 + sy);
+      this.sway.push({ o, ph: (x + y) * 1.7, amp: 0.14 });
+    }
+    const c0 = toScreen(0, map.height), c1 = toScreen(map.width, 0), c2 = toScreen(map.width, map.height);
+    this.bounds = { x0: c0.sx, x1: c1.sx, y0: 0, y1: c2.sy };
+    for (let i = 0; i < 3; i++) this.clouds.push(this.add.image(c0.sx + (c1.sx - c0.sx) * (i / 3), c2.sy * (0.2 + i * 0.3), 'm_cloud').setScale(9, 7).setAlpha(0.13).setDepth(1));
+    this.add.particles(0, 0, 'm_mote', {
+      x: { min: c0.sx, max: c1.sx }, y: { min: 0, max: c2.sy }, lifespan: 7000, frequency: 160, quantity: 1,
+      speedX: { min: -6, max: 6 }, speedY: { min: -12, max: -4 }, scale: { min: 1, max: 2 }, alpha: { onUpdate: (_p: unknown, _k: string, t: number) => Math.sin(t * Math.PI) * 0.85 }, blendMode: 'ADD',
+    }).setDepth(9000);
+  }
+
   private drawGround(map: MapData) {
+    if (map.art === 'v2') { this.drawGroundV2(map); return; }
     const minX = -map.height * TW / 2 - TW / 2, maxX = map.width * TW / 2 + TW / 2;
     const minY = -TH / 2, maxY = (map.width + map.height) * TH / 2 + TH / 2;
     const g = this.make.graphics({}, false);
