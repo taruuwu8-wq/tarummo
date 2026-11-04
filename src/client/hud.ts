@@ -57,7 +57,7 @@ export class Hud {
       <div id="dg" hidden></div>
       <div id="chat"><div id="chatlog"></div><input id="chatin" maxlength="120" placeholder="Enter เพื่อพิมพ์แชท" autocomplete="off"></div>
       <div id="banner"></div>
-      <div class="xp"><i id="pxp"></i><span id="pxpt"></span></div>`;
+      <div class="xp"><i id="pxp"></i><u id="prest"></u><span id="pxpt"></span></div>`;
 
     this.hot = new Hotbar(this.el, world, p, items, send, (t, c) => this.toast(t, c));
     this.$('skillbtn').addEventListener('click', () => this.hot.toggle('skillwin'));
@@ -220,7 +220,9 @@ export class Hud {
     this.$('pmpt').textContent = `${Math.floor(p.mp)} / ${p.maxMp}`;
     this.$('pg').textContent = `💰 ${p.gold.toLocaleString()} G`;
     this.$('pxp').style.width = `${(p.xp / xpNeed) * 100}%`;
-    this.$('pxpt').textContent = `XP ${p.xp} / ${xpNeed}`;
+    const restW = Math.min(1 - p.xp / xpNeed, (p.rested ?? 0) / xpNeed);
+    this.$('prest').style.left = `${(p.xp / xpNeed) * 100}%`; this.$('prest').style.width = `${Math.max(0, restW) * 100}%`;
+    this.$('pxpt').textContent = `XP ${p.xp} / ${xpNeed}${p.rested > 0 ? ` · 😴 Rested +${Math.round(p.rested).toLocaleString()} (×2)` : ''}`;
     const tf = this.$('tf'); tf.hidden = !t;
     if (t) {
       const race = { plant: 'พืช', animal: 'สัตว์', demon: 'ปีศาจ', angel: 'เทวดา', spirit: 'วิญญาณ', robot: 'หุ่น' }[this.world.defs.monsters[t.type]?.race ?? ''] ?? '';

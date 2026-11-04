@@ -39,11 +39,14 @@ fs.mkdirSync(SHARED, { recursive: true });
 const STASH_FILE = path.join(SHARED, 'stash.json');
 let stash: InvSlot[] = [];
 try { stash = JSON.parse(fs.readFileSync(STASH_FILE, 'utf8')); } catch { /* first run */ }
+const UNLOCK_FILE = path.join(SHARED, 'unlocks.json');
+let unlocks: string[] = [];
+try { unlocks = JSON.parse(fs.readFileSync(UNLOCK_FILE, 'utf8')); } catch { /* first run */ }
 
 // ---- rooms ----
 const defs = loadDefs();
 const rooms = new Map<string, World>();
-for (const id of Object.keys(MAPS)) rooms.set(id, new World(structuredClone(MAPS[id]), defs, (Math.random() * 1e9) | 0, { stash }));
+for (const id of Object.keys(MAPS)) rooms.set(id, new World(structuredClone(MAPS[id]), defs, (Math.random() * 1e9) | 0, { stash, unlocks }));
 
 interface Client { ws: WebSocket; name: string; room: string; id: number }
 const clients = new Set<Client>();
@@ -98,12 +101,16 @@ setInterval(() => {
       enter(c, e.to, save.cls, save, e.spawn, vitals);
       persist(c);
     }
-    const msg = JSON.stringify({ t: 'tick', now: w.now, ents: w.snapshot(), ev: ev.filter(e => e.t !== 'portal'), stash, dungeon: w.dungeon } satisfies ServerMsg);
+    const msg = JSON.stringify({ t: 'tick', now: w.now, ents: w.snapshot(), ev: ev.filter(e => e.t !== 'portal'), stash, dungeon: w.dungeon, unlocks } satisfies ServerMsg);
     for (const c of clients) if (c.room === roomId && c.ws.readyState === WebSocket.OPEN) c.ws.send(msg);
   }
 }, TICK_MS);
 setInterval(() => {
   for (const c of clients) persist(c);
+  if ([...rooms.values()].some(w => w.unlocksDirty)) {
+    fs.writeFileSync(UNLOCK_FILE, JSON.stringify(unlocks));
+    for (const w of rooms.values()) w.unlocksDirty = false;
+  }
   if ([...rooms.values()].some(w => w.stashDirty)) {
     fs.writeFileSync(STASH_FILE, JSON.stringify(stash));
     for (const w of rooms.values()) w.stashDirty = false;

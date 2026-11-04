@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { World, TICK_MS, Entity, MapData, Defs, GameEvent } from '../sim/world';
 import { loadDefs, MAPS } from '../data';
 import type { SaveData } from '../sim/world';
-import { writeSave, readStash, writeStash } from './save';
+import { writeSave, readStash, writeStash, readUnlocks, writeUnlocks } from './save';
 import type { Net } from './net';
 import type { Intent } from '../sim/world';
 import { Hud } from './hud';
@@ -57,10 +57,11 @@ export class GameScene extends Phaser.Scene {
   private names = new Map<number, Phaser.GameObjects.Text>();
   private autoRing?: Phaser.GameObjects.Graphics;
   private doorViews: { room: number; imgs: Phaser.GameObjects.Image[] }[] = [];
+  private portalLabels: { p: { to: string; label: string; minLevel?: number }; t: Phaser.GameObjects.Text }[] = [];
   private gated: { objs: Phaser.GameObjects.GameObject[] }[] = [];
 
   create(data: SceneData) {
-    this.views.clear(); this.names.clear(); this.autoRing = undefined; this.doorViews = []; this.gated = []; this.acc = 0; this.leaving = false; this.net = data.net;
+    this.views.clear(); this.names.clear(); this.autoRing = undefined; this.doorViews = []; this.gated = []; this.portalLabels = []; this.acc = 0; this.leaving = false; this.net = data.net;
     (window as unknown as { __scene: GameScene }).__scene = this;  // handy for automated playtests
     const net = data.net;
     const map = MAPS[net ? net.map : data.map ?? data.save?.map ?? 'town'] ?? MAPS.town;
@@ -72,7 +73,7 @@ export class GameScene extends Phaser.Scene {
       net.queue.length = 0;
       this.act = i => net.intent(i);
     } else {
-      this.world = new World(structuredClone(map), defs, Date.now() & 0xffff, { stash: readStash() });
+      this.world = new World(structuredClone(map), defs, Date.now() & 0xffff, { stash: readStash(), unlocks: readUnlocks() });
       this.player = this.world.spawnPlayer(data.cls ?? 'swordsman', data.save, data.at, data.vitals);
       this.act = i => this.world.apply(i);
     }
@@ -92,7 +93,7 @@ export class GameScene extends Phaser.Scene {
     cam.startFollow(this.views.get(this.player.id)!.body, true, 0.12, 0.12);
 
     this.hud = new Hud(this.world, this.player, defs.items, i => this.act(i));
-    const save = () => { writeSave(this.world.save(this.player)); writeStash(this.world.stash); };
+    const save = () => { writeSave(this.world.save(this.player)); writeStash(this.world.stash); writeUnlocks(this.world.unlocks); };
     if (!net) { saveNow = save; this.time.addEvent({ delay: 5000, loop: true, callback: save }); }
     this.events.once('shutdown', () => this.hud.destroy());
     this.drawPortals(map); this.drawNpcs(map);
@@ -135,6 +136,10 @@ export class GameScene extends Phaser.Scene {
     this.drawTargetRing();
     this.drawAutoRange();
     const dg = this.world.dungeon;
+    for (const { p, t } of this.portalLabels) {
+      const open = this.world.unlocks.includes(p.to) || this.player.level >= (p.minLevel ?? 0);
+      t.setText(`${open ? '⟡' : '🔒'} ${p.label}${open ? '' : ` (ต้อง Lv ${p.minLevel})`}`).setColor(open ? '#d9d0ff' : '#ff9f9f');
+    }
     for (const d of this.doorViews) for (const im of d.imgs) im.setVisible(!dg.openDoors.includes(d.room));
     for (const g of this.gated) for (const o of g.objs) (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(dg.cleared);
     const tgt = this.player.target != null ? this.world.entities.get(this.player.target) ?? null : null;
@@ -153,7 +158,7 @@ export class GameScene extends Phaser.Scene {
         const wait = () => { if (net.last && net.queue.some(q => q.t === 'tick')) { net.queue.length = 0; this.scene.restart({ net, cls: net.cls }); } else this.time.delayedCall(30, wait); };
         this.cameras.main.fadeOut(200, 27, 31, 42); wait();
       } else if (m.t === 'tick') {
-        this.world.applySnapshot(m.now, m.ents); this.world.stash = m.stash; this.world.dungeon = m.dungeon; this.acc = 0;
+        this.world.applySnapshot(m.now, m.ents); this.world.stash = m.stash; this.world.dungeon = m.dungeon; this.world.unlocks = m.unlocks; this.acc = 0;
         for (const ev of m.ev) this.onEvent(ev);
       } else if (m.t === 'error') this.hud.toast(m.text, 'warn');
     }
@@ -382,13 +387,19 @@ export class GameScene extends Phaser.Scene {
     } else if (ev.t === 'portal' && ev.id === this.player.id && !this.net && !this.leaving) {
       this.leaving = true;
       const p = this.player, data: SceneData = { cls: p.type, save: this.world.save(p), map: ev.to, at: ev.spawn, vitals: { hp: p.hp, mp: p.mp } };
-      data.save!.map = ev.to; writeSave(data.save!);
+      data.save!.map = ev.to; writeSave(data.save!); writeUnlocks(this.world.unlocks);
       // don't wait on camerafadeoutcomplete: it never fires if another fade is running
       this.cameras.main.fadeOut(200, 27, 31, 42);
       this.time.delayedCall(220, () => this.scene.restart(data));
     } else if (ev.t === 'status') {
       const e = this.world.entities.get(ev.id), v = e && this.views.get(e.id);
       if (e && v) { const { sx, sy } = toScreen(e.x, e.y); this.floatText(sx, sy - v.height - 22, defs.statuses[ev.type].name, '#ffe9a8', 12, 700); }
+    } else if (ev.t === 'unlock') {
+      this.hud.banner(`🔓 ${ev.by} ปลดล็อก ${MAPS[ev.map]?.name ?? ev.map} ให้ทั้งกลุ่มแล้ว`);
+    } else if (ev.t === 'locked' && ev.id === this.player.id) {
+      this.hud.toast(`🔒 ${MAPS[ev.map]?.name ?? ev.map} ต้อง Lv ${ev.level} หรือรอให้เพื่อนในกลุ่มเข้าไปปลดล็อกก่อน`, 'warn');
+    } else if (ev.t === 'rested' && ev.id === this.player.id) {
+      this.hud.banner(`😴 พักไป ${ev.hours} ชม. · Rested XP +${ev.amount.toLocaleString()} (XP จากมอน ×2)`);
     } else if (ev.t === 'telegraph') {
       const { sx, sy } = toScreen(ev.x, ev.y), w = ev.r * TW * 2, h = ev.r * TH * 2;
       const ring = this.add.ellipse(sx, sy, w, h).setStrokeStyle(3, 0xff3b3b, 0.95).setDepth(3);
@@ -566,7 +577,8 @@ export class GameScene extends Phaser.Scene {
       this.tweens.add({ targets: ring, scaleX: 1.15, scaleY: 1.15, alpha: 0.6, yoyo: true, repeat: -1, duration: 700 });
       this.add.particles(sx, sy, 'spark', { frequency: 120, lifespan: 1000, x: { min: -20, max: 20 }, speedY: { min: -40, max: -15 },
         scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, tint: 0xc6b8ff, blendMode: 'ADD' }).setDepth(9 + sy);
-      this.label(sx, sy - 46, '⟡ ' + p.label, '#d9d0ff');
+      const lb = this.label(sx, sy - 46, '⟡ ' + p.label, '#d9d0ff');
+      if (p.minLevel) this.portalLabels.push({ p, t: lb });
       if (p.when === 'cleared') this.gated.push({ objs: this.children.list.slice(before) });
     }
   }
@@ -583,7 +595,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private label(x: number, y: number, s: string, color: string) {
-    this.add.text(x, y, s, { fontFamily: 'system-ui, sans-serif', fontSize: '11px', fontStyle: 'bold', color, stroke: '#1b1f2a', strokeThickness: 3 })
+    return this.add.text(x, y, s, { fontFamily: 'system-ui, sans-serif', fontSize: '11px', fontStyle: 'bold', color, stroke: '#1b1f2a', strokeThickness: 3 })
       .setOrigin(0.5).setDepth(9500).setResolution(2);
   }
 

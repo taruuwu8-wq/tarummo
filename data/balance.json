@@ -59,5 +59,12 @@
   "respawnMs": {
     "monster": 8000,
     "player": 3000
+  },
+  "rested": {
+    "_note": "Offline time builds a rested pool; monster XP is doubled until it runs out.",
+    "perHourPct": 0.05,
+    "capPct": 1.5,
+    "mult": 2,
+    "minAwayMin": 10
   }
 }

@@ -6,7 +6,7 @@ import { playerStats, monsterStats, ClassDef, MonsterDef, ItemDef, Slot, Worn, B
 
 export const TICK_MS = 100;
 
-export interface Portal { x: number; y: number; to: string; spawn: Tile; label: string; when?: 'cleared' }
+export interface Portal { x: number; y: number; to: string; spawn: Tile; label: string; when?: 'cleared'; minLevel?: number }
 export interface DungeonDef {
   doors: { room: number; tiles: Tile[] }[];
   rooms: { area: [number, number, number, number]; monsters: [string, number][] }[];
@@ -56,7 +56,7 @@ export interface AutoTrip { phase: 'toTown' | 'shop' | 'back'; home: string; spo
 export interface AutoStats { since: number; xp: number; gold: number; kills: number; items: Record<string, number> }
 const GEAR_SLOTS = ['weapon', 'offhand', 'armor', 'hat', 'charm'];
 export interface Defs {
-  balance: Balance & { respawnMs: { monster: number; player: number } };
+  balance: Balance & { respawnMs: { monster: number; player: number }; rested: { perHourPct: number; capPct: number; mult: number; minAwayMin: number } };
   classes: Record<string, ClassDef>; monsters: Record<string, MonsterDef>;
   items: Record<string, ItemDef>; skills: Record<string, SkillDef[]>;
   cards: Record<string, CardDef>; upgrade: UpgradeCfg; npcs: Record<string, NpcDef>;
@@ -104,7 +104,7 @@ export const STASH_SIZE = 60;
 /** Players within this many tiles of a kill share its XP, gold and (own) drop rolls. */
 export const SHARE_RANGE = 12;
 export const SLOTS: Slot[] = ['weapon', 'offhand', 'armor', 'hat', 'charm', 'card', 'mount'];
-export interface SaveData { autoStats?: AutoStats & { elapsed?: number }; autoOn?: boolean; autoCfg?: AutoCfg; autoAnchor?: Tile | null; autoTrip?: AutoTrip | null; bars?: Record<string, BarRef[]>; barKnown?: Record<string, string[]>; transformed?: boolean; mounted?: boolean; map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean }
+export interface SaveData { rested?: number; lastSeen?: number; autoStats?: AutoStats & { elapsed?: number }; autoOn?: boolean; autoCfg?: AutoCfg; autoAnchor?: Tile | null; autoTrip?: AutoTrip | null; bars?: Record<string, BarRef[]>; barKnown?: Record<string, string[]>; transformed?: boolean; mounted?: boolean; map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean }
 
 export interface Entity {
   id: number; kind: 'player' | 'monster'; type: string; name: string;
@@ -121,6 +121,7 @@ export interface Entity {
   gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot>>; autoSell: boolean; transformed: boolean;
   cooldowns: Record<string, number>; pendingSkill: string | null; talkTo: string | null;
   lastHit: number;
+  rested: number;
   autoCfg: AutoCfg; autoAnchor: Tile | null; autoTrip: AutoTrip | null; autoStats: AutoStats;
   mounted: boolean; aggro: number; noRespawn: boolean; nextBlast: number; room?: number;
   bars: Record<string, BarRef[]>; barKnown: Record<string, string[]>;
@@ -171,6 +172,9 @@ export type GameEvent =
   | { t: 'msg'; id: number; text: string }
   | { t: 'transform'; id: number; on: boolean }
   | { t: 'status'; id: number; type: StatusType }
+  | { t: 'unlock'; map: string; by: string }
+  | { t: 'locked'; id: number; map: string; level: number }
+  | { t: 'rested'; id: number; amount: number; hours: number }
   | { t: 'rarify'; id: number; item: string; result: 'ok' | 'broke' | 'saved'; rare: number }
   | { t: 'upgrade'; id: number; item: string; ok: boolean; up: number; broke?: boolean; saved?: boolean }
   | { t: 'cardLevel'; id: number; card: string; lv: number }
@@ -191,12 +195,18 @@ export class World {
   /** Shared across rooms (and players). Server persists it; offline it lives in localStorage. */
   stash: InvSlot[];
   stashDirty = false;
+  /** maps the group has opened (shared like the stash) */
+  unlocks: string[];
+  unlocksDirty = false;
   dungeon: DungeonState = { active: false, startedAt: 0, room: 0, openDoors: [], cleared: false, rank: null, timeMs: 0 };
+  /** events raised before the entity existed in the world (flushed on the next tick) */
+  private pendingEvents: GameEvent[] = [];
   private blasts: { x: number; y: number; r: number; at: number; from: number; mult: number; status?: StatusSpec }[] = [];
 
   /** mirror: client-side copy fed by server snapshots; no monsters are spawned and tick() is not called. */
-  constructor(public map: MapData, public defs: Defs, seed = 1, opts: { mirror?: boolean; stash?: InvSlot[] } = {}) {
+  constructor(public map: MapData, public defs: Defs, seed = 1, opts: { mirror?: boolean; stash?: InvSlot[]; unlocks?: string[] } = {}) {
     this.stash = opts.stash ?? [];
+    this.unlocks = opts.unlocks ?? [];
     this.cleanItems(this.stash);
     let s = seed >>> 0;
     this.rng = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
@@ -276,7 +286,7 @@ export class World {
       hp: 1, maxHp: 1, mp: 0, maxMp: 0, stats: undefined as unknown as CombatStats, speed: 1, range: 1, attackMs: 1000,
       target: null, nextAttack: 0, repathAt: 0, lastHurt: -1e9, dead: false, respawnAt: 0,
       idleTicks: 0, xpReward: 0, level: 1, xp: 0, auto: false,
-      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, cooldowns: {}, pendingSkill: null, talkTo: null, lastHit: -1e9, autoCfg: defaultAutoCfg(), autoAnchor: null, autoTrip: null, autoStats: { since: 0, xp: 0, gold: 0, kills: 0, items: {} }, mounted: false, aggro: 0, noRespawn: false, nextBlast: 0, bars: {}, barKnown: {}, passive: { lifesteal: 0 }, extra: NO_EXTRA(), statuses: [], prot: {}, onHit: [], nextSummon: 0,
+      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, cooldowns: {}, pendingSkill: null, talkTo: null, lastHit: -1e9, rested: 0, autoCfg: defaultAutoCfg(), autoAnchor: null, autoTrip: null, autoStats: { since: 0, xp: 0, gold: 0, kills: 0, items: {} }, mounted: false, aggro: 0, noRespawn: false, nextBlast: 0, bars: {}, barKnown: {}, passive: { lifesteal: 0 }, extra: NO_EXTRA(), statuses: [], prot: {}, onHit: [], nextSummon: 0,
     };
   }
 
@@ -291,6 +301,14 @@ export class World {
       Object.assign(e, { xp: save.xp, gold: save.gold, inv: save.inv.filter(s => this.defs.items[s.item]), equip, autoSell: save.autoSell, bars: save.bars ?? {}, barKnown: save.barKnown ?? {} });
       const cfg = { ...defaultAutoCfg(), ...(save.autoCfg ?? {}) };
       if (!save.autoCfg && save.autoSell) cfg.loot.gear.common = 'sell';
+      // rested XP: offline time since the last save fills the pool
+      const rc = this.defs.balance.rested, need = xpToNext(this.defs.balance, save.level ?? 1);
+      e.rested = Math.min(need * rc.capPct, save.rested ?? 0);
+      const awayH = save.lastSeen ? (Date.now() - save.lastSeen) / 3600000 : 0;
+      if (awayH * 60 >= rc.minAwayMin) {
+        const gain = Math.min(need * rc.capPct - e.rested, Math.round(need * rc.perHourPct * awayH));
+        if (gain > 0) { e.rested += gain; this.pendingEvents.push({ t: 'rested', id: e.id, amount: gain, hours: Math.round(awayH * 10) / 10 }); }
+      }
       Object.assign(e, { autoCfg: cfg, auto: !!save.autoOn, autoAnchor: save.autoAnchor ?? null, autoTrip: save.autoTrip ?? null });
       if (e.auto) e.autoStats = save.autoStats ? { ...save.autoStats, since: this.now - (save.autoStats.elapsed ?? 0) } : { since: this.now, xp: 0, gold: 0, kills: 0, items: {} };
       if (!e.equip.offhand && !e.inv.some(s => s.item === c.starterOffhand)) e.equip.offhand = { item: c.starterOffhand, qty: 1, up: 0 };  // older saves
@@ -473,7 +491,7 @@ export class World {
   }
 
   save(e: Entity): SaveData {
-    return { autoStats: { ...e.autoStats, elapsed: this.now - e.autoStats.since }, autoOn: e.auto, autoCfg: e.autoCfg, autoAnchor: e.autoAnchor, autoTrip: e.autoTrip, bars: e.bars, barKnown: e.barKnown, transformed: e.transformed, mounted: e.mounted, map: this.map.id, cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell };
+    return { rested: Math.round(e.rested), lastSeen: Date.now(), autoStats: { ...e.autoStats, elapsed: this.now - e.autoStats.since }, autoOn: e.auto, autoCfg: e.autoCfg, autoAnchor: e.autoAnchor, autoTrip: e.autoTrip, bars: e.bars, barKnown: e.barKnown, transformed: e.transformed, mounted: e.mounted, map: this.map.id, cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell };
   }
 
   /** 'base' or the active card id; each form keeps its own hotbar */
@@ -793,6 +811,7 @@ export class World {
 
   tick() {
     this.now += TICK_MS;
+    if (this.pendingEvents.length) this.events.push(...this.pendingEvents.splice(0));
     const dt = TICK_MS / 1000;
     if (this.map.dungeon) this.dungeonTick(this.map.dungeon);
     for (const b of this.blasts.filter(b => this.now >= b.at)) {
@@ -819,7 +838,16 @@ export class World {
       this.step(e, dt);
       if (e.kind === 'player') {
         const pt = this.map.portals.find(p => p.x === Math.round(e.x) && p.y === Math.round(e.y) && (p.when !== 'cleared' || this.dungeon.cleared));
-        if (pt && !e.dead) { e.path = []; this.events.push({ t: 'portal', id: e.id, to: pt.to, spawn: pt.spawn }); }
+        if (pt && !e.dead) {
+          e.path = [];
+          if (pt.minLevel && e.level < pt.minLevel && !this.unlocks.includes(pt.to)) {
+            if ((e.cooldowns['lockMsg'] ?? 0) <= this.now) { e.cooldowns['lockMsg'] = this.now + 3000; this.events.push({ t: 'locked', id: e.id, map: pt.to, level: pt.minLevel }); }
+            if (e.autoTrip) e.autoTrip = null;
+          } else {
+            if (pt.minLevel && !this.unlocks.includes(pt.to)) { this.unlocks.push(pt.to); this.unlocksDirty = true; this.events.push({ t: 'unlock', map: pt.to, by: e.name }); }
+            this.events.push({ t: 'portal', id: e.id, to: pt.to, spawn: pt.spawn });
+          }
+        }
       }
     }
   }
@@ -1039,7 +1067,11 @@ export class World {
   }
 
   // Single entry point for XP so catch-up / rested bonuses can hook in later.
-  grantXp(p: Entity, amount: number) {
+  grantXp(p: Entity, amount: number, fromKill = true) {
+    if (fromKill && p.rested > 0) {
+      const bonus = Math.min(p.rested, amount * (this.defs.balance.rested.mult - 1));
+      p.rested -= bonus; amount += bonus;
+    }
     amount = Math.round(amount * (1 + (p.extra?.xp ?? 0)));
     this.events.push({ t: 'xp', id: p.id, amount });
     if (p.auto) p.autoStats.xp += amount;

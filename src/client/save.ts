@@ -8,4 +8,7 @@ export function writeSave(d: SaveData) { try { localStorage.setItem(KEY, JSON.st
 const STASH_KEY = 'nostaru.stash.v1';
 export function readStash(): InvSlot[] { try { return JSON.parse(localStorage.getItem(STASH_KEY) ?? '[]'); } catch { return []; } }
 export function writeStash(s: InvSlot[]) { try { localStorage.setItem(STASH_KEY, JSON.stringify(s)); } catch { /* ignore */ } }
+const UNLOCK_KEY = 'nostaru.unlocks.v1';
+export function readUnlocks(): string[] { try { return JSON.parse(localStorage.getItem(UNLOCK_KEY) ?? '[]'); } catch { return []; } }
+export function writeUnlocks(u: string[]) { try { localStorage.setItem(UNLOCK_KEY, JSON.stringify(u)); } catch { /* ignore */ } }
 export function clearSave() { try { localStorage.removeItem(KEY); } catch { /* ignore */ } }
