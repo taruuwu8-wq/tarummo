@@ -147,6 +147,8 @@ export interface Entity {
   bagFullAck?: boolean;
   /** world time when Auto last had something to do; used to roam to a new spot */
   autoBusyAt?: number;
+  /** Auto anti-stuck: last tile/time it made progress, and targets it gave up on (id → until) */
+  stuckPos?: string; stuckAt?: number; autoIgnore?: Record<number, number>;
   /** manual 'go to town' button: channels then warps */
   recallTown?: boolean;
   quest: QuestState; autoQuest: boolean;
@@ -1366,16 +1368,34 @@ export class World {
     if (q && e.mounted) e.mounted = false;
     if (q && !e.autoAnchor) e.autoAnchor = [Math.round(e.x), Math.round(e.y)];
 
+    // anti-stuck: a target it can't reach/hit (no strike, no movement for 8 s) is dropped for 20 s
+    if (e.target != null) {
+      const pos = `${Math.round(e.x * 2)},${Math.round(e.y * 2)}`;
+      if (pos !== e.stuckPos || this.now - e.lastHit < 3000) { e.stuckPos = pos; e.stuckAt = this.now; }
+      else if (this.now - (e.stuckAt ?? this.now) > 8000) {
+        const t = this.entities.get(e.target), room = t?.room != null ? this.map.dungeon?.rooms[t.room] : undefined;
+        if (t && room) {
+          // a dungeon room can't be skipped: pull the stuck monster onto a walkable tile of its room, nearest the player
+          const [x0, y0, x1, y1] = room.area, me: Tile = [Math.round(e.x), Math.round(e.y)], cand: Tile[] = [];
+          for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (this.walkable(x, y) && Math.hypot(x - e.x, y - e.y) > 1) cand.push([x, y]);
+          cand.sort((a, b) => Math.hypot(a[0] - e.x, a[1] - e.y) - Math.hypot(b[0] - e.x, b[1] - e.y));
+          const best = cand.slice(0, 12).find(c => findPath(this.walkable, me, c)?.length);
+          if (best) { t.x = t.px = best[0]; t.y = t.py = best[1]; t.path = []; t.home = best; }
+        } else (e.autoIgnore ??= {})[e.target] = this.now + 20000;
+        e.target = null; e.path = []; e.pendingSkill = null; e.stuckAt = this.now;
+      }
+    }
+    const ign = e.autoIgnore, ok = (o: Entity) => !ign || !(ign[o.id] > this.now);
     if (e.target == null && !e.path.length) {
       let m: Entity | undefined;
       if (this.map.dungeon) {
         // dungeon: only the current room (doors block the rest), bosses included
-        m = [...this.entities.values()].filter(o => o.kind === 'monster' && !o.dead && o.room === this.dungeon.room && !c.skip.includes(o.type))
+        m = [...this.entities.values()].filter(o => o.kind === 'monster' && !o.dead && o.room === this.dungeon.room && ok(o))
           .sort((p, q) => this.dist(e, p) - this.dist(e, q))[0];
       } else {
         const [ax, ay] = e.autoAnchor ?? [e.x, e.y];
         const qm = q?.goal.type === 'kill' ? q.goal.monster : undefined;   // quest target overrides the filters
-        m = [...this.entities.values()].filter(o => o.kind === 'monster' && !o.dead && (qm ? o.type === qm
+        m = [...this.entities.values()].filter(o => o.kind === 'monster' && !o.dead && ok(o) && (qm ? o.type === qm
           : !c.skip.includes(o.type) && (!o.boss || c.bosses) && o.level <= e.level + c.levelAbove && Math.hypot(o.x - ax, o.y - ay) <= c.range))
           .sort((p, q) => this.dist(e, p) - this.dist(e, q))[0];
         if (!m && Math.hypot(e.x - ax, e.y - ay) > 1.5) this.pathTo(e, [Math.round(ax), Math.round(ay)]);
