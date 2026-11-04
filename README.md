@@ -12,3 +12,8 @@ npm run dev
 - `data/` แมพ + ค่าตัวละคร (JSON)
 - `public/sprites/` ภาพที่เกมใช้, `art/raw/` ภาพที่ตัดจากแผ่น AI (55 ชิ้น, บางชิ้นตัดไม่ครบ)
 - `tools/slice_sheet.py <sheet> <out> <rows> <cols>` ตัดแผ่นภาพพื้นขาวเป็น PNG
+
+## เล่นบน GitHub Pages
+
+Settings → Pages → Source: **GitHub Actions** แล้วทุกครั้งที่ push ขึ้น `main` จะ build และ deploy ให้อัตโนมัติ
+ลิงก์: https://taruuwu8-wq.github.io/tarummo/
