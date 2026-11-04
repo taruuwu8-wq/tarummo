@@ -109,6 +109,7 @@ export class GameScene extends Phaser.Scene {
 
   update(_t: number, dtMs: number) {
     // use real elapsed time: Phaser smooths delta, which slows the sim down on low-FPS devices
+    if (this.leaving) return;
     dtMs = this.game.loop.rawDelta;
     this.acc += Math.min(dtMs, 1000);
     if (this.net) this.drainNet();
@@ -273,12 +274,13 @@ export class GameScene extends Phaser.Scene {
     } else if (ev.t === 'xp' && ev.id === this.player.id) {
       const { sx, sy } = toScreen(this.player.x, this.player.y);
       this.floatText(sx, sy - 80, `+${ev.amount} XP`, '#9be7ff', 13);
-    } else if (ev.t === 'portal' && ev.id === this.player.id) {
+    } else if (ev.t === 'portal' && ev.id === this.player.id && !this.net && !this.leaving) {
       this.leaving = true;
       const p = this.player, data: SceneData = { cls: p.type, save: this.world.save(p), map: ev.to, at: ev.spawn, vitals: { hp: p.hp, mp: p.mp } };
       data.save!.map = ev.to; writeSave(data.save!);
-      this.cameras.main.fadeOut(250, 27, 31, 42);
-      this.cameras.main.once('camerafadeoutcomplete', () => this.scene.restart(data));
+      // don't wait on camerafadeoutcomplete: it never fires if another fade is running
+      this.cameras.main.fadeOut(200, 27, 31, 42);
+      this.time.delayedCall(220, () => this.scene.restart(data));
     } else if (ev.t === 'talk' && ev.id === this.player.id) {
       this.hud.openNpc(ev.npc);
     } else if (ev.t === 'transform') {
