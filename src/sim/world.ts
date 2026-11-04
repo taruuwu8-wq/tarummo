@@ -13,7 +13,7 @@ export interface MapData {
   portals: Portal[]; npcs: { id: string; x: number; y: number }[];
 }
 export interface NpcDef {
-  name: string; title: string; sprite: string; height: number; role: 'shop' | 'smith' | 'healer'; greet: string;
+  name: string; title: string; sprite: string; height: number; role: 'shop' | 'smith' | 'healer' | 'stash' | 'debug'; greet: string;
   sells?: { item: string; price: number }[];
 }
 export interface SkillDef {
@@ -40,6 +40,9 @@ export interface UpgradeCfg {
 /** up = upgrade level (gear), lv/xp = card level */
 export interface InvSlot { item: string; qty: number; up?: number; lv?: number; xp?: number }
 export const INV_SIZE = 30;
+export const STASH_SIZE = 60;
+/** Players within this many tiles of a kill share its XP, gold and (own) drop rolls. */
+export const SHARE_RANGE = 12;
 export const SLOTS: Slot[] = ['weapon', 'armor', 'hat', 'charm', 'card'];
 export interface SaveData { map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean }
 
@@ -73,7 +76,11 @@ export type Intent =
   | { kind: 'upgrade'; id: number; ref: number | Slot }
   | { kind: 'talk'; id: number; npc: string }
   | { kind: 'buy'; id: number; index: number; qty: number }
-  | { kind: 'heal'; id: number };
+  | { kind: 'heal'; id: number }
+  | { kind: 'chat'; id: number; text: string }
+  | { kind: 'stashPut'; id: number; index: number }
+  | { kind: 'stashTake'; id: number; index: number }
+  | { kind: 'debug'; id: number; what: 'level' | 'level5' | 'gold' | 'mats' | 'card' };
 
 export type GameEvent =
   | { t: 'attack'; from: number; to: number; ranged: boolean }
@@ -91,7 +98,8 @@ export type GameEvent =
   | { t: 'upgrade'; id: number; item: string; ok: boolean; up: number }
   | { t: 'cardLevel'; id: number; card: string; lv: number }
   | { t: 'portal'; id: number; to: string; spawn: Tile }
-  | { t: 'talk'; id: number; npc: string };
+  | { t: 'talk'; id: number; npc: string }
+  | { t: 'chat'; id: number; name: string; text: string };
 
 export class World {
   entities = new Map<number, Entity>();
@@ -101,8 +109,13 @@ export class World {
   private blocked = new Set<number>();
   private rng: () => number;
 
+  /** Shared across rooms (and players). Server persists it; offline it lives in localStorage. */
+  stash: InvSlot[];
+  stashDirty = false;
+
   /** mirror: client-side copy fed by server snapshots; no monsters are spawned and tick() is not called. */
-  constructor(public map: MapData, public defs: Defs, seed = 1, opts: { mirror?: boolean } = {}) {
+  constructor(public map: MapData, public defs: Defs, seed = 1, opts: { mirror?: boolean; stash?: InvSlot[] } = {}) {
+    this.stash = opts.stash ?? [];
     let s = seed >>> 0;
     this.rng = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
     for (const [x, y] of [...map.rocks, ...map.water, ...map.trees, ...map.npcs.map(n => [n.x, n.y] as Tile)]) this.blocked.add(y * 10000 + x);
@@ -271,6 +284,16 @@ export class World {
     this.events.push({ t: 'transform', id: p.id, on: p.transformed });
   }
 
+  /** Test helpers, only usable next to the GM Test NPC (remove that NPC from town.json before real play). */
+  private debug(p: Entity, what: string) {
+    if (what === 'level' || what === 'level5') {
+      for (let i = 0; i < (what === 'level' ? 1 : 5); i++) { this.applyLevel(p, p.level + 1); this.events.push({ t: 'level', id: p.id, level: p.level }); }
+      p.xp = 0;
+    } else if (what === 'gold') { p.gold += 10000; this.events.push({ t: 'gold', id: p.id, amount: 10000 }); }
+    else if (what === 'mats') for (const m of ['slime_jelly', 'pumpkin_seed', 'golem_shard']) this.grantItem(p, m, 30);
+    else if (what === 'card') this.grantItem(p, this.randomCardFor(p.type));
+  }
+
   private randomCardFor(cls: string) {
     const ids = Object.entries(this.defs.cards).filter(([, c]) => c.class === cls).map(([id]) => id);
     return ids[Math.floor(this.rng() * ids.length)];
@@ -354,6 +377,29 @@ export class World {
     else if (intent.kind === 'upgrade') { if (this.nearNpc(e, 'smith')) this.upgrade(e, intent.ref); else this.events.push({ t: 'msg', id: e.id, text: 'ตีบวกได้ที่ช่าง Brann ในเมือง' }); }
     else if (intent.kind === 'talk') { e.target = null; e.talkTo = intent.npc; e.repathAt = 0; }
     else if (intent.kind === 'buy') this.buy(e, intent.index, intent.qty);
+    else if (intent.kind === 'chat') {
+      const text = String(intent.text ?? '').replace(/\s+/g, ' ').trim().slice(0, 120);
+      if (text) this.events.push({ t: 'chat', id: e.id, name: e.name, text });
+    }
+    else if (intent.kind === 'stashPut' && this.nearNpc(e, 'stash')) {
+      const st = e.inv[intent.index]; if (!st) return;
+      const d = this.defs.items[st.item], stack = d.slot === 'use' || d.slot === 'mat';
+      const same = stack ? this.stash.find(x => x.item === st.item) : undefined;
+      if (same) same.qty += st.qty;
+      else if (this.stash.length < STASH_SIZE) this.stash.push(st);
+      else { this.events.push({ t: 'msg', id: e.id, text: 'คลังกลางเต็ม' }); return; }
+      e.inv.splice(intent.index, 1); this.stashDirty = true;
+    }
+    else if (intent.kind === 'stashTake' && this.nearNpc(e, 'stash')) {
+      const st = this.stash[intent.index]; if (!st) return;
+      const d = this.defs.items[st.item], stack = d.slot === 'use' || d.slot === 'mat';
+      const same = stack ? e.inv.find(x => x.item === st.item) : undefined;
+      if (same) same.qty += st.qty;
+      else if (e.inv.length < INV_SIZE) e.inv.push(st);
+      else { this.events.push({ t: 'msg', id: e.id, text: 'กระเป๋าเต็ม' }); return; }
+      this.stash.splice(intent.index, 1); this.stashDirty = true;
+    }
+    else if (intent.kind === 'debug' && this.nearNpc(e, 'debug')) this.debug(e, intent.what);
     else if (intent.kind === 'heal' && this.nearNpc(e, 'healer')) {
       e.hp = e.maxHp; e.mp = e.maxMp; this.events.push({ t: 'heal', to: e.id, amount: e.maxHp });
     }
@@ -485,12 +531,16 @@ export class World {
     t.respawnAt = this.now + (t.kind === 'monster' ? rs.monster : rs.player);
     for (const o of this.entities.values()) if (o.target === t.id) o.target = null;
     if (t.kind === 'monster' && from.kind === 'player') {
-      this.grantXp(from, t.xpReward);
+      // everyone nearby gets full XP + gold + their own drop rolls: playing together never means sharing less
       const m = this.defs.monsters[t.type];
-      const g = m.gold[0] + Math.floor(this.rng() * (m.gold[1] - m.gold[0] + 1));
-      from.gold += g; this.events.push({ t: 'gold', id: from.id, amount: g });
-      for (const [item, chance, qty] of m.drops) if (this.rng() < chance) this.grantItem(from, item, qty ?? 1);
-      if (m.cardChance && this.rng() < m.cardChance) this.grantItem(from, this.randomCardFor(from.type));
+      for (const p of this.entities.values()) {
+        if (p.kind !== 'player' || p.dead || (p !== from && Math.hypot(p.x - t.x, p.y - t.y) > SHARE_RANGE)) continue;
+        this.grantXp(p, t.xpReward);
+        const g = m.gold[0] + Math.floor(this.rng() * (m.gold[1] - m.gold[0] + 1));
+        p.gold += g; this.events.push({ t: 'gold', id: p.id, amount: g });
+        for (const [item, chance, qty] of m.drops) if (this.rng() < chance) this.grantItem(p, item, qty ?? 1);
+        if (m.cardChance && this.rng() < m.cardChance) this.grantItem(p, this.randomCardFor(p.type));
+      }
     }
   }
 

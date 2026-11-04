@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { WebSocketServer, WebSocket } from 'ws';
-import { World, TICK_MS, Entity, SaveData, Intent } from '../src/sim/world';
+import { World, TICK_MS, Entity, SaveData, Intent, InvSlot } from '../src/sim/world';
 import { loadDefs, MAPS, START_MAP } from '../src/data';
 import type { ClientMsg, ServerMsg } from '../src/net/protocol';
 
@@ -33,10 +33,17 @@ function listSaves() {
   return out;
 }
 
+// ---- shared stash (one for the whole group) ----
+const SHARED = path.join(SAVES, '_shared');
+fs.mkdirSync(SHARED, { recursive: true });
+const STASH_FILE = path.join(SHARED, 'stash.json');
+let stash: InvSlot[] = [];
+try { stash = JSON.parse(fs.readFileSync(STASH_FILE, 'utf8')); } catch { /* first run */ }
+
 // ---- rooms ----
 const defs = loadDefs();
 const rooms = new Map<string, World>();
-for (const id of Object.keys(MAPS)) rooms.set(id, new World(structuredClone(MAPS[id]), defs, (Math.random() * 1e9) | 0));
+for (const id of Object.keys(MAPS)) rooms.set(id, new World(structuredClone(MAPS[id]), defs, (Math.random() * 1e9) | 0, { stash }));
 
 interface Client { ws: WebSocket; name: string; room: string; id: number }
 const clients = new Set<Client>();
@@ -91,11 +98,17 @@ setInterval(() => {
       enter(c, e.to, save.cls, save, e.spawn, vitals);
       persist(c);
     }
-    const msg = JSON.stringify({ t: 'tick', now: w.now, ents: w.snapshot(), ev: ev.filter(e => e.t !== 'portal') } satisfies ServerMsg);
+    const msg = JSON.stringify({ t: 'tick', now: w.now, ents: w.snapshot(), ev: ev.filter(e => e.t !== 'portal'), stash } satisfies ServerMsg);
     for (const c of clients) if (c.room === roomId && c.ws.readyState === WebSocket.OPEN) c.ws.send(msg);
   }
 }, TICK_MS);
-setInterval(() => { for (const c of clients) persist(c); }, 10000);
+setInterval(() => {
+  for (const c of clients) persist(c);
+  if ([...rooms.values()].some(w => w.stashDirty)) {
+    fs.writeFileSync(STASH_FILE, JSON.stringify(stash));
+    for (const w of rooms.values()) w.stashDirty = false;
+  }
+}, 5000);
 
 // ---- http + ws ----
 const MIME: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml' };

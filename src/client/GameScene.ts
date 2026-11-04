@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { World, TICK_MS, Entity, MapData, Defs, GameEvent } from '../sim/world';
 import { loadDefs, MAPS } from '../data';
 import type { SaveData } from '../sim/world';
-import { writeSave } from './save';
+import { writeSave, readStash, writeStash } from './save';
 import type { Net } from './net';
 import type { Intent } from '../sim/world';
 import { Hud } from './hud';
@@ -65,7 +65,7 @@ export class GameScene extends Phaser.Scene {
       net.queue.length = 0;
       this.act = i => net.intent(i);
     } else {
-      this.world = new World(structuredClone(map), defs, Date.now() & 0xffff);
+      this.world = new World(structuredClone(map), defs, Date.now() & 0xffff, { stash: readStash() });
       this.player = this.world.spawnPlayer(data.cls ?? 'swordsman', data.save, data.at, data.vitals);
       this.act = i => this.world.apply(i);
     }
@@ -85,7 +85,7 @@ export class GameScene extends Phaser.Scene {
     cam.startFollow(this.views.get(this.player.id)!.body, true, 0.12, 0.12);
 
     this.hud = new Hud(this.world, this.player, defs.items, i => this.act(i));
-    const save = () => writeSave(this.world.save(this.player));
+    const save = () => { writeSave(this.world.save(this.player)); writeStash(this.world.stash); };
     if (!net) { saveNow = save; this.time.addEvent({ delay: 5000, loop: true, callback: save }); }
     this.events.once('shutdown', () => this.hud.destroy());
     this.drawPortals(map); this.drawNpcs(map);
@@ -140,7 +140,7 @@ export class GameScene extends Phaser.Scene {
         const wait = () => { if (net.last && net.queue.some(q => q.t === 'tick')) { net.queue.length = 0; this.scene.restart({ net, cls: net.cls }); } else this.time.delayedCall(30, wait); };
         this.cameras.main.fadeOut(200, 27, 31, 42); wait();
       } else if (m.t === 'tick') {
-        this.world.applySnapshot(m.now, m.ents); this.acc = 0;
+        this.world.applySnapshot(m.now, m.ents); this.world.stash = m.stash; this.acc = 0;
         for (const ev of m.ev) this.onEvent(ev);
       } else if (m.t === 'error') this.hud.toast(m.text, 'warn');
     }
@@ -281,6 +281,15 @@ export class GameScene extends Phaser.Scene {
       // don't wait on camerafadeoutcomplete: it never fires if another fade is running
       this.cameras.main.fadeOut(200, 27, 31, 42);
       this.time.delayedCall(220, () => this.scene.restart(data));
+    } else if (ev.t === 'chat') {
+      this.hud.chatLine(ev.name, ev.text, ev.id === this.player.id);
+      const v = this.views.get(ev.id);
+      if (v) {
+        const b = this.add.text(v.body.x, v.body.y - v.height - 30, ev.text.length > 40 ? ev.text.slice(0, 40) + '…' : ev.text,
+          { fontFamily: 'system-ui, sans-serif', fontSize: '12px', color: '#1b1f2a', backgroundColor: '#ffffffee', padding: { x: 6, y: 3 } })
+          .setOrigin(0.5, 1).setDepth(9700).setResolution(2);
+        this.tweens.add({ targets: b, alpha: 0, delay: 3500, duration: 400, onComplete: () => b.destroy() });
+      }
     } else if (ev.t === 'talk' && ev.id === this.player.id) {
       this.hud.openNpc(ev.npc);
     } else if (ev.t === 'transform') {

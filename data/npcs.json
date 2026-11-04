@@ -1,14 +1,76 @@
 {
-  "shop":   { "name": "Mira", "title": "ร้านค้า", "sprite": "npc_shop", "height": 64, "role": "shop",
-              "greet": "ยินดีต้อนรับ! ของจำเป็นสำหรับนักผจญภัยมีครบ",
-              "sells": [
-                { "item": "hp_potion", "price": 10 }, { "item": "mp_potion", "price": 10 },
-                { "item": "cloth_tunic", "price": 30 }, { "item": "straw_hat", "price": 30 },
-                { "item": "leather_armor", "price": 220 },
-                { "item": "iron_sword", "price": 200 }, { "item": "hunter_bow", "price": 200 }, { "item": "ember_staff", "price": 200 }
-              ] },
-  "smith":  { "name": "Brann", "title": "ช่างตีบวก", "sprite": "npc_smith", "height": 66, "role": "smith",
-              "greet": "เอาของมา จะตีให้แรงกว่าเดิม ล้มเหลวก็ไม่พังนะ วางใจได้" },
-  "healer": { "name": "Seraph", "title": "ฟื้นฟู", "sprite": "npc_healer", "height": 64, "role": "healer",
-              "greet": "เหนื่อยไหม มาพักก่อน" }
+  "shop": {
+    "name": "Mira",
+    "title": "ร้านค้า",
+    "sprite": "npc_shop",
+    "height": 64,
+    "role": "shop",
+    "greet": "ยินดีต้อนรับ! ของจำเป็นสำหรับนักผจญภัยมีครบ",
+    "sells": [
+      {
+        "item": "hp_potion",
+        "price": 10
+      },
+      {
+        "item": "mp_potion",
+        "price": 10
+      },
+      {
+        "item": "cloth_tunic",
+        "price": 30
+      },
+      {
+        "item": "straw_hat",
+        "price": 30
+      },
+      {
+        "item": "leather_armor",
+        "price": 220
+      },
+      {
+        "item": "iron_sword",
+        "price": 200
+      },
+      {
+        "item": "hunter_bow",
+        "price": 200
+      },
+      {
+        "item": "ember_staff",
+        "price": 200
+      }
+    ]
+  },
+  "smith": {
+    "name": "Brann",
+    "title": "ช่างตีบวก",
+    "sprite": "npc_smith",
+    "height": 66,
+    "role": "smith",
+    "greet": "เอาของมา จะตีให้แรงกว่าเดิม ล้มเหลวก็ไม่พังนะ วางใจได้"
+  },
+  "healer": {
+    "name": "Seraph",
+    "title": "ฟื้นฟู",
+    "sprite": "npc_healer",
+    "height": 64,
+    "role": "healer",
+    "greet": "เหนื่อยไหม มาพักก่อน"
+  },
+  "stash": {
+    "name": "Pip",
+    "title": "คลังกลาง",
+    "sprite": "npc_stash",
+    "height": 60,
+    "role": "stash",
+    "greet": "ฝากของไว้ให้เพื่อนได้ ทุกคนในกลุ่มเปิดคลังเดียวกัน"
+  },
+  "debug": {
+    "name": "GM Test",
+    "title": "ทดสอบ (ลบก่อนเล่นจริง)",
+    "sprite": "npc_debug",
+    "height": 64,
+    "role": "debug",
+    "greet": "โหมดทดสอบ: เสกเลเวล ทอง ของตีบวก และการ์ด"
+  }
 }

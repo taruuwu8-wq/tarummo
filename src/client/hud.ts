@@ -43,6 +43,7 @@ export class Hud {
         <label class="autosell"><input type="checkbox" id="autosell"> ขายอุปกรณ์ระดับธรรมดาอัตโนมัติ</label>
       </div>
       <div id="npc" hidden></div>
+      <div id="chat"><div id="chatlog"></div><input id="chatin" maxlength="120" placeholder="Enter เพื่อพิมพ์แชท" autocomplete="off"></div>
       <div id="banner"></div>
       <div class="xp"><i id="pxp"></i><span id="pxpt"></span></div>`;
 
@@ -55,8 +56,15 @@ export class Hud {
     (this.$('autosell') as HTMLInputElement).checked = p.autoSell;
     this.$('autosell').addEventListener('change', e => send({ kind: 'autoSell', id: p.id, on: (e.target as HTMLInputElement).checked }));
     this.el.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(b => b.addEventListener('click', () => { this.tab = b.dataset.tab as Tab; this.sel = null; this.invSig = ''; }));
+    const chatIn = this.$('chatin') as HTMLInputElement;
+    chatIn.addEventListener('keydown', e => {
+      e.stopPropagation();
+      if (e.key === 'Enter') { const t = chatIn.value.trim(); if (t) send({ kind: 'chat', id: this.p.id, text: t }); chatIn.value = ''; chatIn.blur(); }
+      else if (e.key === 'Escape') chatIn.blur();
+    });
     this.onKey = e => {
-      if (e.repeat) return;
+      if (e.repeat || (e.target as HTMLElement)?.tagName === 'INPUT') return;
+      if (e.key === 'Enter') { chatIn.focus(); e.preventDefault(); return; }
       const n = Number(e.key), skills = this.world.skillsOf(this.p);
       if (n >= 1 && n <= skills.length) this.cast(skills[n - 1].id);
       else if (e.key === 't' || e.key === 'T') this.send({ kind: 'transform', id: this.p.id });
@@ -74,6 +82,14 @@ export class Hud {
     const b = this.$('banner'); b.textContent = text; b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
   }
 
+  chatLine(name: string, text: string, mine: boolean) {
+    const log = this.$('chatlog'), d = document.createElement('div');
+    const b = document.createElement('b'); b.textContent = name + ': '; if (mine) b.className = 'me';
+    d.append(b, document.createTextNode(text));
+    log.append(d);
+    while (log.children.length > 8) log.firstChild!.remove();
+  }
+
   openNpc(id: string) { this.npc = id; this.npcSig = ''; this.$('npc').hidden = false; }
   private closeNpc() { this.npc = null; this.$('npc').hidden = true; }
 
@@ -84,13 +100,16 @@ export class Hud {
     else if (a === 'buy') this.send({ kind: 'buy', id: p.id, index: Number(b.dataset.i), qty: Number(b.dataset.q) });
     else if (a === 'up') { const r = b.dataset.ref!; this.send({ kind: 'upgrade', id: p.id, ref: /^\d+$/.test(r) ? Number(r) : r as Slot }); }
     else if (a === 'heal') this.send({ kind: 'heal', id: p.id });
+    else if (a === 'put') this.send({ kind: 'stashPut', id: p.id, index: Number(b.dataset.i) });
+    else if (a === 'take') this.send({ kind: 'stashTake', id: p.id, index: Number(b.dataset.i) });
+    else if (a === 'dbg') this.send({ kind: 'debug', id: p.id, what: b.dataset.w as 'level' });
     this.npcSig = '';
   }
 
   private renderNpc() {
     const p = this.p, n = this.world.map.npcs.find(x => x.id === this.npc);
     if (!n || Math.hypot(n.x - p.x, n.y - p.y) > 3.2) { this.closeNpc(); return; }
-    const sig = JSON.stringify([this.npc, p.gold, p.inv, p.equip, p.hp === p.maxHp]);
+    const sig = JSON.stringify([this.npc, p.gold, p.inv, p.equip, p.hp === p.maxHp, p.level, this.world.stash]);
     if (sig === this.npcSig) return;
     this.npcSig = sig;
     const d = this.world.defs.npcs[n.id];
@@ -114,6 +133,14 @@ export class Hud {
           <button type="button" data-act="up" data-ref="${ref}"${ok ? '' : ' disabled'}>ตีบวก</button></div>`;
       }).join('') || '<p class="muted">ไม่มีอาวุธ เกราะ หรือการ์ดให้ตีบวก</p>';
       body += '<p class="muted small">ล้มเหลว = เสียทองและวัตถุดิบ ของไม่หาย</p>';
+    } else if (d.role === 'stash') {
+      const cell = (st: InvSlot, i: number, act: string) => { const it = this.items[st.item];
+        return `<button type="button" class="cell ${it.rarity}" data-act="${act}" data-i="${i}" title="${it.name}"><span class="ic">${it.icon}</span>${st.up ? `<em>+${st.up}</em>` : ''}${st.qty > 1 ? `<b>${st.qty}</b>` : ''}</button>`; };
+      body = `<b>คลังกลาง (${this.world.stash.length}/60) · คลิกเพื่อหยิบ</b><div class="grid">${this.world.stash.map((st, i) => cell(st, i, 'take')).join('') || '<span class="muted">ว่าง</span>'}</div>
+        <b>กระเป๋า · คลิกเพื่อฝาก</b><div class="grid">${p.inv.map((st, i) => cell(st, i, 'put')).join('') || '<span class="muted">ว่าง</span>'}</div>`;
+    } else if (d.role === 'debug') {
+      body = [['level', '+1 เลเวล'], ['level5', '+5 เลเวล'], ['gold', '+10,000 G'], ['mats', 'วัตถุดิบตีบวก ×30'], ['card', 'การ์ดสุ่มของอาชีพ']]
+        .map(([w, t]) => `<button type="button" class="big" data-act="dbg" data-w="${w}">${t}</button>`).join('');
     } else {
       body = `<button type="button" class="big" data-act="heal">${p.hp >= p.maxHp ? 'HP/MP เต็มแล้ว' : 'ฟื้นฟู HP/MP (ฟรี)'}</button>`;
     }
