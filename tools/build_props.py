@@ -22,6 +22,16 @@ PROPS = {
     'signpost': ('town_10', 64), 'well': ('town_11', 84), 'bench': ('town_17', 26), 'garden': ('town_19', 58), 'flower_bush': ('town_20', 42),
     'tent': ('town_21', 104), 'crate': ('town_22', 30), 'cart': ('town_23', 40), 'hay_crates': ('town_26', 50), 'pot_stand': ('town_27', 62),
     'stool': ('town_28', 24), 'stump_axe': ('town_29', 34), 'barrel_stone': ('town_33', 46),
+    # snow + desert sheet (sliced with dilate 0: the objects touch)
+    'snow_cliff': ('sd_00', 112), 'snow_rock_big': ('sd_01', 56), 'snow_pine_tall': ('sd_02', 132), 'snow_pine_small': ('sd_03', 92), 'snow_pine_b': ('sd_16', 122),
+    'ice_crystal_small': ('sd_07', 34), 'ice_crystal_big': ('sd_08', 58), 'snow_rock_flat': ('sd_15', 34), 'snow_bush_round': ('sd_17', 36), 'ice_sprig': ('sd_18', 16),
+    'snow_berry_bush': ('sd_19', 38), 'snow_drift': ('sd_20', 24), 'snow_bush': ('sd_21', 30), 'snow_berry_small': ('sd_22', 28), 'snowman': ('sd_23', 50),
+    'bare_tree_snow': ('sd_28', 118), 'stone_arch': ('sd_36', 74), 'stone_pillar': ('sd_43', 76), 'snow_patch': ('sd_44', 18), 'ice_shard': ('sd_45', 34), 'ice_pond': ('sd_46', 52),
+    'sand_rock_big': ('sd_04', 80), 'sand_arch': ('sd_05', 82), 'sand_pillar': ('sd_06', 72), 'sand_tower': ('sd_09', 86), 'cactus_tall': ('sd_10', 62), 'agave': ('sd_11', 36),
+    'cactus_barrel': ('sd_12', 26), 'cactus_rock': ('sd_13', 72), 'cactus_round': ('sd_24', 28), 'cactus_small': ('sd_25', 22), 'dead_tree': ('sd_26', 98), 'desert_grass': ('sd_27', 30),
+    'sand_rocks': ('sd_31', 62), 'skull': ('sd_32', 22), 'sand_stone_small': ('sd_33', 24), 'dry_grass': ('sd_34', 16), 'dune': ('sd_35', 40), 'sand_slab': ('sd_40', 36),
+    'cactus_group': ('sd_41', 62), 'dune_b': ('sd_47', 42), 'sand_rock_small': ('sd_48', 30), 'cactus': ('sd_49', 46), 'dry_grass_b': ('sd_50', 20), 'dry_grass_c': ('sd_51', 18),
+    'palm': ('sd_30', 100), 'oak_green': ('sd_29', 96), 'bush_green_a': ('sd_37', 24), 'bush_green_b': ('sd_38', 30), 'bush_snowy': ('sd_39', 30), 'bush_green_c': ('sd_42', 36),
 }
 os.makedirs('public/props', exist_ok=True)
 out = {}

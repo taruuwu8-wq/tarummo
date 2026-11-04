@@ -1,7 +1,7 @@
 """Cut a sheet of separate props into one PNG per object.
 Background: real alpha, or a light flat/checkerboard backdrop (flood-filled from the border, so white parts
 inside outlined objects survive). Objects = connected blobs (after a small dilation so thin bits stay attached).
-Usage: python3 -I tools/slice_props.py SHEET OUT_DIR PREFIX [min_area=1500]
+Usage: python3 -I tools/slice_props.py SHEET OUT_DIR PREFIX [min_area=1500] [dilate_px=3]
 Writes OUT_DIR/PREFIX_NN.png (trimmed, alpha) and OUT_DIR/PREFIX_index.png (numbered contact sheet)."""
 import sys, os
 from collections import deque
@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw
 
 src, out, prefix = sys.argv[1], sys.argv[2], sys.argv[3]
 min_area = int(sys.argv[4]) if len(sys.argv) > 4 else 1500
+dil = int(sys.argv[5]) if len(sys.argv) > 5 else 3   # 0 = split objects that touch the neighbours
 os.makedirs(out, exist_ok=True)
 im = Image.open(src).convert('RGBA'); a = np.array(im); h, w = a.shape[:2]
 rgb = a[:, :, :3].astype(int)
@@ -32,8 +33,8 @@ if fg.all():   # no real alpha: flood the light, unsaturated backdrop from the b
     a[:, :, 3] = np.where(fg, 255, 0)
 # blobs on a dilated mask
 d = fg.copy()
-for dy in (-3, 0, 3):
-    for dx in (-3, 0, 3): d |= np.roll(np.roll(fg, dy, 0), dx, 1)
+for dy in (-dil, 0, dil):
+    for dx in (-dil, 0, dil): d |= np.roll(np.roll(fg, dy, 0), dx, 1)
 lab = np.zeros((h, w), int); n = 0; boxes = []
 for y0 in range(h):
     for x0 in range(w):

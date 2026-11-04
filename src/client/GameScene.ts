@@ -6,7 +6,7 @@ import { writeSave, readStash, writeStash, readUnlocks, writeUnlocks } from './s
 import type { Net } from './net';
 import type { Intent } from '../sim/world';
 import { Hud } from './hud';
-import { paintGround, makeProps, scatter, PX, MARGIN } from './mapart';
+import { paintGround, makeProps, scatter, PX, MARGIN, PROP_SETS, propsFor } from './mapart';
 import PROPS from '../../data/props.json';
 
 const TW = 64, TH = 32;
@@ -63,7 +63,9 @@ export class GameScene extends Phaser.Scene {
 
   preload() {
     for (const d of [...Object.values(defs.classes), ...Object.values(defs.monsters), ...Object.values(defs.cards), ...Object.values(defs.npcs)]) if (d.sprite) this.load.image(d.sprite, `sprites/${d.sprite}.png`);
-    for (const id of Object.keys(PROPS)) if (id !== '_note') this.load.image(`p_${id}`, `props/${id}.png`);
+    // only the props of the map being entered (textures stay cached across maps)
+    const sd = this.scene.settings.data as SceneData, map = MAPS[sd.net ? sd.net.map : sd.map ?? sd.save?.map ?? 'town'] ?? MAPS.town;
+    for (const id of propsFor(map)) if (!this.textures.exists(`p_${id}`)) this.load.image(`p_${id}`, `props/${id}.png`);
     for (const c of Object.values(defs.classes)) if (c.anim) this.load.spritesheet(c.anim.sheet, `sprites/${c.anim.sheet}.png`, { frameWidth: c.anim.fw, frameHeight: c.anim.fh });
   }
 
@@ -656,32 +658,32 @@ export class GameScene extends Phaser.Scene {
       if (o.sway && !bake) this.sway.push({ o: im, ph: h(fx, fy) * 6.28, amp: o.sway });
       return im;
     };
-    const GRASS = ['grass_a', 'grass_b', 'grass_c', 'grass_fl1', 'grass_fl2'], FLOW = ['fl_white', 'fl_pink', 'fl_purple', 'fl_yellow', 'fb_white', 'fb_pink', 'fb_blue', 'fb_mix'];
-    const MUSH = ['mush_red', 'mush_small', 'mush_orange'], TREES = ['oak_a', 'oak_b', 'oak_a', 'pine'];
-    const grass = (x: number, y: number) => prop(pickOf(GRASS, x, y, 1), x, y, { sway: 0.1, scale: 0.8 + h(x, y, 2) * 0.4, shadow: 0 });
+    const S = PROP_SETS[map.ground] ?? PROP_SETS.grass, gsw = S.groundSway ? 1 : 0;
+    const grass = (x: number, y: number) => prop(pickOf(S.ground, x, y, 1), x, y, { sway: 0.1 * gsw, scale: 0.8 + h(x, y, 2) * 0.4, shadow: 0 });
+    const bush = (x: number, y: number, scale = 1) => prop(pickOf(S.bushes, x, y), x, y, { scale });
     const tree = (x: number, y: number, far = false) => {
-      prop(pickOf(TREES, x, y, 3), x, y, { scale: (far ? 0.85 : 0.9) + h(x, y, 4) * 0.2, sway: far ? 0.012 : 0.018, tint: far ? 0xb4bac2 : undefined });
-      if (!far) { grass(x - 0.4, y + 0.3); if (h(x, y, 5) > 0.5) prop(pickOf(['bush_white', 'bush_pink'], x, y), x + 0.45, y + 0.15, { scale: 0.85 }); }
+      prop(pickOf(S.trees, x, y, 3), x, y, { scale: (far ? 0.85 : 0.9) + h(x, y, 4) * 0.2, sway: far ? 0.012 : 0.018, tint: far ? S.farTint : undefined });
+      if (!far) { grass(x - 0.4, y + 0.3); if (h(x, y, 5) > 0.5) bush(x + 0.45, y + 0.15, 0.85); }
     };
     const rocks = (x: number, y: number) => {
-      prop(h(x, y, 6) > 0.4 ? 'rock_mid' : 'rock_big', x, y, { scale: 0.85 });
-      prop('rock_small', x + 0.5, y + 0.4, { scale: 0.6 }); grass(x - 0.45, y + 0.35);
+      prop(pickOf(S.rocks, x, y, 6), x, y, { scale: 0.85 });
+      prop(S.rockSmall, x + 0.5, y + 0.4, { scale: 0.6 }); grass(x - 0.45, y + 0.35);
     };
-    const flowers = (x: number, y: number) => {   // a patch: 2-3 flower clumps, grass, sometimes a mushroom
-      const f = pickOf(FLOW, x, y, 8);
-      prop(f, x, y, { sway: 0.06, shadow: 0 }); prop(f, x + 0.35, y + 0.3, { sway: 0.06, scale: 0.8, shadow: 0 });
-      if (h(x, y, 9) > 0.5) prop(pickOf(FLOW, x, y, 10), x - 0.3, y + 0.35, { sway: 0.06, scale: 0.75, shadow: 0 });
-      if (h(x, y, 11) > 0.75) prop(pickOf(MUSH, x, y, 12), x + 0.1, y - 0.35, { shadow: 0.5 });
+    const flowers = (x: number, y: number) => {   // a patch: 2-3 clumps (flowers / snowy shrubs, crystals), ground cover, sometimes an extra
+      const f = pickOf(S.patches, x, y, 8);
+      prop(f, x, y, { sway: 0.06 * gsw, shadow: gsw ? 0 : 0.5 }); prop(f, x + 0.35, y + 0.3, { sway: 0.06 * gsw, scale: 0.8, shadow: gsw ? 0 : 0.5 });
+      if (h(x, y, 9) > 0.5) prop(pickOf(S.patches, x, y, 10), x - 0.3, y + 0.35, { sway: 0.06 * gsw, scale: 0.75, shadow: 0 });
+      if (h(x, y, 11) > 0.8) prop(pickOf(S.extras, x, y, 12), x + 0.1, y - 0.35, { shadow: 0.5 });
       grass(x + 0.5, y - 0.1);
     };
     // blocking trees on the two front edges would hide players walking along them: low bushes there instead
-    for (const [x, y] of map.trees) { if (x >= map.width - 2 || y >= map.height - 2) prop(pickOf(['bush_white', 'bush_pink'], x, y), x, y); else tree(x, y); }
+    for (const [x, y] of map.trees) { if (x >= map.width - 2 || y >= map.height - 2) bush(x, y); else tree(x, y); }
     for (const [x, y] of map.rocks) rocks(x, y);
     const blocked = (x: number, y: number) => !this.world.walkable(x, y) || this.world.isWater(x, y) || map.npcs.some(n => Math.hypot(n.x - x, n.y - y) < 2.2);
     const town = map.ground === 'stone';
     for (const [x, y] of scatter(map, blocked, town ? 0 : 9, 3)) flowers(x, y);
     for (const [x, y] of scatter(map, blocked, town ? 6 : 28, 5)) grass(x, y);
-    if (!town) for (const [x, y] of scatter(map, blocked, 4, 13)) prop(pickOf(MUSH, x, y), x, y, { shadow: 0.5 });
+    if (!town) for (const [x, y] of scatter(map, blocked, 4, 13)) prop(pickOf(S.extras, x, y), x, y, { shadow: 0.5 });
     // ---- margin (unwalkable): dense forest behind the two back edges, only low props in front so nothing hides players
     const M = MARGIN, W = map.width, H = map.height;
     bake = [];
@@ -695,14 +697,14 @@ export class GameScene extends Phaser.Scene {
       if (back && !front) {
         if (k < 0.62) tree(jx, jy, out > 1.5);
         else if (k < 0.72) rocks(jx, jy);
-        else if (k < 0.76 && !town) prop('rock_spire', jx, jy, { scale: 0.9 });
+        else if (k < 0.78 && !town) prop(pickOf(S.spires, jx, jy, 17), jx, jy, { scale: 0.9 });
         else if (k < 0.9) flowers(jx, jy);
         else grass(jx, jy);
       } else {
-        if (k < 0.3) prop(pickOf(['bush_white', 'bush_pink'], jx, jy), jx, jy, { scale: 0.9 });
-        else if (k < 0.55) flowers(jx, jy);
-        else if (k < 0.65) prop('rock_small', jx, jy);
-        else if (k < 0.92) grass(jx, jy);
+        if (k < 0.22) bush(jx, jy, 0.9);           // front: sparser, so the edge reads calm
+        else if (k < 0.4) flowers(jx, jy);
+        else if (k < 0.48) prop(S.rockSmall, jx, jy);
+        else if (k < 0.75) grass(jx, jy);
       }
     }
     {
@@ -718,7 +720,12 @@ export class GameScene extends Phaser.Scene {
     const c0 = toScreen(0, H), c1 = toScreen(W, 0), c2 = toScreen(W, H);
     this.bounds = { x0: c0.sx, x1: c1.sx, y0: 0, y1: c2.sy };
     for (let i = 0; i < 3; i++) this.clouds.push(this.add.image(c0.sx + (c1.sx - c0.sx) * (i / 3), c2.sy * (0.2 + i * 0.3), 'm_cloud').setScale(9, 7).setAlpha(0.08).setDepth(1));
-    this.add.particles(0, 0, 'm_mote', {
+    if (map.ground === 'snow') this.add.particles(0, 0, 'dust', {   // snowfall instead of floating motes
+      x: { min: c0.sx - 200, max: c1.sx + 100 }, y: { min: -300, max: c2.sy }, lifespan: 9000, frequency: 70, quantity: 1,
+      speedX: { min: -14, max: 2 }, speedY: { min: 16, max: 34 }, scale: { min: 0.22, max: 0.5 }, tint: 0xffffff,
+      alpha: { onUpdate: (_p: unknown, _k: string, t: number) => Math.min(1, t * 6, (1 - t) * 4) * 0.85 },
+    }).setDepth(9000);
+    else this.add.particles(0, 0, 'm_mote', {
       x: { min: c0.sx, max: c1.sx }, y: { min: 0, max: c2.sy }, lifespan: 7000, frequency: 320, quantity: 1,
       speedX: { min: -6, max: 6 }, speedY: { min: -12, max: -4 }, scale: { min: 1, max: 1.6 }, alpha: { onUpdate: (_p: unknown, _k: string, t: number) => Math.sin(t * Math.PI) * 0.6 }, blendMode: 'ADD',
     }).setDepth(9000);

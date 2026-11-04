@@ -191,5 +191,209 @@
  "barrel_stone": {
   "h": 46,
   "w": 48
+ },
+ "snow_cliff": {
+  "h": 112,
+  "w": 132
+ },
+ "snow_rock_big": {
+  "h": 56,
+  "w": 64
+ },
+ "snow_pine_tall": {
+  "h": 132,
+  "w": 70
+ },
+ "snow_pine_small": {
+  "h": 92,
+  "w": 56
+ },
+ "snow_pine_b": {
+  "h": 122,
+  "w": 81
+ },
+ "ice_crystal_small": {
+  "h": 34,
+  "w": 40
+ },
+ "ice_crystal_big": {
+  "h": 58,
+  "w": 54
+ },
+ "snow_rock_flat": {
+  "h": 34,
+  "w": 60
+ },
+ "snow_bush_round": {
+  "h": 36,
+  "w": 38
+ },
+ "ice_sprig": {
+  "h": 16,
+  "w": 20
+ },
+ "snow_berry_bush": {
+  "h": 38,
+  "w": 41
+ },
+ "snow_drift": {
+  "h": 24,
+  "w": 40
+ },
+ "snow_bush": {
+  "h": 30,
+  "w": 40
+ },
+ "snow_berry_small": {
+  "h": 28,
+  "w": 38
+ },
+ "snowman": {
+  "h": 50,
+  "w": 38
+ },
+ "bare_tree_snow": {
+  "h": 118,
+  "w": 88
+ },
+ "stone_arch": {
+  "h": 74,
+  "w": 77
+ },
+ "stone_pillar": {
+  "h": 76,
+  "w": 60
+ },
+ "snow_patch": {
+  "h": 18,
+  "w": 36
+ },
+ "ice_shard": {
+  "h": 34,
+  "w": 37
+ },
+ "ice_pond": {
+  "h": 52,
+  "w": 84
+ },
+ "sand_rock_big": {
+  "h": 80,
+  "w": 82
+ },
+ "sand_arch": {
+  "h": 82,
+  "w": 86
+ },
+ "sand_pillar": {
+  "h": 72,
+  "w": 53
+ },
+ "sand_tower": {
+  "h": 86,
+  "w": 73
+ },
+ "cactus_tall": {
+  "h": 62,
+  "w": 44
+ },
+ "agave": {
+  "h": 36,
+  "w": 38
+ },
+ "cactus_barrel": {
+  "h": 26,
+  "w": 26
+ },
+ "cactus_rock": {
+  "h": 72,
+  "w": 37
+ },
+ "cactus_round": {
+  "h": 28,
+  "w": 22
+ },
+ "cactus_small": {
+  "h": 22,
+  "w": 22
+ },
+ "dead_tree": {
+  "h": 98,
+  "w": 80
+ },
+ "desert_grass": {
+  "h": 30,
+  "w": 28
+ },
+ "sand_rocks": {
+  "h": 62,
+  "w": 76
+ },
+ "skull": {
+  "h": 22,
+  "w": 33
+ },
+ "sand_stone_small": {
+  "h": 24,
+  "w": 36
+ },
+ "dry_grass": {
+  "h": 16,
+  "w": 24
+ },
+ "dune": {
+  "h": 40,
+  "w": 70
+ },
+ "sand_slab": {
+  "h": 36,
+  "w": 62
+ },
+ "cactus_group": {
+  "h": 62,
+  "w": 59
+ },
+ "dune_b": {
+  "h": 42,
+  "w": 63
+ },
+ "sand_rock_small": {
+  "h": 30,
+  "w": 36
+ },
+ "cactus": {
+  "h": 46,
+  "w": 34
+ },
+ "dry_grass_b": {
+  "h": 20,
+  "w": 23
+ },
+ "dry_grass_c": {
+  "h": 18,
+  "w": 19
+ },
+ "palm": {
+  "h": 100,
+  "w": 62
+ },
+ "oak_green": {
+  "h": 96,
+  "w": 94
+ },
+ "bush_green_a": {
+  "h": 24,
+  "w": 35
+ },
+ "bush_green_b": {
+  "h": 30,
+  "w": 43
+ },
+ "bush_snowy": {
+  "h": 30,
+  "w": 46
+ },
+ "bush_green_c": {
+  "h": 36,
+  "w": 44
  }
 }

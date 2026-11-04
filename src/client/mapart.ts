@@ -35,7 +35,37 @@ const TOWN: Theme = {
   ...MEADOW, flowerRate: 0.004,
   stone: [0x7d7870, 0x8b857b, 0x989186, 0xa59e92], mortar: 0x625e57,
 };
-export const THEMES: Record<string, Theme> = { grass: MEADOW, stone: TOWN };
+const SNOW: Theme = {
+  grass: [0xbfcad6, 0xc9d3de, 0xd3dce5, 0xdde4eb, 0xe7ecf1],   // snow (kept a bit grey so white characters still read)
+  dirt: [0x98a6b6, 0xa4b1bf, 0xafbbc8, 0xbac5d0],              // trodden snow path
+  sand: 0xeef2f6,                                               // snow rim of the frozen pond
+  water: [0x7d9fbd, 0x91b1cb, 0xa7c3d9, 0xd2e4f0],              // ice
+  cliff: [0x6b7686, 0x5c6676, 0x4d5664, 0x3e4552],
+  flowers: [], flowerRate: 0,
+};
+export const THEMES: Record<string, Theme> = { grass: MEADOW, stone: TOWN, snow: SNOW };
+
+/** Which sheet props a theme scatters (ids from data/props.json). */
+export interface PropSet { trees: string[]; bushes: string[]; rocks: string[]; rockSmall: string; spires: string[]; ground: string[]; patches: string[]; extras: string[]; groundSway: boolean; farTint: number }
+const GREEN: PropSet = {
+  trees: ['oak_a', 'oak_b', 'oak_a', 'pine'], bushes: ['bush_white', 'bush_pink'], rocks: ['rock_big', 'rock_mid'], rockSmall: 'rock_small', spires: ['rock_spire'],
+  ground: ['grass_a', 'grass_b', 'grass_c', 'grass_fl1', 'grass_fl2'], patches: ['fl_white', 'fl_pink', 'fl_purple', 'fl_yellow', 'fb_white', 'fb_pink', 'fb_blue', 'fb_mix'],
+  extras: ['mush_red', 'mush_small', 'mush_orange'], groundSway: true, farTint: 0xb4bac2,
+};
+const SNOWY: PropSet = {
+  trees: ['snow_pine_tall', 'snow_pine_b', 'snow_pine_small', 'snow_pine_tall', 'bare_tree_snow'], bushes: ['snow_bush', 'snow_bush_round', 'snow_berry_bush'],
+  rocks: ['snow_rock_big'], rockSmall: 'snow_rock_flat', spires: ['snow_cliff', 'ice_crystal_big', 'stone_arch', 'stone_pillar'],
+  ground: ['ice_sprig', 'snow_patch', 'snow_drift'], patches: ['snow_berry_small', 'snow_bush', 'ice_crystal_small', 'ice_shard', 'bush_snowy'],
+  extras: ['ice_crystal_small', 'ice_shard', 'ice_crystal_small', 'ice_shard', 'ice_crystal_small', 'snowman'], groundSway: false, farTint: 0xb8c4d4,   // snowman: rare
+};
+export const PROP_SETS: Record<string, PropSet> = { grass: GREEN, stone: GREEN, snow: SNOWY };
+export const TOWN_PROPS = ['house_tree', 'house_blue', 'house_vine', 'house_mill', 'lamp', 'flower_bush', 'bench', 'signpost', 'banner', 'sign_board', 'stall_red', 'stall_blue', 'tent', 'stump_axe', 'hay_crates', 'barrel_stone', 'cart', 'crate', 'pot_stand'];
+/** Prop textures a v2 map needs (preload only these). */
+export function propsFor(map: MapData) {
+  if (map.art !== 'v2') return [];
+  const p = PROP_SETS[map.ground] ?? GREEN;
+  return [...new Set([...p.trees, ...p.bushes, ...p.rocks, p.rockSmall, ...p.spires, ...p.ground, ...p.patches, ...p.extras, ...(map.ground === 'stone' ? TOWN_PROPS : [])])];
+}
 
 /** distance from p to segment ab */
 function segDist(px: number, py: number, ax: number, ay: number, bx: number, by: number) {
