@@ -1,4 +1,36 @@
 {
+  "adventurer": [
+    {
+      "id": "adv_slash",
+      "name": "Slash",
+      "icon": "🗡️",
+      "mp": 6,
+      "cooldownMs": 3000,
+      "unlock": 1,
+      "mult": 1.7,
+      "flat": 6
+    },
+    {
+      "id": "adv_dash",
+      "name": "Dash Strike",
+      "icon": "💨",
+      "mp": 10,
+      "cooldownMs": 6000,
+      "unlock": 3,
+      "mult": 2.3,
+      "flat": 10,
+      "range": 3
+    },
+    {
+      "id": "adv_aid",
+      "name": "First Aid",
+      "icon": "🩹",
+      "mp": 12,
+      "cooldownMs": 15000,
+      "unlock": 5,
+      "heal": 0.3
+    }
+  ],
   "swordsman": [
     {
       "id": "power_strike",

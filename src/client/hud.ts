@@ -1,6 +1,6 @@
 // DOM HUD: player/target frames, skill bar, inventory panel, toasts.
 import type { Entity, World, Intent, SkillDef, InvSlot } from '../sim/world';
-import { SLOTS } from '../sim/world';
+import { SLOTS, JOB_LEVEL, BASE_CLASS } from '../sim/world';
 import { Hotbar } from './hotbar';
 import { AutoPanel } from './autopanel';
 import { SellPanel } from './sellpanel';
@@ -153,13 +153,19 @@ export class Hud {
     else if (a === 'take') this.send({ kind: 'stashTake', id: p.id, index: Number(b.dataset.i) });
     else if (a === 'craft') this.send({ kind: 'craft', id: p.id, recipe: b.dataset.r!, times: Number(b.dataset.n) });
     else if (a === 'dbg') this.send({ kind: 'debug', id: p.id, what: b.dataset.w as 'level' });
+    else if (a === 'job') {   // permanent choice: second click confirms
+      const key = 'job:' + b.dataset.c;
+      if (this.confirmKey !== key || Date.now() - this.confirmAt > 6000) { this.confirmKey = key; this.confirmAt = Date.now(); this.npcSig = ''; return; }
+      if (Date.now() - this.confirmAt < 600) return;
+      this.confirmKey = ''; this.send({ kind: 'job', id: p.id, cls: b.dataset.c! });
+    }
     this.npcSig = '';
   }
 
   private renderNpc() {
     const p = this.p, n = this.world.map.npcs.find(x => x.id === this.npc);
     if (!n || Math.hypot(n.x - p.x, n.y - p.y) > 3.2) { this.closeNpc(); return; }
-    const sig = JSON.stringify([this.npc, p.gold, p.inv, p.equip, p.hp === p.maxHp, p.level, this.world.stash]);
+    const sig = JSON.stringify([this.npc, p.gold, p.inv, p.equip, p.hp === p.maxHp, p.level, this.world.stash, p.type, this.confirmKey]);
     if (sig === this.npcSig) return;
     this.npcSig = sig;
     const d = this.world.defs.npcs[n.id];
@@ -215,6 +221,19 @@ export class Hud {
         return `<div class="row"><span class="ic">${out.icon}</span><span class="nm">${out.name}${r.qty > 1 ? ' ×' + r.qty : ''}${lock ? ` <small class="warn-t">ต้อง Lv ${r.level}</small>` : ''}<small class="muted"><br>${need} · ${r.gold} G</small></span>
           <button type="button" data-act="craft" data-r="${r.id}" data-n="1"${n ? '' : ' disabled'}>ทำ</button>${stack ? `<button type="button" data-act="craft" data-r="${r.id}" data-n="5"${n >= 5 ? '' : ' disabled'}>×5</button>` : ''}</div>`;
       }).join('')).join('') + '<p class="muted small">อาวุธ/เกราะที่คราฟต์จะสุ่ม Rare 0-5 เหมือนของดรอป · Shell สุ่มออฟเหมือน Shell ทั่วไป</p>';
+    } else if (d.role === 'guild') {
+      const w = this.world, cls = w.defs.classes;
+      if (p.type !== BASE_CLASS) body = `<p>คุณเป็น <b>${cls[p.type].name}</b> แล้ว ขอให้โชคดีในการผจญภัย!</p>`;
+      else {
+        const ready = p.level >= JOB_LEVEL;
+        const INFO: Record<string, string> = { swordsman: 'ระยะประชิด · ทนทาน · ดาบ + หน้าไม้', archer: 'ระยะไกล · หลบเก่ง · ธนู + มีดสั้น', mage: 'เวทธาตุ · ดาเมจหมู่ · ไม้เท้า + ปืน' };
+        body = `<p class="muted">${ready ? 'เลือกได้ 1 อาชีพ (เปลี่ยนทีหลังไม่ได้) · ได้อาวุธเริ่มต้น + สกิลอาชีพ · Spirit Card ใบแรกได้ตอนเคลียร์ดันเจี้ยนแรก' : `ต้อง Lv ${JOB_LEVEL} ก่อน (ตอนนี้ Lv ${p.level})`}</p>`
+          + Object.entries(cls).filter(([id]) => id !== BASE_CLASS).map(([id, c]) => {
+            const armed = this.confirmKey === 'job:' + id;
+            return `<div class="row job"><img src="sprites/${c.sprite}.png" alt=""><span class="nm">${c.name}<small class="muted">${INFO[id] ?? c.attackType}</small></span>
+              <button type="button" data-act="job" data-c="${id}" class="${armed ? 'armed' : ''}"${ready ? '' : ' disabled'}>${armed ? 'ยืนยัน!' : 'เลือก'}</button></div>`;
+          }).join('');
+      }
     } else if (d.role === 'debug') {
       body = [['level', '+1 เลเวล'], ['level5', '+5 เลเวล'], ['gold', '+10,000 G'], ['mats', 'วัตถุดิบตีบวกทุกขั้น ×30 (รวม Spirit Crystal +10~15)'], ['card', 'การ์ดสุ่มของอาชีพ'], ['job', 'การ์ดที่ใส่ Job +3'], ['gear', 'ของอาชีพ Rare สูง ×3'], ['shells', 'Shell ×3 (ทุกแบบ)'], ['scrolls', 'Reroll ×5 + กันแตก ×3']]
         .map(([w, t]) => `<button type="button" class="big" data-act="dbg" data-w="${w}">${t}</button>`).join('');

@@ -4,7 +4,7 @@ import { readSave, clearSave } from './client/save';
 import { Net } from './client/net';
 import classes from '../data/classes.json';
 
-type ClassInfo = { name: string; sprite: string; attackType: string };
+type ClassInfo = { name: string; sprite: string; attackType: string; desc?: string };
 const CLASSES = classes as Record<string, ClassInfo>;
 const DESC: Record<string, string> = { melee: 'ระยะประชิด · ทนทาน', ranged: 'ระยะไกล · หลบเก่ง', magic: 'เวท · ธาตุไฟ/น้ำ แรงแต่บาง' };
 const pick = document.getElementById('pick')!;
@@ -14,7 +14,7 @@ const sub = pick.querySelector('p')!;
 function classButton(id: string, c: ClassInfo, onClick: () => void) {
   const b = document.createElement('button');
   b.type = 'button';
-  b.innerHTML = `<img src="sprites/${c.sprite}.png" alt=""><b>${c.name}</b><small>${DESC[c.attackType]}</small>`;
+  b.innerHTML = `<img src="sprites/${c.sprite}.png" alt=""><b>${c.name}</b><small>${c.desc ?? DESC[c.attackType]}</small>`;
   b.addEventListener('click', onClick);
   return b;
 }
@@ -41,7 +41,8 @@ function offline() {
     list.before(cont);
     const note = document.createElement('p'); note.textContent = 'หรือเริ่มตัวใหม่ (เซฟเก่าจะถูกแทนที่)'; list.before(note);
   }
-  for (const [id, c] of Object.entries(CLASSES)) list.appendChild(classButton(id, c, () => { clearSave(); start({ cls: id }); }));
+  // new characters start as Adventurer and pick a job at Lv10 (guild NPC in town)
+  for (const [id, c] of Object.entries(CLASSES).filter(([id]) => id === 'adventurer')) list.appendChild(classButton(id, c, () => { clearSave(); start({ cls: id }); }));
 }
 
 // ---- online (server on this host) ----
@@ -71,7 +72,7 @@ function online(net: Net) {
     };
     net.send({ t: 'join', name: name.trim(), cls });
   };
-  for (const [id, c] of Object.entries(CLASSES)) list.appendChild(classButton(id, c, () => join(input.value, id)));
+  for (const [id, c] of Object.entries(CLASSES).filter(([id]) => id === 'adventurer')) list.appendChild(classButton(id, c, () => join(input.value, id)));
   const hint = document.createElement('p'); hint.textContent = 'ถ้าชื่อนี้มีตัวอยู่แล้ว จะเข้าตัวเดิม (อาชีพที่กดจะไม่มีผล)'; hint.className = 'hint';
   list.after(hint);
 }

@@ -29,7 +29,7 @@ const toTile = (sx: number, sy: number) => ({
 });
 
 interface View {
-  body: Phaser.GameObjects.Image; shadow: Phaser.GameObjects.Ellipse; bar: Phaser.GameObjects.Graphics;
+  body: Phaser.GameObjects.Sprite; shadow: Phaser.GameObjects.Ellipse; bar: Phaser.GameObjects.Graphics;
   aura?: Phaser.GameObjects.Ellipse;
   fxSig?: string; sparks?: Phaser.GameObjects.Particles.ParticleEmitter; ring?: Phaser.GameObjects.Ellipse; ringLv?: number;
   wings?: Phaser.GameObjects.Container;
@@ -40,6 +40,8 @@ interface View {
   scale: number; phase: number; lunge: number; lungeDir: { x: number; y: number }; height: number;
   /** procedural animation state: hit recoil, turn squish, spawn pop, death fall (all 1 → 0 or 0 → 1), last step index */
   hitT: number; flipT: number; popT: number; dieT: number; face: number; step: number;
+  /** frame-animated base form (classes with `anim`): sheet key, art faces left; one-shot requests from events */
+  anim?: { sheet: string; faceLeft: boolean }; atkReq?: boolean; hurtReq?: boolean;
 }
 
 export class GameScene extends Phaser.Scene {
@@ -62,6 +64,7 @@ export class GameScene extends Phaser.Scene {
   preload() {
     for (const d of [...Object.values(defs.classes), ...Object.values(defs.monsters), ...Object.values(defs.cards), ...Object.values(defs.npcs)]) if (d.sprite) this.load.image(d.sprite, `sprites/${d.sprite}.png`);
     for (const id of Object.keys(PROPS)) if (id !== '_note') this.load.image(`p_${id}`, `props/${id}.png`);
+    for (const c of Object.values(defs.classes)) if (c.anim) this.load.spritesheet(c.anim.sheet, `sprites/${c.anim.sheet}.png`, { frameWidth: c.anim.fw, frameHeight: c.anim.fh });
   }
 
   private leaving = false;
@@ -96,6 +99,11 @@ export class GameScene extends Phaser.Scene {
     const sg = this.make.graphics({}, false);
     sg.fillStyle(0xffffff, 1).fillPoints([{ x: 4, y: 0 }, { x: 5, y: 3 }, { x: 8, y: 4 }, { x: 5, y: 5 }, { x: 4, y: 8 }, { x: 3, y: 5 }, { x: 0, y: 4 }, { x: 3, y: 3 }], true);
     sg.generateTexture('spark', 8, 8); sg.destroy();
+    for (const c of Object.values(defs.classes)) if (c.anim) for (const [name, a] of Object.entries(c.anim.anims)) {
+      const key = `${c.anim.sheet}_${name}`;
+      if (!this.anims.exists(key)) this.anims.create({ key, frames: this.anims.generateFrameNumbers(c.anim.sheet, { start: a.row * c.anim.cols, end: a.row * c.anim.cols + a.n - 1 }),
+        frameRate: a.fps, repeat: name === 'idle' || name === 'walk' ? -1 : 0, yoyo: name === 'idle' });
+    }
     if (!this.textures.exists('dust')) { const dg = this.make.graphics({}, false); dg.fillStyle(0xffffff, 1).fillCircle(4, 4, 4); dg.generateTexture('dust', 8, 8); dg.destroy(); }
     // footstep dust, shared by everyone (explode() on each landing)
     this.puffs = this.add.particles(0, 0, 'dust', { emitting: false, lifespan: 380, speedX: { min: -28, max: 28 }, speedY: { min: -14, max: -4 },
@@ -211,7 +219,7 @@ export class GameScene extends Phaser.Scene {
 
   private makeView(e: Entity) {
     const d = e.kind === 'player' ? defs.classes[e.type] : defs.monsters[e.type];
-    const body = this.add.image(0, 0, d.sprite).setOrigin(0.5, 1).setInteractive({ useHandCursor: e.kind === 'monster', pixelPerfect: false });
+    const body = this.add.sprite(0, 0, d.sprite).setOrigin(0.5, 1).setInteractive({ useHandCursor: e.kind === 'monster', pixelPerfect: false });
     body.setData('id', e.id);
     // players (and their card forms) share one body size; monsters keep their designed height
     const fit = e.kind === 'player' ? this.fitScale(d.sprite, PLAYER_CORE, PLAYER_MAXW) : { scale: d.height / body.height, height: d.height };
@@ -260,12 +268,23 @@ export class GameScene extends Phaser.Scene {
     v.dieT = e.dead ? Math.min(1, v.dieT + dt / 0.4) : 0;
     if (v.dieT > 0) rot = e.facing * 1.35 * (1 - Math.pow(1 - v.dieT, 3));
     if (e.kind === 'player') this.syncForm(e, v);
+    if (v.anim) {
+      // the frames already walk/attack/fall: drop the hop and the death tilt, keep a little lean
+      if (e.moving) { bob = 0; sqx = 1; sqy = 1; rot *= 0.4; }
+      if (v.dieT > 0) rot = 0;
+      const A = v.anim.sheet + '_', cur = v.body.anims.currentAnim?.key ?? '';
+      const busy = v.body.anims.isPlaying && (cur === A + 'attack' || cur === A + 'hurt'), want = A + (e.dead ? 'die' : e.moving ? 'walk' : 'idle');
+      if (!e.dead && v.atkReq) v.body.play(A + 'attack');
+      else if (!e.dead && v.hurtReq && !busy) v.body.play(A + 'hurt');
+      else if (cur !== want && (!busy || e.dead)) v.body.play(want);
+      v.atkReq = v.hurtReq = false;
+    }
     const lift = e.mounted ? -10 + Math.sin(now * 3) * 2 : 0;
     if (e.mounted) { bob *= 0.3; rot *= 0.3; }
     const x = sx + v.lungeDir.x * l + shake, y = sy + 3 + bob + lift + v.lungeDir.y * l + v.dieT * 4;
     v.body.setRotation(rot);
     sqx *= pop * (1 - v.flipT * 0.8); sqy *= pop;
-    v.body.setPosition(x, y).setScale(v.scale * sqx * e.facing, v.scale * sqy);
+    v.body.setPosition(x, y).setScale(v.scale * sqx * (v.anim?.faceLeft ? -e.facing : e.facing), v.scale * sqy);
     v.shadow.setPosition(sx, sy + 1).setScale((1 + bob / 30) * pop);
     v.body.setDepth(10 + sy); v.shadow.setDepth(2);
     if (v.mount) v.mount.setPosition(sx, y + 4).setDepth(v.body.depth - 0.2).setScale(v.mountLook === 'cloud' ? 1 + Math.sin(now * 5) * 0.03 : 1).setVisible(!e.dead);
@@ -316,12 +335,14 @@ export class GameScene extends Phaser.Scene {
   /** Sprite/aura for card form + mount visuals. Runs every frame; only rebuilds when the key changes. */
   private syncForm(e: Entity, v: View) {
     const card = this.world.cardOf(e), mount = e.mounted && e.equip.mount ? defs.items[e.equip.mount.item].mount : undefined;
-    const key = `${card?.sprite ?? ''}|${mount?.look ?? ''}`;
+    const key = `${e.type}|${card?.sprite ?? ''}|${mount?.look ?? ''}`;
     if (key === v.formKey) return;
     v.formKey = key;
     const base = defs.classes[e.type];
-    const sprite = card ? card.sprite : base.sprite;
-    if (v.body.texture.key !== sprite) { v.body.setTexture(sprite); }
+    const sprite = card ? card.sprite : base.sprite, an = !card ? base.anim : undefined;
+    // size is measured on the still image; an animated base form uses its sheet (same pixel scale as the still)
+    if (an) { v.anim = { sheet: an.sheet, faceLeft: !!an.faceLeft }; v.body.setTexture(an.sheet, 0).setOrigin(an.ax / an.fw, an.ay / an.fh); v.body.play(`${an.sheet}_idle`); }
+    else { v.anim = undefined; v.body.anims.stop(); if (v.body.texture.key !== sprite) v.body.setTexture(sprite); v.body.setOrigin(0.5, 1); }
     const fit = this.fitScale(sprite, PLAYER_CORE, PLAYER_MAXW);
     v.scale = fit.scale; v.height = fit.height;
     v.aura?.destroy(); v.aura = undefined;
@@ -450,7 +471,7 @@ export class GameScene extends Phaser.Scene {
       if (!a || !b || !va) return;
       const pa = toScreen(a.x, a.y), pb = toScreen(b.x, b.y);
       const d = Math.hypot(pb.sx - pa.sx, pb.sy - pa.sy) || 1;
-      va.lungeDir = { x: (pb.sx - pa.sx) / d, y: (pb.sy - pa.sy) / d }; va.lunge = 1;
+      va.lungeDir = { x: (pb.sx - pa.sx) / d, y: (pb.sy - pa.sy) / d }; va.lunge = 1; va.atkReq = true;
       if (ev.ranged) this.projectile(a, pa, pb);
     } else if (ev.t === 'dmg') {
       const e = this.world.entities.get(ev.to), v = e && this.views.get(e.id);
@@ -460,7 +481,7 @@ export class GameScene extends Phaser.Scene {
       const txt = ev.miss ? 'MISS' : String(ev.amount);
       const color = ev.miss ? '#c9d1e0' : e.kind === 'player' ? '#ff6b6b' : ev.crit ? '#ffd23f' : '#ffffff';
       this.floatText(sx, sy - v.height - 6, txt + (ev.crit ? '!' : ''), color, ev.crit ? 20 : 15);
-      if (!ev.miss) { v.hitT = 1; v.body.setTintFill(0xffffff); this.time.delayedCall(70, () => v.body.setTint(0xff8080)); this.time.delayedCall(170, () => { v.body.clearTint(); if (v.tint) v.body.setTint(v.tint); v.stKey = undefined; }); }
+      if (!ev.miss) { v.hitT = 1; v.hurtReq = true; v.body.setTintFill(0xffffff); this.time.delayedCall(70, () => v.body.setTint(0xff8080)); this.time.delayedCall(170, () => { v.body.clearTint(); if (v.tint) v.body.setTint(v.tint); v.stKey = undefined; }); }
     } else if (ev.t === 'die') {
       const v = this.views.get(ev.id); if (!v) return;   // died the tick it spawned (no sprite yet)
       this.tweens.add({ targets: v.body, alpha: 0, duration: 450 });
@@ -743,6 +764,7 @@ export class GameScene extends Phaser.Scene {
       else if (n.id === 'craft') { prop('tent', X - 0.7, Y - 0.6); prop('stump_axe', X + 0.6, Y + 0.6); }
       else if (n.id === 'smith') { prop('hay_crates', X - 0.75, Y + 0.3); prop('barrel_stone', X + 0.5, Y - 0.6); }
       else if (n.id === 'stash') { prop('cart', X + 0.2, Y - 0.9); prop('crate', X - 0.7, Y + 0.4); }
+      else if (n.id === 'guild') { prop('banner', X - 1.0, Y + 0.1); prop('sign_board', X + 0.2, Y - 1.1); }
       else if (n.id === 'healer') { prop('flower_bush', X - 0.7, Y + 0.4); prop('pot_stand', X + 0.5, Y - 0.7); }
     }
   }

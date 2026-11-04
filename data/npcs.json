@@ -16,6 +16,10 @@
         "price": 10
       },
       {
+        "item": "traveler_blade",
+        "price": 200
+      },
+      {
         "item": "cloth_tunic",
         "price": 30
       },
@@ -116,5 +120,13 @@
     "height": 62,
     "role": "craft",
     "greet": "เอาวัตถุดิบมา จะทำยา ม้วนคัมภีร์ Shell หรืออุปกรณ์ให้"
+  },
+  "guild": {
+    "name": "Momo",
+    "title": "กิลด์นักผจญภัย",
+    "sprite": "npc_guild",
+    "height": 60,
+    "role": "guild",
+    "greet": "ถึง Lv10 แล้วมาเลือกอาชีพกับฉันนะ!"
   }
 }

@@ -21,7 +21,7 @@ function autoEquip(w: World, e: Entity) {
   }
 }
 
-for (const cls of Object.keys(defs.classes)) {
+for (const cls of Object.keys(defs.classes).filter(c => c !== 'adventurer')) {
   // START=30 → begin at that level on the right map with the previous gear tier (skips replaying early game)
   const START = Number(process.env.START ?? 0);
   const tierOf = (lv: number) => lv >= 45 ? 'infernal' : lv >= 38 ? 'celestial' : lv >= 25 ? 'abyssal' : lv >= 18 ? 'ashen' : '';
@@ -31,7 +31,8 @@ for (const cls of Object.keys(defs.classes)) {
     equip: { weapon: { item: `${T}_${K[0]}`, qty: 1, up: 5, rare: 3 }, offhand: { item: `${T}_${K[1]}`, qty: 1, up: 3, rare: 2 }, armor: { item: ARMOR[T], qty: 1, up: 5, rare: 3 } },
     quest: { main: defs.quests.main.findIndex(q => q.id === `q_lv${START}`), prog: 0, daily: { day: '', prog: 0, done: false } } } as SaveData : undefined;
   let world = new World(structuredClone(MAPS[startSave?.map ?? START_MAP]), defs, 7);
-  let e = world.spawnPlayer(cls, startSave);
+  // from Lv1 everyone starts as Adventurer and takes `cls` at the guild (Auto quest walks there)
+  let e = world.spawnPlayer(startSave ? cls : 'adventurer', startSave);
   world.apply({ kind: 'autoQuest', id: e.id, on: true });
   const total = (HOURS * 3600 * 1000) / TICK_MS;
   const marks: Record<number, number> = {}, log: string[] = [];
@@ -39,6 +40,7 @@ for (const cls of Object.keys(defs.classes)) {
   let deaths = 0, trips = 0, dungeonStart = 0, lastQuest = 0;
   for (let t = 0; t < total; t++) {
     world.tick();
+    if (e.type === 'adventurer' && world.questOf(e)?.goal.type === 'job') world.apply({ kind: 'job', id: e.id, cls });
     for (const ev of world.events.splice(0)) {
       if (ev.t === 'die' && ev.id === e.id) deaths++;
       if (ev.t === 'level' && ev.id === e.id && !marks[ev.level]) marks[ev.level] = t;

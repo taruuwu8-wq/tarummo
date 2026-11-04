@@ -1212,5 +1212,33 @@
       "armor": 76,
       "hp": 619
     }
+  },
+  "short_sword": {
+    "name": "Short Sword",
+    "slot": "weapon",
+    "rarity": "common",
+    "icon": "🗡️",
+    "level": 1,
+    "class": "adventurer",
+    "price": 5,
+    "weapon": {
+      "min": 12,
+      "max": 17,
+      "critDmg": 0.6
+    }
+  },
+  "traveler_blade": {
+    "name": "Traveler's Blade",
+    "slot": "weapon",
+    "rarity": "uncommon",
+    "icon": "🗡️",
+    "level": 4,
+    "class": "adventurer",
+    "price": 40,
+    "weapon": {
+      "min": 18,
+      "max": 25,
+      "critDmg": 0.7
+    }
   }
 }

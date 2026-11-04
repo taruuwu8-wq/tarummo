@@ -61,28 +61,6 @@
       }
     },
     {
-      "id": "q_ruins",
-      "name": "เคลียร์ซากปรักหักพัง",
-      "goal": {
-        "type": "clear"
-      },
-      "map": "ruins",
-      "reward": {
-        "gold": 400,
-        "xp": 400,
-        "items": [
-          [
-            "spirit_crystal",
-            2
-          ],
-          [
-            "upgrade_scroll",
-            1
-          ]
-        ]
-      }
-    },
-    {
       "id": "q_lv8",
       "name": "แข็งแกร่งพอจะเข้าป่า (Lv 8)",
       "goal": {
@@ -116,6 +94,63 @@
         "items": [
           [
             "reroll_scroll",
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_lv10",
+      "name": "พร้อมเลือกอาชีพ (Lv 10)",
+      "goal": {
+        "type": "level",
+        "level": 10
+      },
+      "map": "frostwood",
+      "reward": {
+        "gold": 300,
+        "items": [
+          [
+            "hp_potion",
+            10
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_job",
+      "name": "เลือกอาชีพที่กิลด์ (Momo ในเมือง)",
+      "goal": {
+        "type": "job"
+      },
+      "map": "town",
+      "reward": {
+        "gold": 300,
+        "items": [
+          [
+            "mp_potion",
+            10
+          ]
+        ]
+      }
+    },
+    {
+      "id": "q_ruins",
+      "name": "บททดสอบอาชีพ: เคลียร์ซากปรักหักพัง (ได้การ์ดใบแรก)",
+      "goal": {
+        "type": "clear"
+      },
+      "map": "ruins",
+      "reward": {
+        "gold": 400,
+        "xp": 400,
+        "items": [
+          [
+            "spirit_crystal",
+            2
+          ],
+          [
+            "upgrade_scroll",
             1
           ]
         ]
@@ -874,5 +909,41 @@
       },
       "group": true
     }
+  ],
+  "_v1order": [
+    "q_slime",
+    "q_pumpkin",
+    "q_lv5",
+    "q_ruins",
+    "q_lv8",
+    "q_treant",
+    "q_icegolem",
+    "q_lv15",
+    "q_bandit",
+    "q_fox",
+    "q_samurai",
+    "q_lv22",
+    "q_ghost",
+    "q_temple",
+    "q_witch",
+    "q_stalker",
+    "q_lv30",
+    "q_rabbit",
+    "q_angel",
+    "q_seraph",
+    "q_spire",
+    "q_lv38",
+    "q_berserk",
+    "q_succubus",
+    "q_bear",
+    "q_lv45",
+    "q_prowler",
+    "q_paladin",
+    "q_wraith",
+    "q_eclipse",
+    "q_lv52",
+    "q_siren",
+    "q_vwraith",
+    "q_colossus"
   ]
 }

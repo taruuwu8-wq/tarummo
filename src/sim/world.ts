@@ -22,7 +22,7 @@ export interface MapData {
   treeTint?: string; art?: string; portals: Portal[]; npcs: { id: string; x: number; y: number }[]; dungeon?: DungeonDef;
 }
 export interface NpcDef {
-  name: string; title: string; sprite: string; height: number; role: 'shop' | 'smith' | 'healer' | 'stash' | 'debug' | 'rarer' | 'craft'; greet: string;
+  name: string; title: string; sprite: string; height: number; role: 'shop' | 'smith' | 'healer' | 'stash' | 'debug' | 'rarer' | 'craft' | 'guild'; greet: string;
   sells?: { item: string; price: number }[];
 }
 export interface SkillDef {
@@ -71,11 +71,14 @@ export interface Defs {
 export interface RecipeDef { id: string; out: string; qty: number; inputs: [string, number][]; gold: number; cat: string; level: number }
 export interface QuestDef {
   id: string; name: string; map?: string; group?: boolean;
-  goal: { type: 'kill' | 'level' | 'clear' | 'visit'; monster?: string; count?: number; level?: number };
+  goal: { type: 'kill' | 'level' | 'clear' | 'visit' | 'job'; monster?: string; count?: number; level?: number };
   reward: { gold?: number; xp?: number; items?: [string, number][]; shellSrc?: 'boss' | 'normal' };
 }
 /** main: index into the chain + progress; daily: per-day kill counter */
-export interface QuestState { main: number; prog: number; daily: { day: string; prog: number; done: boolean }; bossDone?: string[] }
+/** skip: main-quest ids already done before the quest order changed (save migration) */
+export interface QuestState { main: number; prog: number; daily: { day: string; prog: number; done: boolean }; bossDone?: string[]; skip?: string[] }
+export const JOB_LEVEL = 10;
+export const BASE_CLASS = 'adventurer';
 export type StatusType = 'burn' | 'bleed' | 'slow' | 'stun' | 'freeze';
 export interface StatusDef { name: string; icon: string; tint: string; tick?: boolean; maxHpCap?: number; moveMul?: number; attackMul?: number; noAct?: boolean; breakOnHit?: boolean }
 /** chance 0..1, ms duration, power = DoT per second as a fraction of the triggering hit */
@@ -123,7 +126,7 @@ export type GearSet = Partial<Record<Slot, InvSlot>>;
 const SET_SLOTS: Slot[] = ['weapon', 'offhand', 'armor', 'hat', 'charm'];
 const setKey = (st: InvSlot) => `${st.item}|${st.up ?? 0}|${st.rare ?? 0}|${JSON.stringify(st.opts ?? [])}`;
 export const SLOTS: Slot[] = ['weapon', 'offhand', 'armor', 'hat', 'charm', 'card', 'mount'];
-export interface SaveData { quest?: QuestState; autoQuest?: boolean; rested?: number; lastSeen?: number; autoStats?: AutoStats & { elapsed?: number }; autoOn?: boolean; autoCfg?: AutoCfg; autoAnchor?: Tile | null; autoTrip?: AutoTrip | null; bars?: Record<string, BarRef[]>; barKnown?: Record<string, string[]>; transformed?: boolean; mounted?: boolean; map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean; gearSet?: GearSet | null }
+export interface SaveData { quest?: QuestState; autoQuest?: boolean; rested?: number; lastSeen?: number; autoStats?: AutoStats & { elapsed?: number }; autoOn?: boolean; autoCfg?: AutoCfg; autoAnchor?: Tile | null; autoTrip?: AutoTrip | null; bars?: Record<string, BarRef[]>; barKnown?: Record<string, string[]>; transformed?: boolean; mounted?: boolean; map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean; gearSet?: GearSet | null; firstCard?: boolean; questV?: number }
 
 export interface Entity {
   id: number; kind: 'player' | 'monster'; type: string; name: string;
@@ -140,6 +143,8 @@ export interface Entity {
   gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot>>; autoSell: boolean; transformed: boolean;
   /** gear worn before the last auto-equip / set swap, so the player can compare and switch back */
   gearSet: GearSet | null;
+  /** got the first Spirit Card (first dungeon clear after choosing a job) */
+  firstCard: boolean;
   cooldowns: Record<string, number>; pendingSkill: string | null; talkTo: string | null;
   lastHit: number;
   rested: number;
@@ -169,6 +174,7 @@ export type Intent =
   | { kind: 'equip'; id: number; index: number }
   | { kind: 'unequip'; id: number; slot: Slot }
   | { kind: 'autoGear'; id: number }
+  | { kind: 'job'; id: number; cls: string }
   | { kind: 'swapSet'; id: number }
   | { kind: 'use'; id: number; index: number }
   | { kind: 'sell'; id: number; index: number }
@@ -323,7 +329,7 @@ export class World {
       hp: 1, maxHp: 1, mp: 0, maxMp: 0, stats: undefined as unknown as CombatStats, speed: 1, range: 1, attackMs: 1000,
       target: null, nextAttack: 0, repathAt: 0, lastHurt: -1e9, dead: false, respawnAt: 0,
       idleTicks: 0, xpReward: 0, level: 1, xp: 0, auto: false,
-      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, gearSet: null, cooldowns: {}, pendingSkill: null, talkTo: null, lastHit: -1e9, rested: 0, quest: { main: 0, prog: 0, daily: { day: '', prog: 0, done: false } }, autoQuest: false, autoCfg: defaultAutoCfg(), autoAnchor: null, autoTrip: null, autoStats: { since: 0, xp: 0, gold: 0, kills: 0, items: {} }, mounted: false, aggro: 0, noRespawn: false, nextBlast: 0, bars: {}, barKnown: {}, passive: { lifesteal: 0 }, extra: NO_EXTRA(), statuses: [], prot: {}, onHit: [], nextSummon: 0,
+      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, gearSet: null, firstCard: false, cooldowns: {}, pendingSkill: null, talkTo: null, lastHit: -1e9, rested: 0, quest: { main: 0, prog: 0, daily: { day: '', prog: 0, done: false } }, autoQuest: false, autoCfg: defaultAutoCfg(), autoAnchor: null, autoTrip: null, autoStats: { since: 0, xp: 0, gold: 0, kills: 0, items: {} }, mounted: false, aggro: 0, noRespawn: false, nextBlast: 0, bars: {}, barKnown: {}, passive: { lifesteal: 0 }, extra: NO_EXTRA(), statuses: [], prot: {}, onHit: [], nextSummon: 0,
     };
   }
 
@@ -348,17 +354,26 @@ export class World {
         if (gain > 0) { e.rested += gain; this.pendingEvents.push({ t: 'rested', id: e.id, amount: gain, hours: Math.round(awayH * 10) / 10 }); }
       }
       if (save.quest) e.quest = save.quest;
+      // quest order v2 (job change at Lv10, first dungeon moved after it): map the old index by id; quests that were
+      // already behind the player but now come later are marked done so they aren't repeated
+      if (save.quest && !save.questV) {
+        const ids = this.defs.quests.main.map(q => q.id), old = (this.defs.quests as unknown as { _v1order?: string[] })._v1order ?? ids;
+        const oi = save.quest.main, cur = old[oi], ni = cur ? ids.indexOf(cur) : -1;   // e.quest is save.quest: read oi first
+        if (ni >= 0) { e.quest.main = ni; e.quest.skip = old.slice(0, oi).filter(id => ids.indexOf(id) > ni); }
+      }
+      e.firstCard = save.firstCard ?? save.level >= 3;   // old saves got their card at Lv3
       e.autoQuest = !!save.autoQuest;
       Object.assign(e, { autoCfg: cfg, auto: !!save.autoOn, autoAnchor: save.autoAnchor ?? null, autoTrip: save.autoTrip ?? null });
       if (e.auto) e.autoStats = save.autoStats ? { ...save.autoStats, since: this.now - (save.autoStats.elapsed ?? 0) } : { since: this.now, xp: 0, gold: 0, kills: 0, items: {} };
-      if (!e.equip.offhand && !e.inv.some(s => s.item === c.starterOffhand)) e.equip.offhand = { item: c.starterOffhand, qty: 1, up: 0 };  // older saves
-    } else { e.equip = { weapon: { item: c.starterWeapon, qty: 1, up: 0 }, offhand: { item: c.starterOffhand, qty: 1, up: 0 } }; e.inv = [{ item: 'hp_potion', qty: 3 }]; }
+      if (c.starterOffhand && !e.equip.offhand && !e.inv.some(s => s.item === c.starterOffhand)) e.equip.offhand = { item: c.starterOffhand, qty: 1, up: 0 };  // older saves
+    } else { e.equip = { weapon: { item: c.starterWeapon, qty: 1, up: 0 }, ...(c.starterOffhand ? { offhand: { item: c.starterOffhand, qty: 1, up: 0 } } : {}) }; e.inv = [{ item: 'hp_potion', qty: 3 }]; }
     this.applyLevel(e, save?.level ?? 1);
     if (save?.transformed && e.equip.card) { e.transformed = true; this.recalc(e); e.hp = e.maxHp; e.mp = e.maxMp; }
     if (save?.mounted && e.equip.mount) e.mounted = true;
     if (vitals) { e.hp = Math.max(1, Math.min(e.maxHp, vitals.hp)); e.mp = Math.min(e.maxMp, vitals.mp); }
     this.ensureBar(e);
     this.entities.set(e.id, e);
+    this.skipQuests(e);
     this.questEvent(e, 'visit');
     this.questEvent(e, 'level');
     return e;
@@ -534,7 +549,7 @@ export class World {
   }
 
   save(e: Entity): SaveData {
-    return { quest: e.quest, autoQuest: e.autoQuest, rested: Math.round(e.rested), lastSeen: Date.now(), autoStats: { ...e.autoStats, elapsed: this.now - e.autoStats.since }, autoOn: e.auto, autoCfg: e.autoCfg, autoAnchor: e.autoAnchor, autoTrip: e.autoTrip, bars: e.bars, barKnown: e.barKnown, transformed: e.transformed, mounted: e.mounted, map: this.map.id, cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell, gearSet: e.gearSet };
+    return { quest: e.quest, autoQuest: e.autoQuest, rested: Math.round(e.rested), lastSeen: Date.now(), autoStats: { ...e.autoStats, elapsed: this.now - e.autoStats.since }, autoOn: e.auto, autoCfg: e.autoCfg, autoAnchor: e.autoAnchor, autoTrip: e.autoTrip, bars: e.bars, barKnown: e.barKnown, transformed: e.transformed, mounted: e.mounted, map: this.map.id, cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell, gearSet: e.gearSet, firstCard: e.firstCard, questV: 2 };
   }
 
   /** 'base' or the active card id; each form keeps its own hotbar */
@@ -665,7 +680,7 @@ export class World {
     } else if (what === 'gold') { p.gold += 10000; this.events.push({ t: 'gold', id: p.id, amount: 10000 }); }
     else if (what === 'mats') for (const m of ['slime_jelly', 'pumpkin_seed', 'golem_shard', 'spirit_crystal', 'treant_bark', 'frost_shard']) this.grantItem(p, m, 30, { filter: false });
     else if (what === 'card') this.grantItem(p, this.randomCardFor(p.type, p));
-    else if (what === 'gear') for (let i = 0; i < 3; i++) { const l = this.defs.rarity.classGear[p.type]; this.grantItem(p, l[i % l.length], 1, { src: 'boss', filter: false }); }
+    else if (what === 'gear') for (let i = 0; i < 3; i++) { const l = this.defs.rarity.classGear[p.type]; if (!l) break; this.grantItem(p, l[i % l.length], 1, { src: 'boss', filter: false }); }
     else if (what === 'shells') for (const sh of ['shell_weapon', 'shell_armor', 'shell_offhand']) this.grantItem(p, sh, 1, { src: 'gm' });
     else if (what === 'scrolls') { this.grantItem(p, this.defs.rarity.rerollItem, 5); this.grantItem(p, this.defs.rarity.rarify.protectItem, 5); this.grantItem(p, this.defs.upgrade.protectItem, 5); }
     else if (what === 'job' && p.equip.card) {
@@ -858,11 +873,34 @@ export class World {
     }
   }
 
+  /** Step over main quests that don't apply: already done before the order changed, or the job quest for someone who has a job. */
+  private skipQuests(p: Entity) {
+    for (let q = this.questOf(p); q && (p.quest.skip?.includes(q.id) || (q.goal.type === 'job' && p.type !== BASE_CLASS)); q = this.questOf(p)) { p.quest.main++; p.quest.prog = 0; }
+  }
+
+  /** Adventurer → a job, at the guild NPC from JOB_LEVEL. Keeps level/items; the old weapon goes to the bag, the new class's starters are worn. */
+  private changeJob(p: Entity, cls: string) {
+    const c = this.defs.classes[cls];
+    if (p.type !== BASE_CLASS || !c || cls === BASE_CLASS) return;
+    if (p.level < JOB_LEVEL) { this.events.push({ t: 'msg', id: p.id, text: `ต้อง Lv ${JOB_LEVEL} ก่อนถึงเลือกอาชีพได้` }); return; }
+    for (const sl of ['weapon', 'offhand'] as Slot[]) { const st = p.equip[sl]; if (st) { p.inv.push(st); delete p.equip[sl]; } }
+    p.type = cls; p.speed = c.speed; p.attackMs = c.attackMs;
+    p.equip.weapon = { item: c.starterWeapon, qty: 1, up: 0 };
+    if (c.starterOffhand) p.equip.offhand = { item: c.starterOffhand, qty: 1, up: 0 };
+    p.bars = {}; p.barKnown = {}; p.pendingSkill = null; p.cooldowns = {};
+    this.recalc(p); p.hp = p.maxHp; p.mp = p.maxMp;
+    this.ensureBar(p);
+    this.events.push({ t: 'msg', id: p.id, text: `เปลี่ยนอาชีพเป็น ${c.name} แล้ว! เคลียร์ดันเจี้ยนแรกเพื่อรับ Spirit Card ใบแรก` });
+    const q = this.questOf(p);
+    if (q?.goal.type === 'job') this.finishQuest(p, q);
+  }
+
   private finishQuest(p: Entity, q: QuestDef) {
     const r = q.reward;
     if (r.gold) { p.gold += r.gold; this.events.push({ t: 'gold', id: p.id, amount: r.gold }); }
     for (const [it, n] of r.items ?? []) this.grantItem(p, it, n, { filter: false, src: this.defs.items[it]?.slot === 'shell' ? r.shellSrc : undefined });
     p.quest.main++; p.quest.prog = 0;
+    this.skipQuests(p);
     this.events.push({ t: 'quest', id: p.id, name: q.name, done: true });
     if (r.xp) this.grantXp(p, r.xp, false);          // may level up -> next quest's level check runs
     const next = this.questOf(p);
@@ -1020,6 +1058,7 @@ export class World {
       this.stash.splice(intent.index, 1); this.stashDirty = true;
     }
     else if (intent.kind === 'debug' && this.nearNpc(e, 'debug')) this.debug(e, intent.what);
+    else if (intent.kind === 'job' && this.nearNpc(e, 'guild')) this.changeJob(e, intent.cls);
     else if (intent.kind === 'heal' && this.nearNpc(e, 'healer')) {
       e.hp = e.maxHp; e.mp = e.maxMp; this.events.push({ t: 'heal', to: e.id, amount: e.maxHp });
     }
@@ -1114,7 +1153,10 @@ export class World {
         p.gold += g; this.events.push({ t: 'gold', id: p.id, amount: g });
         for (const [item, q] of rw.items) this.grantItem(p, item, q);
         const card = d.cards?.[p.type];
-        if (card && this.rng() < rw.cardChance) this.grantItem(p, card, 1, { filter: false });
+        if (!p.firstCard && p.type !== BASE_CLASS) {
+          p.firstCard = true; this.grantItem(p, this.firstCardFor(p.type), 1, { filter: false });
+          this.events.push({ t: 'msg', id: p.id, text: 'ผ่านบททดสอบ! ได้รับ Spirit Card ใบแรก (กด C เพื่อแปลงร่าง)' });
+        } else if (card && this.rng() < rw.cardChance) this.grantItem(p, card, 1, { filter: false });
         this.questEvent(p, 'clear');
       }
       this.events.push({ t: 'dungeon', state: 'clear', rank: st.rank, timeMs: st.timeMs });
@@ -1310,10 +1352,6 @@ export class World {
       this.events.push({ t: 'level', id: p.id, level: p.level });
       this.ensureBar(p);
       this.questEvent(p, 'level');
-      if (p.level === this.defs.upgrade.giftCardAtLevel) {
-        this.events.push({ t: 'msg', id: p.id, text: `ครบ Lv ${p.level}! ได้รับ Spirit Card` });
-        this.grantItem(p, this.firstCardFor(p.type), 1, { filter: false });
-      }
     }
     // card levels while transformed
     const card = p.transformed ? p.equip.card : undefined, u = this.defs.upgrade;
@@ -1368,6 +1406,10 @@ export class World {
       e.target = null;
       if (e.equip.mount && !e.mounted) e.mounted = true;
       if (!e.path.length && this.now >= e.repathAt) { e.repathAt = this.now + 800; this.pathTo(e, hop); }
+      return;
+    }
+    if (q?.goal.type === 'job') {   // can't pick a job for the player: walk to the guild NPC and let them choose
+      if (this.map.id === q.map && e.level >= JOB_LEVEL && !e.talkTo && !this.nearNpc(e, 'guild')) e.talkTo = this.map.npcs.find(n => this.defs.npcs[n.id].role === 'guild')?.id ?? null;
       return;
     }
     if (q && e.mounted) e.mounted = false;
