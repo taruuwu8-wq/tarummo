@@ -30,6 +30,7 @@ interface View {
   fxSig?: string; sparks?: Phaser.GameObjects.Particles.ParticleEmitter; ring?: Phaser.GameObjects.Ellipse; ringLv?: number;
   wings?: Phaser.GameObjects.Container;
   rareSparks?: Phaser.GameObjects.Particles.ParticleEmitter; rareGlow?: Phaser.FX.Glow; pillar?: Phaser.GameObjects.Image; rareLv?: number;
+  barFill?: number;
   formKey?: string; tint?: number; stKey?: string; stIcons?: Phaser.GameObjects.Text; mount?: Phaser.GameObjects.Image; mountLook?: string; dust?: Phaser.GameObjects.Particles.ParticleEmitter;
   scale: number; phase: number; lunge: number; lungeDir: { x: number; y: number }; height: number;
 }
@@ -204,13 +205,17 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.syncStatus(e, v, x, y - v.height * sqy - 18);
-    v.bar.clear();
+    // HP bar: geometry is rebuilt only when the filled width changes; moving is just setPosition
     const showBar = !e.dead && (e.kind === 'player' || e.hp < e.maxHp || this.player.target === e.id);
+    v.bar.setVisible(showBar);
     if (showBar) {
-      const w = e.boss ? 56 : 34, bx = sx - w / 2, by = y - v.height * sqy - 8;
-      v.bar.fillStyle(0x000000, 0.6).fillRect(bx - 1, by - 1, w + 2, 6);
-      v.bar.fillStyle(e.kind === 'player' ? 0x5be37a : 0xe5484d, 1).fillRect(bx, by, w * (e.hp / e.maxHp), 4);
-      v.bar.setDepth(5000 + sy);
+      const w = e.boss ? 56 : 34, fill = Math.round(w * (e.hp / e.maxHp));
+      if (fill !== v.barFill) {
+        v.barFill = fill;
+        v.bar.clear().fillStyle(0x000000, 0.6).fillRect(-w / 2 - 1, -1, w + 2, 6);
+        v.bar.fillStyle(e.kind === 'player' ? 0x5be37a : 0xe5484d, 1).fillRect(-w / 2, 0, fill, 4);
+      }
+      v.bar.setPosition(sx, Math.round(y - v.height * sqy - 8)).setDepth(5000 + sy);
     }
   }
 

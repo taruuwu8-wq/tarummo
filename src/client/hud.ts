@@ -197,6 +197,11 @@ export class Hud {
       <p class="greet">“${d.greet}”</p><div class="gold">💰 ${p.gold.toLocaleString()} G</div><div class="rows">${body}</div>`;
   }
 
+  // write DOM only when the value changed (the HUD updates every frame)
+  private cache = new Map<string, string>();
+  private txt(id: string, v: string) { if (this.cache.get('t' + id) !== v) { this.cache.set('t' + id, v); this.$(id).textContent = v; } }
+  private wid(id: string, pct: number) { const v = `${Math.round(pct * 1000) / 10}%`; if (this.cache.get('w' + id) !== v) { this.cache.set('w' + id, v); this.$(id).style.width = v; } }
+
   private $(id: string) { return document.getElementById(id)!; }
   private cast(skill: string) { this.send({ kind: 'skill', id: this.p.id, skill }); }
   private toggleBag(force?: boolean) { const b = this.$('bag'); b.hidden = force === undefined ? !b.hidden : !force; this.invSig = ''; }
@@ -213,22 +218,22 @@ export class Hud {
 
   update(xpNeed: number, t: Entity | null) {
     const p = this.p;
-    this.$('pn').textContent = `${p.name} · Lv ${p.level}${p.dead ? ' · กำลังเกิดใหม่…' : ''}`;
-    this.$('php').style.width = `${(p.hp / p.maxHp) * 100}%`;
-    this.$('phpt').textContent = `${Math.ceil(p.hp)} / ${p.maxHp}`;
-    this.$('pmp').style.width = `${(p.mp / Math.max(1, p.maxMp)) * 100}%`;
-    this.$('pmpt').textContent = `${Math.floor(p.mp)} / ${p.maxMp}`;
-    this.$('pg').textContent = `💰 ${p.gold.toLocaleString()} G`;
-    this.$('pxp').style.width = `${(p.xp / xpNeed) * 100}%`;
+    this.txt('pn', `${p.name} · Lv ${p.level}${p.dead ? ' · กำลังเกิดใหม่…' : ''}`);
+    this.wid('php', (p.hp / p.maxHp));
+    this.txt('phpt', `${Math.ceil(p.hp)} / ${p.maxHp}`);
+    this.wid('pmp', (p.mp / Math.max(1, p.maxMp)));
+    this.txt('pmpt', `${Math.floor(p.mp)} / ${p.maxMp}`);
+    this.txt('pg', `💰 ${p.gold.toLocaleString()} G`);
+    this.wid('pxp', (p.xp / xpNeed));
     const restW = Math.min(1 - p.xp / xpNeed, (p.rested ?? 0) / xpNeed);
-    this.$('prest').style.left = `${(p.xp / xpNeed) * 100}%`; this.$('prest').style.width = `${Math.max(0, restW) * 100}%`;
-    this.$('pxpt').textContent = `XP ${p.xp} / ${xpNeed}${p.rested > 0 ? ` · 😴 Rested +${Math.round(p.rested).toLocaleString()} (×2)` : ''}`;
+    this.$('prest').style.left = `${(p.xp / xpNeed) * 100}%`; this.wid('prest', Math.max(0, restW));
+    this.txt('pxpt', `XP ${p.xp} / ${xpNeed}${p.rested > 0 ? ` · 😴 Rested +${Math.round(p.rested).toLocaleString()} (×2)` : ''}`);
     const tf = this.$('tf'); tf.hidden = !t;
     if (t) {
       const race = { plant: 'พืช', animal: 'สัตว์', demon: 'ปีศาจ', angel: 'เทวดา', spirit: 'วิญญาณ', robot: 'หุ่น' }[this.world.defs.monsters[t.type]?.race ?? ''] ?? '';
-      this.$('tn').textContent = `${t.name} · Lv ${t.level}${race ? ' · ' + race : ''}${t.boss ? ' · BOSS' : ''}`;
-      this.$('thp').style.width = `${(t.hp / t.maxHp) * 100}%`;
-      this.$('thpt').textContent = `${Math.ceil(t.hp)} / ${t.maxHp}`;
+      this.txt('tn', `${t.name} · Lv ${t.level}${race ? ' · ' + race : ''}${t.boss ? ' · BOSS' : ''}`);
+      this.wid('thp', (t.hp / t.maxHp));
+      this.txt('thpt', `${Math.ceil(t.hp)} / ${t.maxHp}`);
     }
     // skill bar follows the active form
     const now = this.world.now;
