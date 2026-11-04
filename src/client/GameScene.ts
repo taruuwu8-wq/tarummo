@@ -1,29 +1,21 @@
 import Phaser from 'phaser';
 import { World, TICK_MS, Entity, MapData, Defs, GameEvent } from '../sim/world';
-import meadow from '../../data/maps/meadow.json';
-import town from '../../data/maps/town.json';
-import npcs from '../../data/npcs.json';
-import balance from '../../data/balance.json';
-import classes from '../../data/classes.json';
-import monsters from '../../data/monsters.json';
-import items from '../../data/items.json';
-import skills from '../../data/skills.json';
-import cards from '../../data/cards.json';
-import upgrade from '../../data/upgrade.json';
+import { loadDefs, MAPS } from '../data';
 import type { SaveData } from '../sim/world';
 import { writeSave } from './save';
+import type { Net } from './net';
+import type { Intent } from '../sim/world';
 import { Hud } from './hud';
 
 const TW = 64, TH = 32;
-const defs = { balance, classes, monsters, items, skills, cards, upgrade, npcs } as unknown as Defs;
-const MAPS = { meadow, town } as unknown as Record<string, MapData>;
+const defs = loadDefs();
 
 // Save on tab hide/close. Registered once; points at whichever scene is current.
 let saveNow: () => void = () => {};
 window.addEventListener('pagehide', () => saveNow());
 document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
 
-export interface SceneData { cls: string; save?: SaveData; map?: string; at?: [number, number]; vitals?: { hp: number; mp: number } }
+export interface SceneData { net?: Net; cls: string; save?: SaveData; map?: string; at?: [number, number]; vitals?: { hp: number; mp: number } }
 
 const toScreen = (x: number, y: number) => ({ sx: (x - y) * (TW / 2), sy: (x + y) * (TH / 2) });
 const toTile = (sx: number, sy: number) => ({
@@ -56,13 +48,27 @@ export class GameScene extends Phaser.Scene {
   }
 
   private leaving = false;
+  private net?: Net;
+  private act: (i: Intent) => void = () => {};
+  private names = new Map<number, Phaser.GameObjects.Text>();
 
   create(data: SceneData) {
-    this.views.clear(); this.acc = 0; this.leaving = false;
+    this.views.clear(); this.names.clear(); this.acc = 0; this.leaving = false; this.net = data.net;
     (window as unknown as { __scene: GameScene }).__scene = this;  // handy for automated playtests
-    const map = MAPS[data.map ?? data.save?.map ?? 'town'] ?? MAPS.town;
-    this.world = new World(structuredClone(map), defs, Date.now() & 0xffff);
-    this.player = this.world.spawnPlayer(data.cls ?? 'swordsman', data.save, data.at, data.vitals);
+    const net = data.net;
+    const map = MAPS[net ? net.map : data.map ?? data.save?.map ?? 'town'] ?? MAPS.town;
+    if (net) {
+      // online: this World is only a mirror of the server's room
+      this.world = new World(structuredClone(map), defs, 1, { mirror: true });
+      this.world.applySnapshot(net.last!.now, net.last!.ents);
+      this.player = this.world.entities.get(net.myId)!;
+      net.queue.length = 0;
+      this.act = i => net.intent(i);
+    } else {
+      this.world = new World(structuredClone(map), defs, Date.now() & 0xffff);
+      this.player = this.world.spawnPlayer(data.cls ?? 'swordsman', data.save, data.at, data.vitals);
+      this.act = i => this.world.apply(i);
+    }
 
     // tiny 4-point star used by upgrade sparkles
     const sg = this.make.graphics({}, false);
@@ -78,10 +84,9 @@ export class GameScene extends Phaser.Scene {
     cam.setZoom(window.innerWidth < 600 ? 1.15 : 1.5);
     cam.startFollow(this.views.get(this.player.id)!.body, true, 0.12, 0.12);
 
-    this.hud = new Hud(this.world, this.player, defs.items, i => this.world.apply(i));
+    this.hud = new Hud(this.world, this.player, defs.items, i => this.act(i));
     const save = () => writeSave(this.world.save(this.player));
-    saveNow = save;
-    this.time.addEvent({ delay: 5000, loop: true, callback: save });
+    if (!net) { saveNow = save; this.time.addEvent({ delay: 5000, loop: true, callback: save }); }
     this.events.once('shutdown', () => this.hud.destroy());
     this.drawPortals(map); this.drawNpcs(map);
     this.banner(map.name + (map.safe ? ' · เขตปลอดภัย' : ''));
@@ -89,15 +94,15 @@ export class GameScene extends Phaser.Scene {
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => this.drawHover(p));
     this.input.on('pointerdown', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
       const npc = over.find(o => o.getData('npc') !== undefined);
-      if (npc) { this.world.apply({ kind: 'talk', id: this.player.id, npc: npc.getData('npc') }); return; }
+      if (npc) { this.act({ kind: 'talk', id: this.player.id, npc: npc.getData('npc') }); return; }
       const hit = over.find(o => o.getData('id') !== undefined);
       if (hit) {
         const id = hit.getData('id') as number;
-        if (id !== this.player.id) { this.world.apply({ kind: 'attack', id: this.player.id, target: id }); return; }
+        if (id !== this.player.id) { this.act({ kind: 'attack', id: this.player.id, target: id }); return; }
       }
       const { x, y } = toTile(p.worldX, p.worldY);
       if (!this.world.walkable(x, y)) return;
-      this.world.apply({ kind: 'move', id: this.player.id, to: [x, y] });
+      this.act({ kind: 'move', id: this.player.id, to: [x, y] });
       this.showMarker(x, y);
     });
   }
@@ -106,16 +111,38 @@ export class GameScene extends Phaser.Scene {
     // use real elapsed time: Phaser smooths delta, which slows the sim down on low-FPS devices
     dtMs = this.game.loop.rawDelta;
     this.acc += Math.min(dtMs, 1000);
-    while (this.acc >= TICK_MS) {
+    if (this.net) this.drainNet();
+    else while (this.acc >= TICK_MS) {
       this.world.tick(); this.acc -= TICK_MS;
       for (const ev of this.world.events) { this.onEvent(ev); if (this.leaving) return; }
       this.world.events.length = 0;
     }
-    const alpha = this.acc / TICK_MS, now = this.time.now / 1000;
-    for (const e of this.world.entities.values()) this.syncView(e, alpha, now, dtMs);
+    if (this.leaving) return;
+    const alpha = Math.min(1, this.acc / TICK_MS), now = this.time.now / 1000;
+    for (const e of this.world.entities.values()) { if (!this.views.has(e.id)) this.makeView(e); this.syncView(e, alpha, now, dtMs); }
+    for (const [id, v] of this.views) if (!this.world.entities.has(id)) {
+      v.body.destroy(); v.shadow.destroy(); v.bar.destroy(); v.aura?.destroy(); v.sparks?.destroy(); v.ring?.destroy(); v.wings?.destroy();
+      this.views.delete(id); this.names.get(id)?.destroy(); this.names.delete(id);
+    }
     this.drawTargetRing();
     const tgt = this.player.target != null ? this.world.entities.get(this.player.target) ?? null : null;
     this.hud.update(this.world.xpNeeded(this.player), tgt);
+  }
+
+  private drainNet() {
+    const net = this.net!;
+    while (net.queue.length && !this.leaving) {
+      const m = net.queue.shift()!;
+      if (m.t === 'welcome') {
+        // moved to another map: restart once the new room's first snapshot arrives
+        this.leaving = true;
+        const wait = () => { if (net.last && net.queue.some(q => q.t === 'tick')) { net.queue.length = 0; this.scene.restart({ net, cls: net.cls }); } else this.time.delayedCall(30, wait); };
+        this.cameras.main.fadeOut(200, 27, 31, 42); wait();
+      } else if (m.t === 'tick') {
+        this.world.applySnapshot(m.now, m.ents); this.acc = 0;
+        for (const ev of m.ev) this.onEvent(ev);
+      } else if (m.t === 'error') this.hud.toast(m.text, 'warn');
+    }
   }
 
   private makeView(e: Entity) {
@@ -144,6 +171,11 @@ export class GameScene extends Phaser.Scene {
     if (v.aura) { v.aura.setPosition(sx, sy + 1).setVisible(!e.dead).setScale(1 + Math.sin(now * 4) * 0.08); }
     if (e.kind === 'player') this.syncGearFx(e, v, x, y, sx, sy, now);
     v.body.setVisible(!e.dead || v.body.alpha > 0.01); v.shadow.setVisible(!e.dead);
+    if (this.net && e.kind === 'player') {
+      let t = this.names.get(e.id);
+      if (!t) { t = this.add.text(0, 0, '', { fontFamily: 'system-ui, sans-serif', fontSize: '11px', fontStyle: 'bold', color: e.id === this.player.id ? '#ffe066' : '#9be7ff', stroke: '#1b1f2a', strokeThickness: 3 }).setOrigin(0.5).setResolution(2); this.names.set(e.id, t); }
+      t.setText(`${e.name} Lv${e.level}`).setPosition(x, y - v.height * sqy - 18).setDepth(9600);
+    }
 
     v.bar.clear();
     const showBar = !e.dead && (e.kind === 'player' || e.hp < e.maxHp || this.player.target === e.id);
@@ -304,7 +336,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private projectile(a: Entity, pa: { sx: number; sy: number }, pb: { sx: number; sy: number }) {
-    const magic = a.stats.attackType === 'magic';
+    const magic = a.stats?.attackType === 'magic';
     const g = this.add.graphics().setDepth(9000);
     if (magic) { g.fillStyle(0xff8a3d, 1).fillCircle(0, 0, 5); g.fillStyle(0xffe08a, 1).fillCircle(0, 0, 2.5); }
     else { g.lineStyle(2, 0xf2e6c9, 1).lineBetween(-7, 0, 7, 0); }

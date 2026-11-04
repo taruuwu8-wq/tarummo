@@ -101,7 +101,8 @@ export class World {
   private blocked = new Set<number>();
   private rng: () => number;
 
-  constructor(public map: MapData, public defs: Defs, seed = 1) {
+  /** mirror: client-side copy fed by server snapshots; no monsters are spawned and tick() is not called. */
+  constructor(public map: MapData, public defs: Defs, seed = 1, opts: { mirror?: boolean } = {}) {
     let s = seed >>> 0;
     this.rng = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
     for (const [x, y] of [...map.rocks, ...map.water, ...map.trees, ...map.npcs.map(n => [n.x, n.y] as Tile)]) this.blocked.add(y * 10000 + x);
@@ -109,7 +110,7 @@ export class World {
     for (const [id, c] of Object.entries(defs.cards)) if (!id.startsWith('_'))
       defs.items[id] = { name: c.name, slot: 'card', rarity: c.rarity, icon: c.icon, class: c.class, price: 100, element: c.element, bonus: c.bonus };
     delete (defs.cards as Record<string, unknown>)['_note'];
-    for (const m of map.monsters) for (let i = 0; i < m.count; i++) this.spawnMonster(m.type, this.randomFreeTile());
+    if (!opts.mirror) for (const m of map.monsters) for (let i = 0; i < m.count; i++) this.spawnMonster(m.type, this.randomFreeTile());
   }
 
   walkable = (x: number, y: number) =>
@@ -133,6 +134,34 @@ export class World {
     const saved = p.autoSell; p.autoSell = false;   // never auto-sell what you just bought
     if (this.grantItem(p, offer.item, qty)) p.gold -= offer.price * qty;
     p.autoSell = saved;
+  }
+
+  removeEntity(id: number) {
+    this.entities.delete(id);
+    for (const o of this.entities.values()) if (o.target === id) o.target = null;
+  }
+
+  /** Network snapshot: everything the client needs to render + run the HUD. */
+  snapshot() {
+    const out: Partial<Entity>[] = [];
+    for (const e of this.entities.values()) {
+      const { path: _p, px: _a, py: _b, ...rest } = e;
+      out.push(e.kind === 'monster' ? { ...rest, stats: undefined } : rest);
+    }
+    return out;
+  }
+
+  /** Apply a snapshot to a mirror world. Keeps object identity so HUD references stay valid. */
+  applySnapshot(now: number, ents: Partial<Entity>[]) {
+    this.now = now;
+    const seen = new Set<number>();
+    for (const d of ents) {
+      seen.add(d.id!);
+      const e = this.entities.get(d.id!);
+      if (e) { e.px = e.x; e.py = e.y; Object.assign(e, d); }
+      else this.entities.set(d.id!, { ...(d as Entity), px: d.x!, py: d.y!, path: [] });
+    }
+    for (const id of [...this.entities.keys()]) if (!seen.has(id)) this.entities.delete(id);
   }
 
   private base(kind: Entity['kind'], type: string, [x, y]: Tile): Entity {
@@ -503,7 +532,7 @@ export class World {
     if (e.hp < e.maxHp * 0.35) { const i = e.inv.findIndex(s => this.defs.items[s.item].heal?.hp); if (i >= 0) this.use(e, i); }
     if (e.mp < e.maxMp * 0.15) { const i = e.inv.findIndex(s => this.defs.items[s.item].heal?.mp); if (i >= 0) this.use(e, i); }
     if (e.target == null && !e.path.length) {
-      const m = this.nearestMonster(e, 9, e.level + 1);
+      const m = this.nearestMonster(e, 14, e.level + 1);
       if (m && !m.boss) { e.target = m.id; e.repathAt = 0; }
     }
     // skills in bar order; heal only when hurt; whirlwind only when the target is close

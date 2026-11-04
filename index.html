@@ -93,6 +93,13 @@
     #classes button { width: 140px; display: grid; justify-items: center; gap: 4px; padding: 12px 8px; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; cursor: pointer; font: inherit; }
     #classes button:hover { border-color: var(--gold); }
     #classes img { height: 80px; image-rendering: auto; }
+    .login { display: grid; gap: 8px; justify-items: center; }
+    .login input { width: min(260px, 80vw); padding: 10px 12px; font: inherit; font-size: 16px; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; text-align: center; }
+    .login input:focus-visible { outline: 2px solid var(--gold); }
+    .login .err { min-height: 1em; color: #ffb36b; font-size: 12px; }
+    .login .saved { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+    .login .saved button { padding: 6px 10px; font: inherit; font-size: 12px; color: var(--fg); background: var(--panel); border: 1px solid var(--gold); border-radius: 999px; cursor: pointer; }
+    #pick .hint { font-size: 11px; }
     #pick small { color: var(--muted); font-size: 11px; }
     @media (max-width: 600px) { .frame { width: 150px; } .frame.target { width: 140px; top: calc(96px + env(safe-area-inset-top, 0px)); left: calc(10px + env(safe-area-inset-left, 0px)); right: auto; } .sk { width: 42px; height: 42px; } .sk .ic { font-size: 19px; line-height: 42px; } .sk.wide { width: 46px; } #bar { gap: 4px; padding: 4px; } #bag, #npc { top: auto; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); max-height: 60%; } }
   </style>
