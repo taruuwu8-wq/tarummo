@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { World, TICK_MS, Entity, MapData, Defs, GameEvent } from '../sim/world';
-import meadow from '../../data/meadow.json';
+import meadow from '../../data/maps/meadow.json';
+import town from '../../data/maps/town.json';
+import npcs from '../../data/npcs.json';
 import balance from '../../data/balance.json';
 import classes from '../../data/classes.json';
 import monsters from '../../data/monsters.json';
@@ -13,7 +15,15 @@ import { writeSave } from './save';
 import { Hud } from './hud';
 
 const TW = 64, TH = 32;
-const defs = { balance, classes, monsters, items, skills, cards, upgrade } as unknown as Defs;
+const defs = { balance, classes, monsters, items, skills, cards, upgrade, npcs } as unknown as Defs;
+const MAPS = { meadow, town } as unknown as Record<string, MapData>;
+
+// Save on tab hide/close. Registered once; points at whichever scene is current.
+let saveNow: () => void = () => {};
+window.addEventListener('pagehide', () => saveNow());
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
+
+export interface SceneData { cls: string; save?: SaveData; map?: string; at?: [number, number]; vitals?: { hp: number; mp: number } }
 
 const toScreen = (x: number, y: number) => ({ sx: (x - y) * (TW / 2), sy: (x + y) * (TH / 2) });
 const toTile = (sx: number, sy: number) => ({
@@ -42,13 +52,17 @@ export class GameScene extends Phaser.Scene {
   constructor() { super('game'); }
 
   preload() {
-    for (const d of [...Object.values(defs.classes), ...Object.values(defs.monsters), ...Object.values(defs.cards)]) if (d.sprite) this.load.image(d.sprite, `sprites/${d.sprite}.png`);
+    for (const d of [...Object.values(defs.classes), ...Object.values(defs.monsters), ...Object.values(defs.cards), ...Object.values(defs.npcs)]) if (d.sprite) this.load.image(d.sprite, `sprites/${d.sprite}.png`);
   }
 
-  create(data: { cls: string; save?: SaveData }) {
-    const map = meadow as unknown as MapData;
-    this.world = new World(map, defs, Date.now() & 0xffff);
-    this.player = this.world.spawnPlayer(data.cls ?? 'swordsman', data.save);
+  private leaving = false;
+
+  create(data: SceneData) {
+    this.views.clear(); this.acc = 0; this.leaving = false;
+    (window as unknown as { __scene: GameScene }).__scene = this;  // handy for automated playtests
+    const map = MAPS[data.map ?? data.save?.map ?? 'town'] ?? MAPS.town;
+    this.world = new World(structuredClone(map), defs, Date.now() & 0xffff);
+    this.player = this.world.spawnPlayer(data.cls ?? 'swordsman', data.save, data.at, data.vitals);
 
     // tiny 4-point star used by upgrade sparkles
     const sg = this.make.graphics({}, false);
@@ -66,12 +80,16 @@ export class GameScene extends Phaser.Scene {
 
     this.hud = new Hud(this.world, this.player, defs.items, i => this.world.apply(i));
     const save = () => writeSave(this.world.save(this.player));
+    saveNow = save;
     this.time.addEvent({ delay: 5000, loop: true, callback: save });
-    window.addEventListener('pagehide', save);
-    document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+    this.events.once('shutdown', () => this.hud.destroy());
+    this.drawPortals(map); this.drawNpcs(map);
+    this.banner(map.name + (map.safe ? ' · เขตปลอดภัย' : ''));
 
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => this.drawHover(p));
     this.input.on('pointerdown', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
+      const npc = over.find(o => o.getData('npc') !== undefined);
+      if (npc) { this.world.apply({ kind: 'talk', id: this.player.id, npc: npc.getData('npc') }); return; }
       const hit = over.find(o => o.getData('id') !== undefined);
       if (hit) {
         const id = hit.getData('id') as number;
@@ -85,10 +103,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_t: number, dtMs: number) {
+    // use real elapsed time: Phaser smooths delta, which slows the sim down on low-FPS devices
+    dtMs = this.game.loop.rawDelta;
     this.acc += Math.min(dtMs, 1000);
     while (this.acc >= TICK_MS) {
       this.world.tick(); this.acc -= TICK_MS;
-      for (const ev of this.world.events) this.onEvent(ev);
+      for (const ev of this.world.events) { this.onEvent(ev); if (this.leaving) return; }
       this.world.events.length = 0;
     }
     const alpha = this.acc / TICK_MS, now = this.time.now / 1000;
@@ -221,6 +241,14 @@ export class GameScene extends Phaser.Scene {
     } else if (ev.t === 'xp' && ev.id === this.player.id) {
       const { sx, sy } = toScreen(this.player.x, this.player.y);
       this.floatText(sx, sy - 80, `+${ev.amount} XP`, '#9be7ff', 13);
+    } else if (ev.t === 'portal' && ev.id === this.player.id) {
+      this.leaving = true;
+      const p = this.player, data: SceneData = { cls: p.type, save: this.world.save(p), map: ev.to, at: ev.spawn, vitals: { hp: p.hp, mp: p.mp } };
+      data.save!.map = ev.to; writeSave(data.save!);
+      this.cameras.main.fadeOut(250, 27, 31, 42);
+      this.cameras.main.once('camerafadeoutcomplete', () => this.scene.restart(data));
+    } else if (ev.t === 'talk' && ev.id === this.player.id) {
+      this.hud.openNpc(ev.npc);
     } else if (ev.t === 'transform') {
       const e = this.world.entities.get(ev.id)!, v = this.views.get(e.id)!;
       const card = this.world.cardOf(e), base = defs.classes[e.type];
@@ -299,23 +327,71 @@ export class GameScene extends Phaser.Scene {
     this.ring.lineStyle(2, 0xff5d5d, 0.9).strokeEllipse(sx, sy + 1, t.boss ? 64 : 40, t.boss ? 30 : 18);
   }
 
+  // Ground is baked into one texture; trees/rocks are shared textures. Graphics objects re-tessellate every frame.
   private drawGround(map: MapData) {
-    const g = this.add.graphics().setDepth(0);
+    const minX = -map.height * TW / 2 - TW / 2, maxX = map.width * TW / 2 + TW / 2;
+    const minY = -TH / 2, maxY = (map.width + map.height) * TH / 2 + TH / 2;
+    const g = this.make.graphics({}, false);
+    g.translateCanvas(-minX, -minY);
     for (let y = 0; y < map.height; y++) for (let x = 0; x < map.width; x++) {
       const { sx, sy } = toScreen(x, y);
       const water = this.world.isWater(x, y);
       const n = ((x * 73856093) ^ (y * 19349663)) >>> 0;
-      const base = water ? 0x4aa3d8 : [0x7cc56b, 0x76bf65, 0x82ca70][n % 3];
-      this.diamond(g, sx, sy, base, water ? 0x3a8cc0 : 0x68ad58);
-      if (!water && n % 11 === 0) { g.fillStyle(0xf4e27a, 1).fillCircle(sx - 6, sy + 2, 2); g.fillStyle(0xffffff, 1).fillCircle(sx + 8, sy - 3, 1.6); }
-      if (this.world.isRock(x, y)) {
-        const r = this.add.graphics().setDepth(10 + sy);
-        r.fillStyle(0x000000, 0.25).fillEllipse(sx, sy + 4, 40, 12);
-        r.fillStyle(0x8a8f9c, 1).fillEllipse(sx, sy - 4, 34, 22);
-        r.fillStyle(0xa9aeba, 1).fillEllipse(sx - 5, sy - 9, 18, 10);
-      }
+      const stone = map.ground === 'stone';
+      const base = water ? 0x4aa3d8 : stone ? [0xc9c2b4, 0xc2bba9, 0xd0c9bb][n % 3] : [0x7cc56b, 0x76bf65, 0x82ca70][n % 3];
+      this.diamond(g, sx, sy, base, water ? 0x3a8cc0 : stone ? 0xa8a090 : 0x68ad58);
+      if (!water && !stone && n % 11 === 0) { g.fillStyle(0xf4e27a, 1).fillCircle(sx - 6, sy + 2, 2); g.fillStyle(0xffffff, 1).fillCircle(sx + 8, sy - 3, 1.6); }
+    }
+    const key = `ground_${map.id}`;
+    if (this.textures.exists(key)) this.textures.remove(key);
+    g.generateTexture(key, maxX - minX, maxY - minY); g.destroy();
+    this.add.image(minX, minY, key).setOrigin(0, 0).setDepth(0);
+
+    if (!this.textures.exists('tree')) {
+      const t = this.make.graphics({}, false); t.translateCanvas(24, 58);
+      t.fillStyle(0x000000, 0.25).fillEllipse(0, 4, 38, 12);
+      t.fillStyle(0x7a5232, 1).fillRect(-4, -22, 8, 24);
+      t.fillStyle(0x3f9a4a, 1).fillCircle(0, -34, 20);
+      t.fillStyle(0x56b65e, 1).fillCircle(-7, -40, 11);
+      t.generateTexture('tree', 48, 70); t.destroy();
+      const r = this.make.graphics({}, false); r.translateCanvas(22, 20);
+      r.fillStyle(0x000000, 0.25).fillEllipse(0, 4, 40, 12);
+      r.fillStyle(0x8a8f9c, 1).fillEllipse(0, -4, 34, 22);
+      r.fillStyle(0xa9aeba, 1).fillEllipse(-5, -9, 18, 10);
+      r.generateTexture('rock', 44, 30); r.destroy();
+    }
+    for (const [x, y] of map.trees) { const { sx, sy } = toScreen(x, y); this.add.image(sx, sy, 'tree').setOrigin(24 / 48, 58 / 70).setDepth(10 + sy); }
+    for (const [x, y] of map.rocks) { const { sx, sy } = toScreen(x, y); this.add.image(sx, sy, 'rock').setOrigin(0.5, 20 / 30).setDepth(10 + sy); }
+  }
+
+  private drawPortals(map: MapData) {
+    for (const p of map.portals) {
+      const { sx, sy } = toScreen(p.x, p.y);
+      const ring = this.add.ellipse(sx, sy, 54, 26, 0x8f7bff, 0.35).setStrokeStyle(3, 0xc6b8ff, 1).setDepth(2);
+      this.tweens.add({ targets: ring, scaleX: 1.15, scaleY: 1.15, alpha: 0.6, yoyo: true, repeat: -1, duration: 700 });
+      this.add.particles(sx, sy, 'spark', { frequency: 120, lifespan: 1000, x: { min: -20, max: 20 }, speedY: { min: -40, max: -15 },
+        scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, tint: 0xc6b8ff, blendMode: 'ADD' }).setDepth(9 + sy);
+      this.label(sx, sy - 46, '⟡ ' + p.label, '#d9d0ff');
     }
   }
+
+  private drawNpcs(map: MapData) {
+    for (const n of map.npcs) {
+      const d = defs.npcs[n.id], { sx, sy } = toScreen(n.x, n.y);
+      this.add.ellipse(sx, sy + 1, 36, 10, 0x000000, 0.28).setDepth(2);
+      const img = this.add.image(sx, sy + 3, d.sprite).setOrigin(0.5, 1).setInteractive({ useHandCursor: true });
+      img.setScale(d.height / img.height).setDepth(10 + sy).setData('npc', n.id);
+      this.tweens.add({ targets: img, scaleY: img.scaleY * 1.025, yoyo: true, repeat: -1, duration: 1100, ease: 'Sine.easeInOut' });
+      this.label(sx, sy - d.height - 6, `${d.name} · ${d.title}`, '#ffe9a8');
+    }
+  }
+
+  private label(x: number, y: number, s: string, color: string) {
+    this.add.text(x, y, s, { fontFamily: 'system-ui, sans-serif', fontSize: '11px', fontStyle: 'bold', color, stroke: '#1b1f2a', strokeThickness: 3 })
+      .setOrigin(0.5).setDepth(9500).setResolution(2);
+  }
+
+  private banner(s: string) { this.hud.banner(s); this.cameras.main.fadeIn(250, 27, 31, 42); }
 
   private diamond(g: Phaser.GameObjects.Graphics, sx: number, sy: number, fill: number, line: number) {
     g.fillStyle(fill, 1).beginPath().moveTo(sx, sy - TH / 2).lineTo(sx + TW / 2, sy).lineTo(sx, sy + TH / 2).lineTo(sx - TW / 2, sy);

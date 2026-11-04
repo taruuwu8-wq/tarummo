@@ -14,6 +14,9 @@ export class Hud {
   private invSig = '';
   private sel: number | Slot | null = null;
   private skillSig = '';
+  private npc: string | null = null;
+  private npcSig = '';
+  private onKey: (e: KeyboardEvent) => void;
 
   constructor(private world: World, private p: Entity, private items: Record<string, ItemDef>, private send: (i: Intent) => void) {
     this.el.innerHTML = `
@@ -39,6 +42,8 @@ export class Hud {
         <div class="detail" id="detail"></div>
         <label class="autosell"><input type="checkbox" id="autosell"> ขายอุปกรณ์ระดับธรรมดาอัตโนมัติ</label>
       </div>
+      <div id="npc" hidden></div>
+      <div id="banner"></div>
       <div class="xp"><i id="pxp"></i><span id="pxpt"></span></div>`;
 
     this.$('skills').addEventListener('click', e => { const b = (e.target as HTMLElement).closest<HTMLElement>('[data-sk]'); if (b) this.cast(b.dataset.sk!); });
@@ -50,15 +55,70 @@ export class Hud {
     (this.$('autosell') as HTMLInputElement).checked = p.autoSell;
     this.$('autosell').addEventListener('change', e => send({ kind: 'autoSell', id: p.id, on: (e.target as HTMLInputElement).checked }));
     this.el.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(b => b.addEventListener('click', () => { this.tab = b.dataset.tab as Tab; this.sel = null; this.invSig = ''; }));
-    window.addEventListener('keydown', e => {
+    this.onKey = e => {
       if (e.repeat) return;
       const n = Number(e.key), skills = this.world.skillsOf(this.p);
       if (n >= 1 && n <= skills.length) this.cast(skills[n - 1].id);
       else if (e.key === 't' || e.key === 'T') this.send({ kind: 'transform', id: this.p.id });
       else if (e.key === 'q' || e.key === 'Q') this.potion();
       else if (e.key === 'i' || e.key === 'I') this.toggleBag();
-      else if (e.key === 'Escape') this.toggleBag(false);
-    });
+      else if (e.key === 'Escape') { this.toggleBag(false); this.closeNpc(); }
+    };
+    window.addEventListener('keydown', this.onKey);
+    this.$('npc').addEventListener('click', e => this.onNpcClick(e));
+  }
+
+  destroy() { window.removeEventListener('keydown', this.onKey); }
+
+  banner(text: string) {
+    const b = this.$('banner'); b.textContent = text; b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+  }
+
+  openNpc(id: string) { this.npc = id; this.npcSig = ''; this.$('npc').hidden = false; }
+  private closeNpc() { this.npc = null; this.$('npc').hidden = true; }
+
+  private onNpcClick(e: Event) {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-act]'); if (!b) return;
+    const p = this.p, a = b.dataset.act!;
+    if (a === 'close') this.closeNpc();
+    else if (a === 'buy') this.send({ kind: 'buy', id: p.id, index: Number(b.dataset.i), qty: Number(b.dataset.q) });
+    else if (a === 'up') { const r = b.dataset.ref!; this.send({ kind: 'upgrade', id: p.id, ref: /^\d+$/.test(r) ? Number(r) : r as Slot }); }
+    else if (a === 'heal') this.send({ kind: 'heal', id: p.id });
+    this.npcSig = '';
+  }
+
+  private renderNpc() {
+    const p = this.p, n = this.world.map.npcs.find(x => x.id === this.npc);
+    if (!n || Math.hypot(n.x - p.x, n.y - p.y) > 3.2) { this.closeNpc(); return; }
+    const sig = JSON.stringify([this.npc, p.gold, p.inv, p.equip, p.hp === p.maxHp]);
+    if (sig === this.npcSig) return;
+    this.npcSig = sig;
+    const d = this.world.defs.npcs[n.id];
+    let body = '';
+    if (d.role === 'shop') {
+      body = (d.sells ?? []).map((o, i) => {
+        const it = this.items[o.item], stack = it.slot === 'use' || it.slot === 'mat';
+        const req = it.class ? ` · ${this.world.defs.classes[it.class].name}` : '';
+        return `<div class="row"><span class="ic">${it.icon}</span><span class="nm ${it.rarity}-t">${it.name}<small class="muted">${it.level && it.level > 1 ? ' Lv' + it.level : ''}${req}</small></span>
+          <span class="pr">${o.price} G</span><button type="button" data-act="buy" data-i="${i}" data-q="1"${p.gold < o.price ? ' disabled' : ''}>ซื้อ</button>${stack ? `<button type="button" data-act="buy" data-i="${i}" data-q="10"${p.gold < o.price * 10 ? ' disabled' : ''}>×10</button>` : ''}</div>`;
+      }).join('');
+    } else if (d.role === 'smith') {
+      const refs: { ref: string; st: InvSlot; where: string }[] = [];
+      for (const sl of this.world.defs.upgrade.slots) { const st = p.equip[sl]; if (st) refs.push({ ref: sl, st, where: 'สวมอยู่' }); }
+      p.inv.forEach((st, i) => { if (this.world.defs.upgrade.slots.includes(this.items[st.item].slot as Slot)) refs.push({ ref: String(i), st, where: 'ในกระเป๋า' }); });
+      body = refs.map(({ ref, st, where }) => {
+        const it = this.items[st.item], c = this.world.upgradeCost(st);
+        if (!c) return `<div class="row"><span class="ic">${it.icon}</span><span class="nm">${it.name} +${st.up}<small class="muted"> · ${where}</small></span><span class="pr">สูงสุด</span></div>`;
+        const m = this.items[c.mat], have = p.inv.find(x => x.item === c.mat)?.qty ?? 0, ok = p.gold >= c.gold && have >= c.qty;
+        return `<div class="row"><span class="ic">${it.icon}</span><span class="nm ${it.rarity}-t">${it.name} +${st.up ?? 0}<small class="muted"> · ${where}<br>${Math.round(c.rate * 100)}% · ${c.gold} G · ${m.icon}${have}/${c.qty}</small></span>
+          <button type="button" data-act="up" data-ref="${ref}"${ok ? '' : ' disabled'}>ตีบวก</button></div>`;
+      }).join('') || '<p class="muted">ไม่มีอาวุธ เกราะ หรือการ์ดให้ตีบวก</p>';
+      body += '<p class="muted small">ล้มเหลว = เสียทองและวัตถุดิบ ของไม่หาย</p>';
+    } else {
+      body = `<button type="button" class="big" data-act="heal">${p.hp >= p.maxHp ? 'HP/MP เต็มแล้ว' : 'ฟื้นฟู HP/MP (ฟรี)'}</button>`;
+    }
+    this.$('npc').innerHTML = `<div class="bag-head"><b>${d.name} · ${d.title}</b><button type="button" data-act="close" aria-label="ปิด">✕</button></div>
+      <p class="greet">“${d.greet}”</p><div class="gold">💰 ${p.gold.toLocaleString()} G</div><div class="rows">${body}</div>`;
   }
 
   private $(id: string) { return document.getElementById(id)!; }
@@ -117,6 +177,7 @@ export class Hud {
     (this.$('potion').querySelector('.cd') as HTMLElement).style.height = `${(pl / 1500) * 100}%`;
     this.$('potq').textContent = String(p.inv.filter(s => this.items[s.item].heal?.hp).reduce((a, s) => a + s.qty, 0));
     if (!this.$('bag').hidden) this.renderBag();
+    if (this.npc) this.renderNpc();
   }
 
   private renderBag() {
@@ -157,7 +218,7 @@ export class Hud {
     let extra = '';
     if (cost) {
       const have = p.inv.find(x => x.item === cost.mat)?.qty ?? 0, m = this.items[cost.mat];
-      extra = `<div class="muted">ตีบวก +${st.up ?? 0} → +${(st.up ?? 0) + 1} · โอกาส ${Math.round(cost.rate * 100)}% · ${cost.gold} G + ${m.icon} ${m.name} ${have}/${cost.qty} <br><small>ล้มเหลว = เสียทองและวัตถุดิบ ของไม่หาย</small></div>`;
+      extra = `<div class="muted">ตีบวก +${st.up ?? 0} → +${(st.up ?? 0) + 1} · โอกาส ${Math.round(cost.rate * 100)}% · ${cost.gold} G + ${m.icon} ${m.name} ${have}/${cost.qty} <br><small>ตีบวกได้ที่ช่าง Brann ในเมือง</small></div>`;
     } else if (cost === null) extra = '<div class="muted">ตีบวกสูงสุดแล้ว (+10)</div>';
     if (card) {
       const u = this.world.defs.upgrade, lv = st.lv ?? 1;
@@ -167,7 +228,7 @@ export class Hud {
     }
     det.innerHTML = `<div><b class="${d.rarity}-t">${d.icon} ${d.name}${st.up ? ' +' + st.up : ''}</b> <small class="muted">${RARITY_TH[d.rarity]}${req ? ' · ต้องการ ' + req : ''}${worn ? ' · สวมอยู่' : ''}</small></div>
       <div class="muted">${lines.join(' · ') || 'วัตถุดิบ ใช้ตีบวกอุปกรณ์'}</div>${extra}
-      <div class="acts">${canEquip ? '<button type="button" id="act-eq">สวมใส่</button>' : ''}${worn ? '<button type="button" id="act-un">ถอด</button>' : ''}${canUse ? '<button type="button" id="act-use">ใช้</button>' : ''}${cost ? '<button type="button" id="act-up">ตีบวก</button>' : ''}${worn ? '' : `<button type="button" id="act-sell">ขาย ${d.price * st.qty} G</button>`}</div>`;
+      <div class="acts">${canEquip ? '<button type="button" id="act-eq">สวมใส่</button>' : ''}${worn ? '<button type="button" id="act-un">ถอด</button>' : ''}${canUse ? '<button type="button" id="act-use">ใช้</button>' : ''}${worn ? '' : `<button type="button" id="act-sell">ขาย ${d.price * st.qty} G</button>`}</div>`;
     const i = this.sel as number, sl = this.sel as Slot;
     document.getElementById('act-eq')?.addEventListener('click', () => { this.send({ kind: 'equip', id: p.id, index: i }); this.sel = d.slot as Slot; });
     document.getElementById('act-un')?.addEventListener('click', () => { this.send({ kind: 'unequip', id: p.id, slot: sl }); this.sel = null; });

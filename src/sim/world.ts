@@ -6,9 +6,15 @@ import { playerStats, monsterStats, ClassDef, MonsterDef, ItemDef, Slot, Worn, B
 
 export const TICK_MS = 100;
 
+export interface Portal { x: number; y: number; to: string; spawn: Tile; label: string }
 export interface MapData {
-  id: string; width: number; height: number; spawn: Tile;
-  rocks: Tile[]; water: Tile[]; monsters: { type: string; count: number }[];
+  id: string; name: string; ground: 'grass' | 'stone'; safe: boolean; width: number; height: number; spawn: Tile;
+  rocks: Tile[]; water: Tile[]; trees: Tile[]; monsters: { type: string; count: number }[];
+  portals: Portal[]; npcs: { id: string; x: number; y: number }[];
+}
+export interface NpcDef {
+  name: string; title: string; sprite: string; height: number; role: 'shop' | 'smith' | 'healer'; greet: string;
+  sells?: { item: string; price: number }[];
 }
 export interface SkillDef {
   id: string; name: string; icon: string; mp: number; cooldownMs: number;
@@ -18,7 +24,7 @@ export interface Defs {
   balance: Balance & { respawnMs: { monster: number; player: number } };
   classes: Record<string, ClassDef>; monsters: Record<string, MonsterDef>;
   items: Record<string, ItemDef>; skills: Record<string, SkillDef[]>;
-  cards: Record<string, CardDef>; upgrade: UpgradeCfg;
+  cards: Record<string, CardDef>; upgrade: UpgradeCfg; npcs: Record<string, NpcDef>;
 }
 export interface CardDef {
   name: string; class: string; role: string; sprite: string; height: number; icon: string; rarity: ItemDef['rarity'];
@@ -35,7 +41,7 @@ export interface UpgradeCfg {
 export interface InvSlot { item: string; qty: number; up?: number; lv?: number; xp?: number }
 export const INV_SIZE = 30;
 export const SLOTS: Slot[] = ['weapon', 'armor', 'hat', 'charm', 'card'];
-export interface SaveData { cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean }
+export interface SaveData { map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean }
 
 export interface Entity {
   id: number; kind: 'player' | 'monster'; type: string; name: string;
@@ -50,7 +56,7 @@ export interface Entity {
   // player
   level: number; xp: number; auto: boolean;
   gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot>>; autoSell: boolean; transformed: boolean;
-  cooldowns: Record<string, number>; pendingSkill: string | null;
+  cooldowns: Record<string, number>; pendingSkill: string | null; talkTo: string | null;
 }
 
 export type Intent =
@@ -64,7 +70,10 @@ export type Intent =
   | { kind: 'sell'; id: number; index: number }
   | { kind: 'autoSell'; id: number; on: boolean }
   | { kind: 'transform'; id: number }
-  | { kind: 'upgrade'; id: number; ref: number | Slot };
+  | { kind: 'upgrade'; id: number; ref: number | Slot }
+  | { kind: 'talk'; id: number; npc: string }
+  | { kind: 'buy'; id: number; index: number; qty: number }
+  | { kind: 'heal'; id: number };
 
 export type GameEvent =
   | { t: 'attack'; from: number; to: number; ranged: boolean }
@@ -80,7 +89,9 @@ export type GameEvent =
   | { t: 'msg'; id: number; text: string }
   | { t: 'transform'; id: number; on: boolean }
   | { t: 'upgrade'; id: number; item: string; ok: boolean; up: number }
-  | { t: 'cardLevel'; id: number; card: string; lv: number };
+  | { t: 'cardLevel'; id: number; card: string; lv: number }
+  | { t: 'portal'; id: number; to: string; spawn: Tile }
+  | { t: 'talk'; id: number; npc: string };
 
 export class World {
   entities = new Map<number, Entity>();
@@ -93,7 +104,7 @@ export class World {
   constructor(public map: MapData, public defs: Defs, seed = 1) {
     let s = seed >>> 0;
     this.rng = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
-    for (const [x, y] of [...map.rocks, ...map.water]) this.blocked.add(y * 10000 + x);
+    for (const [x, y] of [...map.rocks, ...map.water, ...map.trees, ...map.npcs.map(n => [n.x, n.y] as Tile)]) this.blocked.add(y * 10000 + x);
     // cards live in the item table too, so the bag/equip code handles them uniformly
     for (const [id, c] of Object.entries(defs.cards)) if (!id.startsWith('_'))
       defs.items[id] = { name: c.name, slot: 'card', rarity: c.rarity, icon: c.icon, class: c.class, price: 100, element: c.element, bonus: c.bonus };
@@ -105,6 +116,24 @@ export class World {
     x >= 0 && y >= 0 && x < this.map.width && y < this.map.height && !this.blocked.has(y * 10000 + x);
   isWater(x: number, y: number) { return this.map.water.some(([a, b]) => a === x && b === y); }
   isRock(x: number, y: number) { return this.map.rocks.some(([a, b]) => a === x && b === y); }
+  isTree(x: number, y: number) { return this.map.trees.some(([a, b]) => a === x && b === y); }
+
+  private nearNpc(e: Entity, role: NpcDef['role']) {
+    return this.map.npcs.some(n => this.defs.npcs[n.id].role === role && Math.hypot(n.x - e.x, n.y - e.y) <= 3);
+  }
+
+  private buy(p: Entity, index: number, qty: number) {
+    const n = this.map.npcs.find(n => this.defs.npcs[n.id].role === 'shop');
+    const offer = n && this.defs.npcs[n.id].sells?.[index];
+    if (!n || !offer || !this.nearNpc(p, 'shop')) return;
+    qty = Math.max(1, Math.min(99, Math.floor(qty)));
+    if (p.gold < offer.price * qty) { this.events.push({ t: 'msg', id: p.id, text: 'ทองไม่พอ' }); return; }
+    const d = this.defs.items[offer.item], stack = d.slot === 'use' || d.slot === 'mat';
+    if (!stack && qty > 1) qty = 1;
+    const saved = p.autoSell; p.autoSell = false;   // never auto-sell what you just bought
+    if (this.grantItem(p, offer.item, qty)) p.gold -= offer.price * qty;
+    p.autoSell = saved;
+  }
 
   private base(kind: Entity['kind'], type: string, [x, y]: Tile): Entity {
     return {
@@ -112,13 +141,13 @@ export class World {
       hp: 1, maxHp: 1, mp: 0, maxMp: 0, stats: undefined as unknown as CombatStats, speed: 1, range: 1, attackMs: 1000,
       target: null, nextAttack: 0, repathAt: 0, lastHurt: -1e9, dead: false, respawnAt: 0,
       idleTicks: 0, xpReward: 0, level: 1, xp: 0, auto: false,
-      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, cooldowns: {}, pendingSkill: null,
+      gold: 0, inv: [], equip: {}, autoSell: false, transformed: false, cooldowns: {}, pendingSkill: null, talkTo: null,
     };
   }
 
-  spawnPlayer(cls: string, save?: SaveData): Entity {
+  spawnPlayer(cls: string, save?: SaveData, at?: Tile, vitals?: { hp: number; mp: number }): Entity {
     const c = this.defs.classes[cls];
-    const e = this.base('player', cls, this.map.spawn);
+    const e = this.base('player', cls, at ?? this.map.spawn);
     Object.assign(e, { name: c.name, speed: c.speed, range: c.range, attackMs: c.attackMs });
     if (save) {
       const equip: Partial<Record<Slot, InvSlot>> = {};
@@ -126,6 +155,7 @@ export class World {
       Object.assign(e, { xp: save.xp, gold: save.gold, inv: save.inv.filter(s => this.defs.items[s.item]), equip, autoSell: save.autoSell });
     } else { e.equip = { weapon: { item: c.starterWeapon, qty: 1, up: 0 } }; e.inv = [{ item: 'hp_potion', qty: 3 }]; }
     this.applyLevel(e, save?.level ?? 1);
+    if (vitals) { e.hp = Math.max(1, Math.min(e.maxHp, vitals.hp)); e.mp = Math.min(e.maxMp, vitals.mp); }
     this.entities.set(e.id, e);
     return e;
   }
@@ -165,7 +195,7 @@ export class World {
   }
 
   save(e: Entity): SaveData {
-    return { cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell };
+    return { map: this.map.id, cls: e.type, level: e.level, xp: e.xp, gold: e.gold, inv: e.inv, equip: e.equip, autoSell: e.autoSell };
   }
 
   skillsOf(e: Entity): SkillDef[] {
@@ -279,7 +309,7 @@ export class World {
   apply(intent: Intent) {
     const e = this.entities.get(intent.id);
     if (!e || e.dead) return;
-    if (intent.kind === 'move') { e.target = null; this.pathTo(e, intent.to); }
+    if (intent.kind === 'move') { e.target = null; e.talkTo = null; this.pathTo(e, intent.to); }
     else if (intent.kind === 'attack') { const t = this.entities.get(intent.target); if (t && !t.dead) { e.target = t.id; e.repathAt = 0; } }
     else if (intent.kind === 'auto') e.auto = intent.on;
     else if (intent.kind === 'skill') {
@@ -292,7 +322,12 @@ export class World {
     else if (intent.kind === 'sell') this.sell(e, intent.index);
     else if (intent.kind === 'autoSell') e.autoSell = intent.on;
     else if (intent.kind === 'transform') this.transform(e);
-    else if (intent.kind === 'upgrade') this.upgrade(e, intent.ref);
+    else if (intent.kind === 'upgrade') { if (this.nearNpc(e, 'smith')) this.upgrade(e, intent.ref); else this.events.push({ t: 'msg', id: e.id, text: 'ตีบวกได้ที่ช่าง Brann ในเมือง' }); }
+    else if (intent.kind === 'talk') { e.target = null; e.talkTo = intent.npc; e.repathAt = 0; }
+    else if (intent.kind === 'buy') this.buy(e, intent.index, intent.qty);
+    else if (intent.kind === 'heal' && this.nearNpc(e, 'healer')) {
+      e.hp = e.maxHp; e.mp = e.maxMp; this.events.push({ t: 'heal', to: e.id, amount: e.maxHp });
+    }
   }
 
   private pathTo(e: Entity, to: Tile) {
@@ -309,7 +344,7 @@ export class World {
       e.px = e.x; e.py = e.y;
       if (e.dead) { if (this.now >= e.respawnAt) this.respawn(e); continue; }
       if (e.kind === 'monster') this.monsterAi(e);
-      else this.playerAi(e);
+      else { this.playerAi(e); this.walkToNpc(e); }
       this.combat(e);
       // out-of-combat regen for players
       if (e.kind === 'player') {
@@ -317,6 +352,25 @@ export class World {
         e.mp = Math.min(e.maxMp, e.mp + e.maxMp * (this.now - e.lastHurt > 4000 ? 0.04 : 0.015) * dt);
       }
       this.step(e, dt);
+      if (e.kind === 'player') {
+        const pt = this.map.portals.find(p => p.x === Math.round(e.x) && p.y === Math.round(e.y));
+        if (pt && !e.dead) { e.path = []; this.events.push({ t: 'portal', id: e.id, to: pt.to, spawn: pt.spawn }); }
+      }
+    }
+  }
+
+  private walkToNpc(e: Entity) {
+    if (!e.talkTo) return;
+    const n = this.map.npcs.find(n => n.id === e.talkTo);
+    if (!n) { e.talkTo = null; return; }
+    if (Math.hypot(n.x - e.x, n.y - e.y) <= 1.6) {
+      e.path = []; e.talkTo = null;
+      e.facing = (n.x - n.y) > (e.x - e.y) ? 1 : -1;
+      this.events.push({ t: 'talk', id: e.id, npc: n.id });
+    } else if (this.now >= e.repathAt && !e.path.length) {
+      e.repathAt = this.now + 500;
+      const opts: Tile[] = [[n.x, n.y + 1], [n.x + 1, n.y], [n.x - 1, n.y], [n.x, n.y - 1], [n.x + 1, n.y + 1], [n.x - 1, n.y + 1]];
+      for (const t of opts) if (this.walkable(...t) && this.pathTo(e, t)) break;
     }
   }
 

@@ -68,6 +68,22 @@
     .acts button { padding: 6px 12px; background: #0f1320; border: 1px solid var(--line); border-radius: 6px; }
     .acts button:first-child { border-color: var(--gold); }
     .autosell { display: flex; gap: 6px; align-items: center; font-size: 11px; color: var(--muted); }
+    #npc { pointer-events: auto; position: absolute; left: calc(10px + env(safe-area-inset-left, 0px)); top: calc(110px + env(safe-area-inset-top, 0px)); width: min(340px, calc(100vw - 20px)); max-height: calc(100% - 210px); overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: rgba(20,24,36,.95); border: 1px solid var(--gold); border-radius: 12px; }
+    #npc > * { flex-shrink: 0; margin: 0; }
+    #npc button { font: inherit; color: var(--fg); cursor: pointer; padding: 5px 10px; background: #0f1320; border: 1px solid var(--line); border-radius: 6px; }
+    #npc button:disabled { opacity: .4; cursor: default; }
+    #npc .bag-head button { background: none; border: 0; }
+    #npc .greet { color: var(--muted); font-style: italic; }
+    #npc .rows { display: flex; flex-direction: column; gap: 6px; }
+    #npc .row { display: flex; align-items: center; gap: 8px; padding: 6px; background: #0f1320; border-radius: 8px; }
+    #npc .row .ic { font-size: 20px; width: 26px; text-align: center; }
+    #npc .row .nm { flex: 1; min-width: 0; font-size: 12px; }
+    #npc .row .pr { color: var(--gold); font-variant-numeric: tabular-nums; font-size: 12px; }
+    #npc .big { padding: 12px; border-color: var(--gold); }
+    #npc .small { font-size: 11px; }
+    #banner { position: absolute; left: 0; right: 0; top: calc(64px + env(safe-area-inset-top, 0px)); text-align: center; font-size: 22px; font-weight: 800; text-shadow: 0 2px 4px #000, 0 0 2px #000; opacity: 0; }
+    #banner.show { animation: ban 2.4s ease-out; }
+    @keyframes ban { 0% { opacity: 0; transform: translateY(8px); } 12%, 70% { opacity: 1; transform: none; } 100% { opacity: 0; } }
     #pick { position: fixed; inset: 0; z-index: 10; display: grid; place-content: center; gap: 16px; padding: 16px; text-align: center; background: radial-gradient(circle at 50% 40%, #2a3350, var(--bg)); }
     #pick h1 { margin: 0; font-size: 28px; letter-spacing: .04em; }
     #pick p { margin: 0; color: var(--muted); }
@@ -78,7 +94,7 @@
     #classes button:hover { border-color: var(--gold); }
     #classes img { height: 80px; image-rendering: auto; }
     #pick small { color: var(--muted); font-size: 11px; }
-    @media (max-width: 600px) { .frame { width: 150px; } .frame.target { width: 140px; top: calc(96px + env(safe-area-inset-top, 0px)); left: calc(10px + env(safe-area-inset-left, 0px)); right: auto; } .sk { width: 42px; height: 42px; } .sk .ic { font-size: 19px; line-height: 42px; } .sk.wide { width: 46px; } #bar { gap: 4px; padding: 4px; } #bag { top: auto; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); max-height: 60%; } }
+    @media (max-width: 600px) { .frame { width: 150px; } .frame.target { width: 140px; top: calc(96px + env(safe-area-inset-top, 0px)); left: calc(10px + env(safe-area-inset-left, 0px)); right: auto; } .sk { width: 42px; height: 42px; } .sk .ic { font-size: 19px; line-height: 42px; } .sk.wide { width: 46px; } #bar { gap: 4px; padding: 4px; } #bag, #npc { top: auto; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); max-height: 60%; } }
   </style>
 </head>
 <body>
