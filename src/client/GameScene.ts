@@ -29,6 +29,7 @@ interface View {
   aura?: Phaser.GameObjects.Ellipse;
   fxSig?: string; sparks?: Phaser.GameObjects.Particles.ParticleEmitter; ring?: Phaser.GameObjects.Ellipse; ringLv?: number;
   wings?: Phaser.GameObjects.Container;
+  rareSparks?: Phaser.GameObjects.Particles.ParticleEmitter; rareGlow?: Phaser.FX.Glow; pillar?: Phaser.GameObjects.Image; rareLv?: number;
   formKey?: string; tint?: number; stKey?: string; stIcons?: Phaser.GameObjects.Text; mount?: Phaser.GameObjects.Image; mountLook?: string; dust?: Phaser.GameObjects.Particles.ParticleEmitter;
   scale: number; phase: number; lunge: number; lungeDir: { x: number; y: number }; height: number;
 }
@@ -50,6 +51,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private leaving = false;
+  private hudErr = false;
   private net?: Net;
   private act: (i: Intent) => void = () => {};
   private names = new Map<number, Phaser.GameObjects.Text>();
@@ -127,7 +129,7 @@ export class GameScene extends Phaser.Scene {
     const alpha = Math.min(1, this.acc / TICK_MS), now = this.time.now / 1000;
     for (const e of this.world.entities.values()) { if (!this.views.has(e.id)) this.makeView(e); this.syncView(e, alpha, now, dtMs); }
     for (const [id, v] of this.views) if (!this.world.entities.has(id)) {
-      v.body.destroy(); v.shadow.destroy(); v.bar.destroy(); v.stIcons?.destroy(); v.aura?.destroy(); v.sparks?.destroy(); v.ring?.destroy(); v.wings?.destroy(); v.mount?.destroy(); v.dust?.destroy();
+      v.body.destroy(); v.shadow.destroy(); v.bar.destroy(); v.stIcons?.destroy(); v.rareSparks?.destroy(); v.pillar?.destroy(); v.aura?.destroy(); v.sparks?.destroy(); v.ring?.destroy(); v.wings?.destroy(); v.mount?.destroy(); v.dust?.destroy();
       this.views.delete(id); this.names.get(id)?.destroy(); this.names.delete(id);
     }
     this.drawTargetRing();
@@ -136,7 +138,9 @@ export class GameScene extends Phaser.Scene {
     for (const d of this.doorViews) for (const im of d.imgs) im.setVisible(!dg.openDoors.includes(d.room));
     for (const g of this.gated) for (const o of g.objs) (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(dg.cleared);
     const tgt = this.player.target != null ? this.world.entities.get(this.player.target) ?? null : null;
-    this.hud.update(this.world.xpNeeded(this.player), tgt);
+    // a HUD error must never freeze the game loop
+    try { this.hud.update(this.world.xpNeeded(this.player), tgt); }
+    catch (err) { if (!this.hudErr) { this.hudErr = true; console.error(err); this.hud.toast('UI error — ดู console', 'warn'); } }
   }
 
   private drainNet() {
@@ -267,7 +271,8 @@ export class GameScene extends Phaser.Scene {
   // Upgrade visuals: weapon +N -> sparkles, armor +N -> ground aura, card +N (while transformed) -> wings.
   private syncGearFx(e: Entity, v: View, x: number, y: number, sx: number, sy: number, now: number) {
     const wUp = e.equip.weapon?.up ?? 0, aUp = e.equip.armor?.up ?? 0, cUp = e.transformed ? e.equip.card?.up ?? 0 : 0;
-    const sig = `${wUp}|${aUp}|${cUp}|${v.height}`;
+    const rLv = Math.max(e.equip.weapon?.rare ?? 0, e.equip.offhand?.rare ?? 0, e.equip.armor?.rare ?? 0);
+    const sig = `${wUp}|${aUp}|${cUp}|${v.height}|${rLv}`;
     const u = defs.upgrade;
     if (sig !== v.fxSig) {
       v.fxSig = sig;
@@ -289,7 +294,32 @@ export class GameScene extends Phaser.Scene {
       v.wings?.destroy(); v.wings = undefined;
       const wt = this.tier(u.wingTiers, cUp);
       if (wt) v.wings = this.makeWings(wt, v.height);
+      // rare visuals: sparks from the feet, outline glow (R5+), light pillar (R7)
+      v.rareSparks?.destroy(); v.rareSparks = undefined; v.pillar?.destroy(); v.pillar = undefined;
+      v.body.preFX?.clear(); v.rareGlow = undefined; v.rareLv = rLv;
+      const rt = this.tier(defs.rarity.fx, rLv);
+      if (rt) {
+        const col = parseInt(rt.color, 16);
+        v.rareSparks = this.add.particles(0, 0, 'spark', {
+          frequency: 1000 / rt.sparks, lifespan: 1100, quantity: 1, x: { min: -20, max: 20 }, y: { min: -4, max: 4 },
+          speedY: { min: -60, max: -25 }, speedX: { min: -6, max: 6 }, scale: { start: rLv >= 7 ? 1.6 : 1.1, end: 0 }, alpha: { start: 1, end: 0 },
+          tint: rLv >= 7 ? [0xff3b3b, 0xffd23f, 0xffffff] : col, blendMode: 'ADD',
+        });
+        if (rt.glow && v.body.preFX) v.rareGlow = v.body.preFX.addGlow(col, rt.glow, 0, false, 0.1, 10);
+        if (rt.pillar) {
+          if (!this.textures.exists('pillar')) {
+            const c = this.textures.createCanvas('pillar', 48, 200)!, ctx = c.getContext();
+            const gr = ctx.createLinearGradient(0, 0, 0, 200); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.7, 'rgba(255,255,255,0.55)'); gr.addColorStop(1, 'rgba(255,255,255,0.9)');
+            const gx = ctx.createLinearGradient(0, 0, 48, 0); gx.addColorStop(0, 'rgba(0,0,0,1)'); gx.addColorStop(0.5, 'rgba(0,0,0,0)'); gx.addColorStop(1, 'rgba(0,0,0,1)');
+            ctx.fillStyle = gr; ctx.fillRect(0, 0, 48, 200); ctx.globalCompositeOperation = 'destination-out'; ctx.fillStyle = gx; ctx.fillRect(0, 0, 48, 200); c.refresh();
+          }
+          v.pillar = this.add.image(0, 0, 'pillar').setOrigin(0.5, 1).setTint(col).setBlendMode(Phaser.BlendModes.ADD);
+        }
+      }
     }
+    if (v.rareSparks) { v.rareSparks.setPosition(sx, sy + 2).setDepth(v.body.depth + 0.5); v.rareSparks.emitting = !e.dead; }
+    if (v.rareGlow) v.rareGlow.outerStrength = (v.rareLv ?? 0) >= 7 ? 4 + Math.sin(now * 4) * 2 : this.tier(defs.rarity.fx, v.rareLv ?? 0)!.glow;
+    if (v.pillar) v.pillar.setPosition(sx, sy + 6).setDepth(v.body.depth - 0.6).setAlpha(0.65 + Math.sin(now * 2.5) * 0.2).setScale(1.5, 1 + Math.sin(now * 2.5) * 0.08).setVisible(!e.dead);
     if (v.sparks) v.sparks.setPosition(x, y).setDepth(v.body.depth + 1).emitting = !e.dead;
     if (v.ring) v.ring.setPosition(sx, sy + 1).setVisible(!e.dead).setAlpha(0.75 + Math.sin(now * 3) * 0.25);
     if (v.wings) {
@@ -395,10 +425,13 @@ export class GameScene extends Phaser.Scene {
       if (e.id === this.player.id) this.hud.toast(card ? `แปลงร่างเป็น ${card.name}` : 'คืนร่าง', card ? 'rare' : 'muted');
     } else if (ev.t === 'rarify' && ev.id === this.player.id) {
       const d = defs.items[ev.item];
+      if (ev.result === 'ok' && ev.rare >= 6) this.hud.bigResult(`🎉 ได้ R${ev.rare}! ${d.name}`);
       this.hud.toast(ev.result === 'ok' ? `สุ่มได้ R${ev.rare}! ${d.name}` : ev.result === 'saved' ? `แตก! แต่ใบกันแตกช่วยไว้ ${d.name} ยังเป็น R${ev.rare}` : `${d.name} แตกหายไปแล้ว...`, ev.result === 'ok' ? (ev.rare >= 6 ? 'epic' : 'rare') : 'warn');
     } else if (ev.t === 'upgrade' && ev.id === this.player.id) {
       const d = defs.items[ev.item];
-      this.hud.toast(ev.ok ? `ตีบวกสำเร็จ! ${d.name} +${ev.up}` : `ตีบวกล้มเหลว ${d.name} ยังเป็น +${ev.up}`, ev.ok ? 'uncommon' : 'warn');
+      if (ev.broke) this.hud.bigResult(`💥 ${d.name} แตกหายไปแล้ว`);
+      else if (ev.ok && ev.up >= 8) this.hud.bigResult(`✨ ${d.name} +${ev.up}!`);
+      this.hud.toast(ev.ok ? `ตีบวกสำเร็จ! ${d.name} +${ev.up}` : ev.broke ? `${d.name} แตก!` : ev.saved ? `ล้มเหลว แต่ใบกันแตกช่วยไว้ ${d.name} ยังเป็น +${ev.up}` : `ตีบวกล้มเหลว ${d.name} ยังเป็น +${ev.up}`, ev.ok ? 'uncommon' : 'warn');
     } else if (ev.t === 'cardLevel' && ev.id === this.player.id) {
       this.hud.toast(`${defs.items[ev.card].name} เลเวลอัป! Lv ${ev.lv}${ev.lv === 3 ? ' · ปลดล็อกสกิลที่ 3' : ''}`, 'rare');
     } else if (ev.t === 'skill') {

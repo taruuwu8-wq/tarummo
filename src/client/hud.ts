@@ -21,6 +21,10 @@ export class Hud {
   private npc: string | null = null;
   private npcSig = '';
   private useProt = false;
+  private useUpProt = false;
+  private confirmKey = '';
+  private confirmAt = 0;
+  private lockUntil = 0;
   private onKey: (e: KeyboardEvent) => void;
 
   constructor(private world: World, private p: Entity, private items: Record<string, ItemDef>, private send: (i: Intent) => void) {
@@ -86,7 +90,11 @@ export class Hud {
     };
     window.addEventListener('keydown', this.onKey);
     this.$('npc').addEventListener('click', e => this.onNpcClick(e));
-    this.$('npc').addEventListener('change', e => { const t = e.target as HTMLInputElement; if (t.id === 'useprot') { this.useProt = t.checked; this.npcSig = ''; } });
+    this.$('npc').addEventListener('change', e => {
+      const t = e.target as HTMLInputElement;
+      if (t.id === 'useprot') { this.useProt = t.checked; this.npcSig = ''; }
+      if (t.id === 'useupprot') { this.useUpProt = t.checked; this.npcSig = ''; }
+    });
   }
 
   destroy() { window.removeEventListener('keydown', this.onKey); }
@@ -103,6 +111,9 @@ export class Hud {
     while (log.children.length > 8) log.firstChild!.remove();
   }
 
+  /** Called on rarify/upgrade results: a great roll blocks clicks for a moment so spam-clicking can't skip past it. */
+  bigResult(text: string) { this.lockUntil = Date.now() + 1500; this.confirmKey = ''; this.npcSig = ''; this.banner(text); }
+
   openNpc(id: string) { this.npc = id; this.npcSig = ''; this.$('npc').hidden = false; }
   private closeNpc() { this.npc = null; this.$('npc').hidden = true; }
 
@@ -111,11 +122,19 @@ export class Hud {
     const p = this.p, a = b.dataset.act!;
     if (a === 'close') this.closeNpc();
     else if (a === 'buy') this.send({ kind: 'buy', id: p.id, index: Number(b.dataset.i), qty: Number(b.dataset.q) });
-    else if (a === 'up') { const r = b.dataset.ref!; this.send({ kind: 'upgrade', id: p.id, ref: /^\d+$/.test(r) ? Number(r) : r as Slot }); }
+    else if (a === 'up' || a === 'rare') {
+      // risky actions need a second, deliberate click; and right after a big result clicks are ignored briefly
+      if (Date.now() < this.lockUntil) return;
+      const r = b.dataset.ref!, key = a + ':' + r, ref = /^\d+$/.test(r) ? Number(r) : r as Slot;
+      if (b.dataset.risk && (this.confirmKey !== key || Date.now() - this.confirmAt > 6000)) { this.confirmKey = key; this.confirmAt = Date.now(); this.npcSig = ''; return; }
+      if (b.dataset.risk && Date.now() - this.confirmAt < 600) return;
+      this.confirmKey = '';
+      if (a === 'up') this.send({ kind: 'upgrade', id: p.id, ref, protect: this.useUpProt });
+      else this.send({ kind: 'rarify', id: p.id, ref, protect: this.useProt });
+    }
     else if (a === 'heal') this.send({ kind: 'heal', id: p.id });
     else if (a === 'put') this.send({ kind: 'stashPut', id: p.id, index: Number(b.dataset.i) });
     else if (a === 'take') this.send({ kind: 'stashTake', id: p.id, index: Number(b.dataset.i) });
-    else if (a === 'rare') { const r = b.dataset.ref!; this.send({ kind: 'rarify', id: p.id, ref: /^\d+$/.test(r) ? Number(r) : r as Slot, protect: this.useProt }); }
     else if (a === 'dbg') this.send({ kind: 'debug', id: p.id, what: b.dataset.w as 'level' });
     this.npcSig = '';
   }
@@ -139,14 +158,19 @@ export class Hud {
       const refs: { ref: string; st: InvSlot; where: string }[] = [];
       for (const sl of this.world.defs.upgrade.slots) { const st = p.equip[sl]; if (st) refs.push({ ref: sl, st, where: 'สวมอยู่' }); }
       p.inv.forEach((st, i) => { if (this.world.defs.upgrade.slots.includes(this.items[st.item].slot as Slot)) refs.push({ ref: String(i), st, where: 'ในกระเป๋า' }); });
-      body = refs.map(({ ref, st, where }) => {
+      const sc = p.inv.find(x => x.item === this.world.defs.upgrade.protectItem)?.qty ?? 0;
+      const prot = this.useUpProt && sc > 0;
+      body = `<label class="chk"><input type="checkbox" id="useupprot"${this.useUpProt ? ' checked' : ''}> ใช้ใบกันแตก (ตีบวก) · เหลือ <b class="${sc ? '' : 'warn-t'}">${sc}</b></label>
+        ${this.useUpProt && !sc ? '<p class="warn-t small">⚠ ใบกันแตกหมดแล้ว! ตีบวกตอนนี้ของอาจแตก</p>' : ''}`
+        + (refs.map(({ ref, st, where }) => {
         const it = this.items[st.item], c = this.world.upgradeCost(st);
-        if (!c) return `<div class="row"><span class="ic">${it.icon}</span><span class="nm">${it.name} +${st.up}<small class="muted"> · ${where}</small></span><span class="pr">สูงสุด</span></div>`;
+        if (!c) return `<div class="row"><span class="ic">${it.icon}</span><span class="nm">${itemName(this.world, st)}<small class="muted"> · ${where}</small></span><span class="pr">สูงสุด</span></div>`;
         const m = this.items[c.mat], have = p.inv.find(x => x.item === c.mat)?.qty ?? 0, ok = p.gold >= c.gold && have >= c.qty;
-        return `<div class="row"><span class="ic">${it.icon}</span><span class="nm ${it.rarity}-t">${it.name} +${st.up ?? 0}<small class="muted"> · ${where}<br>${Math.round(c.rate * 100)}% · ${c.gold} G · ${m.icon}${have}/${c.qty}</small></span>
-          <button type="button" data-act="up" data-ref="${ref}"${ok ? '' : ' disabled'}>ตีบวก</button></div>`;
-      }).join('') || '<p class="muted">ไม่มีอาวุธ เกราะ หรือการ์ดให้ตีบวก</p>';
-      body += '<p class="muted small">ล้มเหลว = เสียทองและวัตถุดิบ ของไม่หาย</p>';
+        const risk = c.breakChance > 0 && !prot, armed = this.confirmKey === 'up:' + ref;
+        return `<div class="row"><span class="ic">${it.icon}</span><span class="nm">${itemName(this.world, st)}<small class="muted"> · ${where}<br>สำเร็จ ${Math.round(c.rate * 100)}%${c.breakChance ? ` · <span class="${prot ? '' : 'warn-t'}">พลาดแล้วแตก ${Math.round(c.breakChance * 100)}%${prot ? ' (กันไว้)' : ''}</span>` : ''} · ${c.gold} G · ${m.icon}${have}/${c.qty}</small></span>
+          <button type="button" data-act="up" data-ref="${ref}"${risk ? ' data-risk="1"' : ''} class="${armed ? 'armed' : ''}"${ok ? '' : ' disabled'}>${armed ? 'ยืนยัน! เสี่ยงแตก' : 'ตีบวก'}</button></div>`;
+      }).join('') || '<p class="muted">ไม่มีอาวุธ เกราะ หรือการ์ดให้ตีบวก</p>');
+      body += '<p class="muted small">+0 ถึง +4 ล้มเหลวแค่เสียทองกับวัตถุดิบ · ตั้งแต่ +5 (การ์ด +7) ล้มเหลวอาจแตก · ใบกันแตกใช้ไป 1 ใบทุกครั้งที่ติ๊กไว้</p>';
     } else if (d.role === 'stash') {
       const cell = (st: InvSlot, i: number, act: string) => { const it = this.items[st.item];
         return `<button type="button" class="cell ${it.rarity}" data-act="${act}" data-i="${i}" title="${it.name}"><span class="ic">${it.icon}</span>${st.up ? `<em>+${st.up}</em>` : ''}${st.qty > 1 ? `<b>${st.qty}</b>` : ''}</button>`; };
@@ -157,10 +181,12 @@ export class Hud {
       const refs: { ref: string; st: InvSlot; where: string }[] = [];
       for (const sl of r.gearSlots) { const st = p.equip[sl as Slot]; if (st) refs.push({ ref: sl, st, where: 'สวมอยู่' }); }
       p.inv.forEach((st, i) => { if (r.gearSlots.includes(this.items[st.item].slot)) refs.push({ ref: String(i), st, where: 'ในกระเป๋า' }); });
-      body = `<label class="chk"><input type="checkbox" id="useprot"${this.useProt && prot ? ' checked' : ''}${prot ? '' : ' disabled'}> ใช้ใบกันแตก (มี ${prot})</label>
+      body = `<label class="chk"><input type="checkbox" id="useprot"${this.useProt ? ' checked' : ''}> ใช้ใบกันแตก (Rare) · เหลือ <b class="${prot ? '' : 'warn-t'}">${prot}</b></label>
+        ${this.useProt && !prot ? '<p class="warn-t small">⚠ ใบกันแตก (Rare) หมดแล้ว!</p>' : ''}
         <p class="muted small">ผลสุ่ม R1-R7 · โอกาสแตก ${Math.round(r.rarify.breakChance * 100)}% (ของหายถาวร ถ้าไม่ใช้ใบกันแตก) · สุ่มออฟใหม่ตาม Rare</p>`
         + (refs.map(({ ref, st, where }) => `<div class="row"><span class="ic">${this.items[st.item].icon}</span><span class="nm">${itemName(w, st)}<small class="muted"> · ${where}</small></span>
-          <span class="pr">${w.rarifyCost(st)} G</span><button type="button" data-act="rare" data-ref="${ref}"${p.gold < w.rarifyCost(st) ? ' disabled' : ''}>สุ่ม Rare</button></div>`).join('') || '<p class="muted">ไม่มีอาวุธ อาวุธรอง หรือเกราะ</p>');
+          <span class="pr">${w.rarifyCost(st)} G</span>${(() => { const hi = (st.rare ?? 0) >= 6, noProt = !(this.useProt && prot), armed = this.confirmKey === 'rare:' + ref;
+            return `<button type="button" data-act="rare" data-ref="${ref}"${hi || noProt ? ' data-risk="1"' : ''} class="${armed ? 'armed' : ''}"${p.gold < w.rarifyCost(st) ? ' disabled' : ''}>${armed ? (hi ? `ยืนยัน! สุ่มทับ R${st.rare}` : 'ยืนยัน! เสี่ยงแตก') : 'สุ่ม Rare'}</button>`; })()}</div>`).join('') || '<p class="muted">ไม่มีอาวุธ อาวุธรอง หรือเกราะ</p>');
     } else if (d.role === 'debug') {
       body = [['level', '+1 เลเวล'], ['level5', '+5 เลเวล'], ['gold', '+10,000 G'], ['mats', 'วัตถุดิบตีบวกทุกขั้น ×30 (รวม Spirit Crystal +10~15)'], ['card', 'การ์ดสุ่มของอาชีพ'], ['job', 'การ์ดที่ใส่ Job +3'], ['gear', 'ของอาชีพ Rare สูง ×3'], ['shells', 'Shell ×3 (ทุกแบบ)'], ['scrolls', 'Reroll ×5 + กันแตก ×3']]
         .map(([w, t]) => `<button type="button" class="big" data-act="dbg" data-w="${w}">${t}</button>`).join('');

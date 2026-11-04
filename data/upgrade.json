@@ -1,5 +1,5 @@
 {
-  "_note": "Upgrade +0 -> +10 for weapon/armor. Fail = lose gold+materials only, never the item.",
+  "_note": "Upgrade +0..+10 (cards +15). A failed upgrade may break the item (breakOnFail, by current +) unless an Upgrade Protection Scroll is used; the scroll is used up on every protected attempt.",
   "slots": [
     "weapon",
     "offhand",
@@ -133,7 +133,24 @@
       "armor": 1,
       "elemRate": 0.01
     },
-    "maxUp": 15
+    "maxUp": 15,
+    "breakOnFail": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0.2,
+      0.25,
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.6
+    ]
   },
   "glowTiers": [
     {
@@ -202,5 +219,18 @@
     }
   ],
   "_wingNote": "sprite: put a PNG name here (public/sprites/<name>.png, one wing pair centered) to replace the drawn placeholder",
-  "maxUp": 10
+  "maxUp": 10,
+  "breakOnFail": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6
+  ],
+  "protectItem": "upgrade_scroll"
 }

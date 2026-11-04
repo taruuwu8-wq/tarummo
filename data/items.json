@@ -407,7 +407,7 @@
     "price": 50
   },
   "protect_scroll": {
-    "name": "Protection Scroll",
+    "name": "Rare Protection Scroll",
     "slot": "mat",
     "rarity": "epic",
     "icon": "🛡️",
@@ -426,5 +426,12 @@
     "rarity": "common",
     "icon": "🪵",
     "price": 4
+  },
+  "upgrade_scroll": {
+    "name": "Upgrade Protection Scroll",
+    "slot": "mat",
+    "rarity": "epic",
+    "icon": "🔰",
+    "price": 200
   }
 }

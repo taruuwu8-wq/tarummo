@@ -76,8 +76,10 @@ export interface RarityCfg {
   rerollItem: string; shell: { lineWeights: number[]; gradeWeights: { normal: number[]; boss: number[] } };
   gearSlots: string[]; classGear: Record<string, string[]>;
   bossLoot: LootCfg; miniBossLoot: LootCfg;
+  fx: { min: number; color: string; sparks: number; glow: number; pillar: boolean }[];
+  gm: { shellLines: number; shellGrades: number[] };
 }
-export interface LootCfg { classGear: number; shell: number; reroll: number; protect: number }
+export interface LootCfg { classGear: number; shell: number; reroll: number; protect: number; upgradeProtect?: number }
 const GRADES: Grade[] = ['C', 'B', 'A', 'S'];
 /** Per-player numbers from equipment options that aren't part of CombatStats. */
 export interface Extra { bleed: number; mpCost: number; gold: number; xp: number; restHp: number; restMp: number; natHp: number; natMp: number; potion: number }
@@ -89,9 +91,9 @@ export interface CardDef {
   weapon: 'main' | 'offhand'; attackType?: AttackType; range?: number;
 }
 export interface UpgradeCfg {
-  slots: Slot[]; successRate: number[]; gold: number[]; material: string[]; materialQty: number[]; maxUp: number;
+  slots: Slot[]; successRate: number[]; gold: number[]; material: string[]; materialQty: number[]; maxUp: number; breakOnFail: number[]; protectItem: string;
   cardXpPerLevel: number; cardMaxLevel: number; giftCardAtLevel: number;
-  card: { successRate: number[]; gold: number[]; material: string[]; materialQty: number[]; perUp: Bonus; maxUp: number };
+  card: { successRate: number[]; gold: number[]; material: string[]; materialQty: number[]; perUp: Bonus; maxUp: number; breakOnFail: number[] };
   glowTiers: { min: number; color: string; rate: number }[];
   wingTiers: { min: number; size: number; color: string; sprite: string | null; glow?: boolean }[];
 }
@@ -139,7 +141,7 @@ export type Intent =
   | { kind: 'sell'; id: number; index: number }
   | { kind: 'autoSell'; id: number; on: boolean }
   | { kind: 'transform'; id: number }
-  | { kind: 'upgrade'; id: number; ref: number | Slot }
+  | { kind: 'upgrade'; id: number; ref: number | Slot; protect?: boolean }
   | { kind: 'talk'; id: number; npc: string }
   | { kind: 'buy'; id: number; index: number; qty: number }
   | { kind: 'heal'; id: number }
@@ -170,7 +172,7 @@ export type GameEvent =
   | { t: 'transform'; id: number; on: boolean }
   | { t: 'status'; id: number; type: StatusType }
   | { t: 'rarify'; id: number; item: string; result: 'ok' | 'broke' | 'saved'; rare: number }
-  | { t: 'upgrade'; id: number; item: string; ok: boolean; up: number }
+  | { t: 'upgrade'; id: number; item: string; ok: boolean; up: number; broke?: boolean; saved?: boolean }
   | { t: 'cardLevel'; id: number; card: string; lv: number }
   | { t: 'portal'; id: number; to: string; spawn: Tile }
   | { t: 'talk'; id: number; npc: string }
@@ -195,6 +197,7 @@ export class World {
   /** mirror: client-side copy fed by server snapshots; no monsters are spawned and tick() is not called. */
   constructor(public map: MapData, public defs: Defs, seed = 1, opts: { mirror?: boolean; stash?: InvSlot[] } = {}) {
     this.stash = opts.stash ?? [];
+    this.cleanItems(this.stash);
     let s = seed >>> 0;
     this.rng = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
     for (const [x, y] of [...map.rocks, ...map.water, ...map.trees, ...(map.walls ?? []), ...map.npcs.map(n => [n.x, n.y] as Tile)]) this.blocked.add(y * 10000 + x);
@@ -228,6 +231,15 @@ export class World {
     const saved = p.autoSell; p.autoSell = false;   // never auto-sell what you just bought
     if (this.grantItem(p, offer.item, qty, { filter: false })) p.gold -= offer.price * qty;
     p.autoSell = saved;
+  }
+
+  /** Migrate renamed ids and drop items that no longer exist (in place). */
+  cleanItems(list: InvSlot[]) {
+    for (let i = list.length - 1; i >= 0; i--) {
+      const st = list[i];
+      if (RENAMED[st.item]) st.item = RENAMED[st.item];
+      if (!this.defs.items[st.item]) list.splice(i, 1);
+    }
   }
 
   removeEntity(id: number) {
@@ -353,16 +365,19 @@ export class World {
   }
 
   /** n random lines for a slot; grade chances from `gw` (C/B/A/S); one line per stat. */
-  private rollLines(slot: string, n: number, gw: number[]): OptLine[] {
+  private rollLines(slot: string, n: number, gw: number[], high = false): OptLine[] {
     const out: OptLine[] = [], used = new Set<string>(), all = this.defs.options.options.filter(o => o.slot === slot);
     for (let i = 0; i < n; i++) {
       const g = GRADES[this.pickWeighted(gw)];
       const pool = all.filter(o => o.grade === g && !used.has(o.stat));
-      const pick = pool.length ? pool : all.filter(o => !used.has(o.stat));
+      // no free line of that grade: fall back to the best grade still available
+      const rest = all.filter(o => !used.has(o.stat)), best = Math.max(...rest.map(o => GRADES.indexOf(o.grade)));
+      const pick = pool.length ? pool : rest.filter(o => GRADES.indexOf(o.grade) === best);
       if (!pick.length) break;
       const o = pick[Math.floor(this.rng() * pick.length)];
       used.add(o.stat);
-      out.push({ id: o.id, v: o.min + Math.floor(this.rng() * (o.max - o.min + 1)) });
+      const lo = high ? Math.ceil((o.min + o.max) / 2) : o.min;
+      out.push({ id: o.id, v: lo + Math.floor(this.rng() * (o.max - lo + 1)) });
     }
     return out;
   }
@@ -454,6 +469,7 @@ export class World {
     if (this.rng() < lc.shell) this.grantItem(p, ['shell_weapon', 'shell_armor', 'shell_offhand'][Math.floor(this.rng() * 3)], 1, { src });
     if (this.rng() < lc.reroll) this.grantItem(p, r.rerollItem, 1);
     if (this.rng() < lc.protect) this.grantItem(p, r.rarify.protectItem, 1);
+    if (lc.upgradeProtect && this.rng() < lc.upgradeProtect) this.grantItem(p, this.defs.upgrade.protectItem, 1);
   }
 
   save(e: Entity): SaveData {
@@ -502,10 +518,10 @@ export class World {
     const isCard = this.defs.items[st.item].slot === 'card';
     const u = isCard ? this.defs.upgrade.card : this.defs.upgrade, up = st.up ?? 0;
     if (up >= (isCard ? this.defs.upgrade.card.maxUp : this.defs.upgrade.maxUp)) return null;
-    return { gold: u.gold[up], mat: u.material[up], qty: u.materialQty[up], rate: u.successRate[up] };
+    return { gold: u.gold[up], mat: u.material[up], qty: u.materialQty[up], rate: u.successRate[up], breakChance: u.breakOnFail?.[up] ?? 0 };
   }
 
-  private upgrade(p: Entity, ref: number | Slot) {
+  private upgrade(p: Entity, ref: number | Slot, protect = false) {
     const st = typeof ref === 'number' ? p.inv[ref] : p.equip[ref];
     if (!st) return;
     const def = this.defs.items[st.item];
@@ -514,11 +530,19 @@ export class World {
     if (!c) { this.events.push({ t: 'msg', id: p.id, text: 'ตีบวกสูงสุดแล้ว' }); return; }
     const mat = p.inv.find(s => s.item === c.mat);
     if (p.gold < c.gold || !mat || mat.qty < c.qty) { this.events.push({ t: 'msg', id: p.id, text: 'ทองหรือวัตถุดิบไม่พอ' }); return; }
+    const scroll = protect ? p.inv.find(x => x.item === this.defs.upgrade.protectItem) : undefined;
+    if (protect && !scroll) { this.events.push({ t: 'msg', id: p.id, text: 'ใบกันแตก (ตีบวก) หมดแล้ว' }); return; }
     p.gold -= c.gold; mat.qty -= c.qty;
     if (mat.qty <= 0) p.inv.splice(p.inv.indexOf(mat), 1);
+    if (scroll && --scroll.qty <= 0) p.inv.splice(p.inv.indexOf(scroll), 1);
     const ok = this.rng() < c.rate;
+    let broke = false, saved = false;
     if (ok) st.up = (st.up ?? 0) + 1;
-    this.events.push({ t: 'upgrade', id: p.id, item: st.item, ok, up: st.up ?? 0 });
+    else if (c.breakChance && this.rng() < c.breakChance) {
+      if (scroll) saved = true;
+      else { broke = true; if (typeof ref === 'number') p.inv.splice(p.inv.indexOf(st), 1); else { if (ref === 'card' && p.transformed) { p.transformed = false; } delete p.equip[ref]; } }
+    }
+    this.events.push({ t: 'upgrade', id: p.id, item: st.item, ok, up: st.up ?? 0, broke, saved });
     this.recalc(p);
   }
 
@@ -581,8 +605,8 @@ export class World {
     else if (what === 'mats') for (const m of ['slime_jelly', 'pumpkin_seed', 'golem_shard', 'spirit_crystal']) this.grantItem(p, m, 30, { filter: false });
     else if (what === 'card') this.grantItem(p, this.randomCardFor(p.type));
     else if (what === 'gear') for (let i = 0; i < 3; i++) { const l = this.defs.rarity.classGear[p.type]; this.grantItem(p, l[i % l.length], 1, { src: 'boss', filter: false }); }
-    else if (what === 'shells') for (const sh of ['shell_weapon', 'shell_armor', 'shell_offhand']) this.grantItem(p, sh, 1, { src: 'boss' });
-    else if (what === 'scrolls') { this.grantItem(p, this.defs.rarity.rerollItem, 5); this.grantItem(p, this.defs.rarity.rarify.protectItem, 3); }
+    else if (what === 'shells') for (const sh of ['shell_weapon', 'shell_armor', 'shell_offhand']) this.grantItem(p, sh, 1, { src: 'gm' });
+    else if (what === 'scrolls') { this.grantItem(p, this.defs.rarity.rerollItem, 5); this.grantItem(p, this.defs.rarity.rarify.protectItem, 5); this.grantItem(p, this.defs.upgrade.protectItem, 5); }
     else if (what === 'job' && p.equip.card) {
       const c = p.equip.card; c.lv = Math.min(this.defs.upgrade.cardMaxLevel, (c.lv ?? 1) + 3); c.xp = 0;
       this.events.push({ t: 'cardLevel', id: p.id, card: c.item, lv: c.lv });
@@ -596,7 +620,7 @@ export class World {
   }
 
   /** Single entry point for items (catch-up / shared loot can hook in later). Returns false if bag full. */
-  grantItem(p: Entity, item: string, qty = 1, opts: { filter?: boolean; src?: 'normal' | 'boss' } = {}): boolean {
+  grantItem(p: Entity, item: string, qty = 1, opts: { filter?: boolean; src?: 'normal' | 'boss' | 'gm' } = {}): boolean {
     const def = this.defs.items[item];
     if (opts.filter !== false) {
       const act = this.lootAct(p, def);
@@ -612,10 +636,11 @@ export class World {
       if (def.slot === 'card') p.inv.push({ item, qty, lv: 1, xp: 0 });
       else if (stackable) p.inv.push({ item, qty });
       else if (def.slot === 'shell') {
-        const n = 1 + this.pickWeighted(r.shell.lineWeights);
-        p.inv.push({ item, qty: 1, opts: this.rollLines(def.shellFor!, n, r.shell.gradeWeights[opts.src ?? 'normal']) });
+        const gm = opts.src === 'gm';
+        const n = gm ? r.gm.shellLines : 1 + this.pickWeighted(r.shell.lineWeights);
+        p.inv.push({ item, qty: 1, opts: this.rollLines(def.shellFor!, n, gm ? r.gm.shellGrades : r.shell.gradeWeights[opts.src === 'boss' ? 'boss' : 'normal'], gm) });
       } else if (r.gearSlots.includes(def.slot) && opts.src) {
-        const rare = this.pickWeighted(r.drop[opts.src]);
+        const rare = opts.src === 'gm' ? 7 : this.pickWeighted(r.drop[opts.src]);
         p.inv.push({ item, qty, up: 0, rare, opts: this.rollRareLines(def.slot, rare) });
       } else p.inv.push({ item, qty, up: 0 });
     }
@@ -728,7 +753,7 @@ export class World {
     else if (intent.kind === 'sell') this.sell(e, intent.index);
     else if (intent.kind === 'autoSell') e.autoSell = intent.on;
     else if (intent.kind === 'transform') this.transform(e);
-    else if (intent.kind === 'upgrade') { if (this.nearNpc(e, 'smith')) this.upgrade(e, intent.ref); else this.events.push({ t: 'msg', id: e.id, text: 'ตีบวกได้ที่ช่าง Brann ในเมือง' }); }
+    else if (intent.kind === 'upgrade') { if (this.nearNpc(e, 'smith')) this.upgrade(e, intent.ref, !!intent.protect); else this.events.push({ t: 'msg', id: e.id, text: 'ตีบวกได้ที่ช่าง Brann ในเมือง' }); }
     else if (intent.kind === 'talk') { e.target = null; e.talkTo = intent.npc; e.repathAt = 0; }
     else if (intent.kind === 'buy') this.buy(e, intent.index, intent.qty);
     else if (intent.kind === 'chat') {
