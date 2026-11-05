@@ -413,7 +413,9 @@ export class GameScene extends Phaser.Scene {
     };
     const hw = hd.hw * Math.abs(sxs), show = !e.dead || body.alpha > 0.3, back = !!v.up;
     const head = cos.fhead?.img, hl = e.equip.fhead && defs.items[e.equip.fhead.item].look;
-    if (head && hl) {
+    // Mage's own art already wears a wizard hat: hide headwear on the base Mage form (cards keep it)
+    if (head) head.setVisible(false);
+    if (head && hl && !(e.type === 'mage' && !e.transformed)) {
       const p = toW(hd.cx, hd.top + hd.hw * (hl.dy ?? 0.3));
       head.setOrigin(0.5, 1).setPosition(p.wx, p.wy).setRotation(rot).setScale(hw * hl.w / head.width).setFlipX(e.facing < 0).setDepth(body.depth + 0.12).setVisible(show);
     }
