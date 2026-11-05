@@ -587,5 +587,6 @@
       "archer": "moon_ranger",
       "mage": "star_sage"
     }
-  }
+  },
+  "art": "v2"
 }

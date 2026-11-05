@@ -6,7 +6,7 @@ import { writeSave, readStash, writeStash, readUnlocks, writeUnlocks } from './s
 import type { Net } from './net';
 import type { Intent } from '../sim/world';
 import { Hud } from './hud';
-import { paintGround, makeProps, scatter, PX, MARGIN, PROP_SETS, propsFor, mulTint, recolored } from './mapart';
+import { paintGround, makeProps, scatter, PX, MARGIN, PROP_SETS, propsFor, mulTint, recolored, THEMES, wallTexture } from './mapart';
 import PROPS from '../../data/props.json';
 
 const TW = 64, TH = 32;
@@ -779,9 +779,9 @@ export class GameScene extends Phaser.Scene {
     for (const [x, y] of map.trees) { if (x >= map.width - 2 || y >= map.height - 2 || h(x, y, 21) < (S.lowTrees ?? 0)) { bush(x, y); if (h(x, y, 22) > 0.5) prop(pickOf(S.patches, x, y, 23), x + 0.4, y + 0.3, { shadow: 0.4 }); } else tree(x, y); }
     for (const [x, y] of map.rocks) rocks(x, y);
     const blocked = (x: number, y: number) => !this.world.walkable(x, y) || this.world.isWater(x, y) || map.npcs.some(n => Math.hypot(n.x - x, n.y - y) < 2.2);
-    const town = map.ground === 'stone';
-    for (const [x, y] of scatter(map, blocked, town ? 0 : 9, 3)) flowers(x, y);
-    for (const [x, y] of scatter(map, blocked, town ? 6 : 28, 5)) grass(x, y);
+    const town = map.ground === 'stone', dg = !!map.dungeon;
+    for (const [x, y] of scatter(map, blocked, town || dg ? 0 : 9, 3)) flowers(x, y);
+    for (const [x, y] of scatter(map, blocked, dg ? 0 : town ? 6 : 28, 5)) grass(x, y);
     if (!town) for (const [x, y] of scatter(map, blocked, 4, 13)) prop(pickOf(S.extras, x, y), x, y, { shadow: 0.5 });
     // ---- margin (unwalkable): dense forest behind the two back edges, only low props in front so nothing hides players
     const M = MARGIN, W = map.width, H = map.height;
@@ -793,6 +793,11 @@ export class GameScene extends Phaser.Scene {
       const out = Math.max(-0.6 - jx, -0.6 - jy, jx - W + 0.4, jy - H + 0.4);
       if (out <= 0.2 || nearHouse(jx, jy)) continue;
       const back = jx < -0.5 || jy < -0.5, front = jx > W - 0.5 || jy > H - 0.5, k = h(jx, jy, 16);
+      if (dg) {   // dungeon: darkness with a few pillars/arches behind, almost nothing in front
+        if (back && !front && out > 0.8 && k < 0.22) prop(pickOf(S.spires, jx, jy, 17), jx, jy, { scale: 0.9 + h(jx, jy, 18) * 0.3, tint: out > 2.5 ? S.farTint : undefined });
+        else if (k > 0.94) prop(pickOf(S.extras, jx, jy, 19), jx, jy, { shadow: 0.4 });
+        continue;
+      }
       if (back && !front) {
         const [bt, br, bs] = S.back ?? [0.62, 0.72, 0.78];
         if (k < bt) tree(jx, jy, out > 1.5);
@@ -817,6 +822,7 @@ export class GameScene extends Phaser.Scene {
       bake = null;
     }
     if (town) this.townDecor(map, prop);
+    if (map.walls?.length) this.dungeonWalls(map);
     const c0 = toScreen(0, H), c1 = toScreen(W, 0), c2 = toScreen(W, H);
     this.bounds = { x0: c0.sx, x1: c1.sx, y0: 0, y1: c2.sy };
     for (let i = 0; i < 3; i++) this.clouds.push(this.add.image(c0.sx + (c1.sx - c0.sx) * (i / 3), c2.sy * (0.2 + i * 0.3), 'm_cloud').setScale(9, 7).setAlpha(0.08).setDepth(1));
@@ -844,6 +850,28 @@ export class GameScene extends Phaser.Scene {
       x: { min: c0.sx, max: c1.sx }, y: { min: 0, max: c2.sy }, lifespan: 7000, frequency: 320, quantity: 1,
       speedX: { min: -6, max: 6 }, speedY: { min: -12, max: -4 }, scale: { min: 1, max: 1.6 }, alpha: { onUpdate: (_p: unknown, _k: string, t: number) => Math.sin(t * Math.PI) * 0.6 }, blendMode: 'ADD',
     }).setDepth(9000);
+  }
+
+  /** v2 dungeon walls: themed brick blocks (front edges low so players stay visible), doors, wall torches. */
+  private dungeonWalls(map: MapData) {
+    const th = THEMES[map.ground], wc = th?.wall ?? [0x6b6380, 0x3a3446, 0x2c2738, 0x1e1a28, 0xffa040];
+    const tall = `wall2_${map.ground}`, low = `wall2l_${map.ground}`;
+    wallTexture(this, tall, wc, 44); wallTexture(this, low, wc, 14);
+    const W = map.width, H = map.height;
+    for (const [x, y] of map.walls ?? []) {
+      const { sx, sy } = toScreen(x, y), front = x === W - 1 || y === H - 1;
+      this.add.image(sx, sy, front ? low : tall).setOrigin(0.5, ((front ? 14 : 44) + 16) / (32 + (front ? 14 : 44))).setDepth(10 + sy);
+      // torches on the back walls every few tiles
+      if (!front && (x === 0 || y === 0) && (x + y) % 4 === 2) {
+        const ex = sx + (y === 0 ? 14 : -14), ey = sy - 30;
+        this.add.ellipse(ex, ey + 6, 70, 46, wc[4], 0.12).setDepth(10 + sy + 0.2).setBlendMode('ADD');
+        this.add.rectangle(ex, ey + 6, 3, 8, 0x3a2a1e).setDepth(10 + sy + 0.3);
+        this.add.particles(ex, ey, 'dust', { lifespan: 500, frequency: 70, speedX: { min: -6, max: 6 }, speedY: { min: -30, max: -14 },
+          scale: { start: 0.45, end: 0 }, tint: [wc[4], 0xffe0a0], blendMode: 'ADD', alpha: { start: 0.9, end: 0 } }).setDepth(10 + sy + 0.4);
+      }
+    }
+    if (!this.textures.exists('door')) this.drawGroundLegacyTextures();
+    this.doorViews = (map.dungeon?.doors ?? []).map(d => ({ room: d.room, imgs: d.tiles.map(([x, y]) => { const { sx, sy } = toScreen(x, y); return this.add.image(sx, sy, 'door').setOrigin(0.5, 44 / 62).setDepth(10 + sy); }) }));
   }
 
   /** Houses sit in the back margin (scenery, not walkable). Returns [x, y, keep-clear radius] so trees avoid them. */
@@ -943,6 +971,13 @@ export class GameScene extends Phaser.Scene {
       }
     }
     for (const [x, y] of map.trees) { const { sx, sy } = toScreen(x, y); this.add.image(sx, sy, treeKey).setOrigin(24 / 48, 58 / 70).setDepth(10 + sy); }
+    this.drawGroundLegacyTextures();
+    for (const [x, y] of map.walls ?? []) { const { sx, sy } = toScreen(x, y); this.add.image(sx, sy, 'wall').setOrigin(0.5, 44 / 62).setDepth(10 + sy); }
+    this.doorViews = (map.dungeon?.doors ?? []).map(d => ({ room: d.room, imgs: d.tiles.map(([x, y]) => { const { sx, sy } = toScreen(x, y); return this.add.image(sx, sy, 'door').setOrigin(0.5, 44 / 62).setDepth(10 + sy); }) }));
+    for (const [x, y] of map.rocks) { const { sx, sy } = toScreen(x, y); this.add.image(sx, sy, 'rock').setOrigin(0.5, 20 / 30).setDepth(10 + sy); }
+  }
+
+  private drawGroundLegacyTextures() {
     if (!this.textures.exists('wall')) {
       const w = this.make.graphics({}, false); w.translateCanvas(32, 44);
       w.fillStyle(0x3a3446, 1).fillPoints([{ x: -32, y: 0 }, { x: 0, y: 16 }, { x: 0, y: -12 }, { x: -32, y: -28 }], true);
@@ -954,9 +989,6 @@ export class GameScene extends Phaser.Scene {
       d.lineStyle(3, 0xffd23f, 0.9); for (const k of [-21, -14, -7]) d.lineBetween(k, -28 + (k + 28) / 2 + 2, k, (k + 28) / 2 + 2);
       d.generateTexture('door', 64, 62); w.destroy(); d.destroy();
     }
-    for (const [x, y] of map.walls ?? []) { const { sx, sy } = toScreen(x, y); this.add.image(sx, sy, 'wall').setOrigin(0.5, 44 / 62).setDepth(10 + sy); }
-    this.doorViews = (map.dungeon?.doors ?? []).map(d => ({ room: d.room, imgs: d.tiles.map(([x, y]) => { const { sx, sy } = toScreen(x, y); return this.add.image(sx, sy, 'door').setOrigin(0.5, 44 / 62).setDepth(10 + sy); }) }));
-    for (const [x, y] of map.rocks) { const { sx, sy } = toScreen(x, y); this.add.image(sx, sy, 'rock').setOrigin(0.5, 20 / 30).setDepth(10 + sy); }
   }
 
   private drawPortals(map: MapData) {

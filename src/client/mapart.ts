@@ -22,7 +22,8 @@ const pick = (pal: number[][], v: number) => pal[Math.max(0, Math.min(pal.length
 // Palettes are kept muted (lower saturation/contrast than the character sprites) so characters read first.
 interface Theme { grass: number[]; dirt: number[]; sand: number; water: number[]; cliff: number[]; flowers: number[]; flowerRate: number;
   /** town: cobblestone pavers over the whole map except a grass border; fountain gets a stone rim instead of sand */
-  stone?: number[]; mortar?: number }
+  stone?: number[]; mortar?: number; /** dungeon: pave the whole play area */ paveAll?: boolean;
+  /** dungeon wall colours: top, left face, right face, mortar, torch */ wall?: [number, number, number, number, number] }
 const MEADOW: Theme = {
   grass: [0x45703c, 0x507c43, 0x5b884a, 0x679352, 0x759f5c],
   dirt: [0x76593e, 0x87694a, 0x977957, 0xa68865],
@@ -71,7 +72,15 @@ const VOID: Theme = {
   grass: [0x2a2238, 0x30273f, 0x362c46, 0x3c324d, 0x433854], dirt: [0x4a2e5e, 0x54356a, 0x5e3c76, 0x684382], sand: 0x1c1626,
   water: [0x3a1e5a, 0x4a2a70, 0x5c3888, 0x9a6ad0], cliff: [0x1c1626, 0x16111f, 0x110d18, 0x0c0911], flowers: [0xc08aff], flowerRate: 0.002,
 };
-export const THEMES: Record<string, Theme> = { grass: MEADOW, stone: TOWN, snow: SNOW, ash: ASH, marsh: MARSH, sky: SKY, lava: LAVA, twilight: TWILIGHT, void: VOID };
+const dungeon = (stone: number[], mortar: number, rock: number[], wall: [number, number, number, number, number]): Theme => ({
+  grass: rock, dirt: stone, sand: stone[3], water: [0x2a3a50, 0x34485e, 0x40566e, 0x6a8aa8], cliff: [rock[1], rock[0], rock[0], 0x0c0a10],
+  flowers: [], flowerRate: 0, stone, mortar, paveAll: true, wall,
+});
+const RUIN = dungeon([0x5e5866, 0x68626f, 0x726c79, 0x7c7683], 0x3e3946, [0x2a2630, 0x302b36, 0x36303c, 0x3c3542, 0x423a48], [0x625c6e, 0x4e4858, 0x3c3746, 0x2a2632, 0xffa040]);
+const TEMPLE = dungeon([0x3e5a66, 0x466470, 0x4e6e7a, 0x587884], 0x2a3e48, [0x1e2a32, 0x223038, 0x26363e, 0x2a3c44, 0x2e424a], [0x557680, 0x3e5a64, 0x2e4650, 0x1e2e36, 0x6fe0ff]);
+const CRYSTAL = dungeon([0x6a5e8a, 0x746894, 0x7e729e, 0x887ca8], 0x463c62, [0x2a2440, 0x302948, 0x362e50, 0x3c3358, 0x423860], [0x8c80b4, 0x6c5e98, 0x52467a, 0x352c52, 0xc8b0ff]);
+const ECLIPSE = dungeon([0x5a3a40, 0x64424a, 0x6e4a52, 0x78525a], 0x3a2428, [0x24161a, 0x2a1a1e, 0x301e22, 0x362226, 0x3c262a], [0x7a5458, 0x5e3c42, 0x4a2e34, 0x2e1c20, 0xff7040]);
+export const THEMES: Record<string, Theme> = { ruin: RUIN, temple: TEMPLE, crystal: CRYSTAL, eclipse: ECLIPSE, grass: MEADOW, stone: TOWN, snow: SNOW, ash: ASH, marsh: MARSH, sky: SKY, lava: LAVA, twilight: TWILIGHT, void: VOID };
 
 /** Which sheet props a theme scatters (ids from data/props.json). */
 /** back: cumulative chances for the back margin [tree, rock cluster, spire] (rest: patches/ground); spireScale for those */
@@ -124,7 +133,15 @@ const VOIDY: PropSet = {
   spires: ['void_gate', 'void_crystal_isle', 'void_crystal_float', 'void_float', 'void_rune_plat', 'void_pillar'], ground: ['void_shard', 'void_shard_b', 'void_shard_c', 'void_pebble'], patches: ['void_shard_b', 'void_crystal', 'void_shard'],
   extras: ['void_pillar', 'void_shard_c', 'void_rock_float'], groundSway: false, farTint: 0x9a90b0, back: [0.3, 0.45, 0.85]
 };
-export const PROP_SETS: Record<string, PropSet> = { grass: GREEN, stone: GREEN, snow: SNOWY, ash: DESERT, marsh: MARSHY, sky: SKYISH, lava: LAVAY, twilight: TWI, void: VOIDY };
+const dprops = (pillars: string[], extras: string[], tint?: number): PropSet => ({
+  tint, trees: pillars, bushes: ['rock_small'], rocks: ['rock_mid', 'rock_big'], rockSmall: 'rock_small', spires: [...pillars, 'stone_arch'],
+  ground: ['rock_small'], patches: extras, extras, groundSway: false, farTint: 0x80808c, back: [0.35, 0.6, 0.8],
+});
+const RUINP = dprops(['stone_pillar', 'stone_arch', 'rock_spire'], ['moss_rock_s', 'skull', 'mush_small'], 0xb8b0c0);
+const TEMPLEP = dprops(['stone_pillar', 'sky_obelisk', 'stone_arch'], ['mush_glow_small', 'sky_gem_b', 'moss_rock_s'], 0x9ec4cc);
+const CRYSTALP = dprops(['sky_crystal', 'sky_obelisk', 'ice_crystal_big'], ['sky_gem', 'sky_shard', 'ice_crystal_small'], 0xd8ccff);
+const ECLIPSEP = dprops(['lava_obelisk', 'lava_pillar', 'void_pillar'], ['ember_shard', 'skull', 'void_shard'], 0xd0a0a0);
+export const PROP_SETS: Record<string, PropSet> = { ruin: RUINP, temple: TEMPLEP, crystal: CRYSTALP, eclipse: ECLIPSEP, grass: GREEN, stone: GREEN, snow: SNOWY, ash: DESERT, marsh: MARSHY, sky: SKYISH, lava: LAVAY, twilight: TWI, void: VOIDY };
 /** multiply two 0xRRGGBB tints */
 export const mulTint = (a: number, b: number) => (((((a >> 16) & 255) * ((b >> 16) & 255)) / 255) << 16) | (((((a >> 8) & 255) * ((b >> 8) & 255)) / 255) << 8) | (((a & 255) * (b & 255)) / 255);
 export const TOWN_PROPS = ['house_tree', 'house_blue', 'house_vine', 'house_mill', 'lamp', 'flower_bush', 'bench', 'signpost', 'banner', 'sign_board', 'stall_red', 'stall_blue', 'tent', 'stump_axe', 'hay_crates', 'barrel_stone', 'cart', 'crate', 'pot_stand'];
@@ -192,7 +209,7 @@ export function paintGround(scene: Phaser.Scene, map: MapData, isWater: (x: numb
         const pw = 0.42 + (vnoise(fx * 1.7, fy * 1.7, 3) - 0.5) * 0.35;
         const n = fbm(fx * 0.32, fy * 0.32, 1) * 0.6 + fbm(fx * 1.6, fy * 1.6, 2) * 0.4;
         const border = Math.min(fx + 0.5, fy + 0.5, map.width - 0.5 - fx, map.height - 0.5 - fy) + (vnoise(fx * 1.3, fy * 1.3, 6) - 0.5) * 0.9;
-        if (ST && MO && (border > 1.6 || pd < 0.7)) {
+        if (ST && MO && (th.paveAll || border > 1.6 || pd < 0.7)) {
           // cobblestone pavers aligned to the iso axes; offset rows, per-stone tone, bevel toward the bottom edge, worn cracks
           const u = fx * 2.4, v = fy * 2.4, row = Math.floor(v), u2 = u + (row & 1) * 0.5, cell = Math.floor(u2), fu = u2 - cell, fv = v - row;
           if (fu < 0.09 || fv < 0.12) col = hash(cell, row, 21) < 0.25 && border < 3 ? G[1] : MO;   // moss in the joints near the grass
@@ -288,4 +305,36 @@ export function recolored(scene: Phaser.Scene, key: string, rc: Recolor, tag: st
   }
   ctx.putImageData(img, 0, 0); tex.refresh();
   return out;
+}
+
+/** Isometric brick wall block for a dungeon theme (tile footprint 64x32, height hgt px). Origin = tile centre. */
+export function wallTexture(scene: Phaser.Scene, key: string, c: [number, number, number, number, number], hgt: number) {
+  if (scene.textures.exists(key)) return;
+  const W = 64, H = 32 + hgt, cx = 32, cy = hgt + 16;
+  const t = scene.textures.createCanvas(key, W, H)!, g = t.getContext();
+  const hex = (v: number, k = 1) => `rgb(${Math.min(255, ((v >> 16) & 255) * k) | 0},${Math.min(255, ((v >> 8) & 255) * k) | 0},${Math.min(255, (v & 255) * k) | 0})`;
+  const poly = (pts: number[][], col: string) => { g.fillStyle = col; g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (const p of pts.slice(1)) g.lineTo(p[0], p[1]); g.closePath(); g.fill(); };
+  const top = [[cx - 32, cy - hgt], [cx, cy - 16 - hgt], [cx + 32, cy - hgt], [cx, cy + 16 - hgt]];
+  // faces
+  poly([[cx - 32, cy], [cx, cy + 16], [cx, cy + 16 - hgt], [cx - 32, cy - hgt]], hex(c[1]));
+  poly([[cx + 32, cy], [cx, cy + 16], [cx, cy + 16 - hgt], [cx + 32, cy - hgt]], hex(c[2]));
+  // bricks: offset rows on both faces, per-brick tone. On a face, u = distance from the outer corner (0..32):
+  // x = cx ∓ (32 - u), bottom edge y = cy + u/2.
+  g.strokeStyle = hex(c[3]); g.lineWidth = 1;
+  const rowH = 7;
+  for (let row = 0; row * rowH < hgt; row++) for (const side of [-1, 1]) {
+    const bw = 11, off = (row & 1) * 5.5, rh = Math.min(rowH, hgt - row * rowH);
+    for (let u = -off; u < 32; u += bw) {
+      const u0 = Math.max(0, u), u1 = Math.min(32, u + bw); if (u1 <= u0) continue;
+      const k = 0.86 + (((row * 7 + Math.round(u) * 3 + (side > 0 ? 5 : 0)) * 2654435761) >>> 0) % 100 / 350;
+      const X = (uu: number) => cx + side * (32 - uu), Y = (uu: number, dv: number) => cy + uu / 2 - row * rowH - dv;
+      const P = [[X(u0), Y(u0, 0)], [X(u1), Y(u1, 0)], [X(u1), Y(u1, rh)], [X(u0), Y(u0, rh)]];
+      poly(P, hex(side < 0 ? c[1] : c[2], k));
+      g.beginPath(); g.moveTo(P[0][0], P[0][1]); g.lineTo(P[1][0], P[1][1]); g.moveTo(P[1][0], P[1][1]); g.lineTo(P[2][0], P[2][1]); g.stroke();
+    }
+  }
+  poly(top, hex(c[0]));
+  g.strokeStyle = hex(c[0], 1.25); g.beginPath(); g.moveTo(top[0][0], top[0][1]); g.lineTo(top[1][0], top[1][1]); g.lineTo(top[2][0], top[2][1]); g.stroke();
+  g.strokeStyle = hex(c[3]); g.beginPath(); g.moveTo(top[0][0], top[0][1]); g.lineTo(top[3][0], top[3][1]); g.lineTo(top[2][0], top[2][1]); g.stroke();
+  t.refresh();
 }

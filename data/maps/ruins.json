@@ -587,5 +587,6 @@
       "archer": "forest_warden",
       "mage": "frost_sage"
     }
-  }
+  },
+  "art": "v2"
 }

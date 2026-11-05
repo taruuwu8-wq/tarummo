@@ -587,5 +587,6 @@
       "archer": "storm_hunter",
       "mage": "tide_caller"
     }
-  }
+  },
+  "art": "v2"
 }
