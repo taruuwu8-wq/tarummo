@@ -761,7 +761,7 @@ export class GameScene extends Phaser.Scene {
     const grass = (x: number, y: number) => prop(pickOf(S.ground, x, y, 1), x, y, { sway: 0.1 * gsw, scale: 0.8 + h(x, y, 2) * 0.4, shadow: 0 });
     const bush = (x: number, y: number, scale = 1) => prop(pickOf(S.bushes, x, y), x, y, { scale });
     const tree = (x: number, y: number, far = false) => {
-      prop(pickOf(S.trees, x, y, 3), x, y, { scale: (far ? 0.85 : 0.9) + h(x, y, 4) * 0.2, sway: far ? 0.012 : 0.018, tint: far ? S.farTint : undefined });
+      prop(pickOf(S.trees, x, y, 3), x, y, { scale: ((far ? 0.85 : 0.9) + h(x, y, 4) * 0.2) * (S.treeScale ?? 1), sway: far ? 0.012 : 0.018, tint: far ? S.farTint : undefined });
       if (!far) { grass(x - 0.4, y + 0.3); if (h(x, y, 5) > 0.5) bush(x + 0.45, y + 0.15, 0.85); }
     };
     const rocks = (x: number, y: number) => {
@@ -776,7 +776,7 @@ export class GameScene extends Phaser.Scene {
       grass(x + 0.5, y - 0.1);
     };
     // blocking trees on the two front edges would hide players walking along them: low bushes there instead
-    for (const [x, y] of map.trees) { if (x >= map.width - 2 || y >= map.height - 2) bush(x, y); else tree(x, y); }
+    for (const [x, y] of map.trees) { if (x >= map.width - 2 || y >= map.height - 2 || h(x, y, 21) < (S.lowTrees ?? 0)) { bush(x, y); if (h(x, y, 22) > 0.5) prop(pickOf(S.patches, x, y, 23), x + 0.4, y + 0.3, { shadow: 0.4 }); } else tree(x, y); }
     for (const [x, y] of map.rocks) rocks(x, y);
     const blocked = (x: number, y: number) => !this.world.walkable(x, y) || this.world.isWater(x, y) || map.npcs.some(n => Math.hypot(n.x - x, n.y - y) < 2.2);
     const town = map.ground === 'stone';

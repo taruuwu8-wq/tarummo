@@ -77,7 +77,7 @@ export const THEMES: Record<string, Theme> = { grass: MEADOW, stone: TOWN, snow:
 /** back: cumulative chances for the back margin [tree, rock cluster, spire] (rest: patches/ground); spireScale for those */
 /** recolor: foliage pixels (green hues) are moved to `hue` with saturation/lightness multipliers; trunks/rocks keep their colour */
 export interface Recolor { hue: number; sat: number; light: number }
-export interface PropSet { tint?: number; recolor?: Recolor; trees: string[]; bushes: string[]; rocks: string[]; rockSmall: string; spires: string[]; ground: string[]; patches: string[]; extras: string[]; groundSway: boolean; farTint: number; back?: [number, number, number]; spireScale?: number }
+export interface PropSet { /** share of in-map tree spots drawn as low props instead (dense maps) */ lowTrees?: number; treeScale?: number; tint?: number; recolor?: Recolor; trees: string[]; bushes: string[]; rocks: string[]; rockSmall: string; spires: string[]; ground: string[]; patches: string[]; extras: string[]; groundSway: boolean; farTint: number; back?: [number, number, number]; spireScale?: number }
 const GREEN: PropSet = {
   trees: ['oak_a', 'oak_b', 'oak_a', 'pine'], bushes: ['bush_white', 'bush_pink'], rocks: ['rock_big', 'rock_mid'], rockSmall: 'rock_small', spires: ['rock_spire'],
   ground: ['grass_a', 'grass_b', 'grass_c', 'grass_fl1', 'grass_fl2'], patches: ['fl_white', 'fl_pink', 'fl_purple', 'fl_yellow', 'fb_white', 'fb_pink', 'fb_blue', 'fb_mix'],
@@ -112,10 +112,12 @@ const LAVAY: PropSet = {
   spires: ['lava_arch', 'lava_arch_b', 'lava_pillars', 'lava_float', 'lava_platform', 'lava_obelisk'], ground: ['ember_shard', 'ember_shard_b', 'ember_ball'], patches: ['ember_shard_b', 'lava_crystal_pile', 'ember_shard'],
   extras: ['lava_ruin', 'lava_ruin_floor', 'ember_ball'], groundSway: false, farTint: 0x9a8a88, back: [0.25, 0.45, 0.85]
 };
-const TWI: PropSet = {
-  recolor: { hue: 268, sat: 0.5, light: 0.85 }, tint: 0xd0cce4, trees: ['dead_tree', 'bare_tree_snow', 'oak_b', 'pine', 'oak_a'], bushes: ['bush_green_b', 'bush_snowy'], rocks: ['rock_big', 'rock_mid'], rockSmall: 'rock_small',
-  spires: ['stone_arch', 'stone_pillar', 'ice_crystal_big', 'rock_spire'], ground: ['grass_a', 'grass_c'], patches: ['ice_crystal_small', 'bush_green_a', 'grass_fl2'],
-  extras: ['ice_shard', 'ice_crystal_small', 'skull'], groundSway: true, farTint: 0xb0b0c8,
+const TWI: PropSet = {   // dusk: purple-leaf woods (greens recoloured), violet crystals, glowing mushrooms, old gates
+  recolor: { hue: 272, sat: 0.55, light: 0.9 },
+  trees: ['oak_a', 'oak_b', 'void_tree', 'oak_a', 'dead_tree'], bushes: ['bush_green_b', 'reeds', 'mush_purple'], rocks: ['moss_rock', 'rock_big'], rockSmall: 'moss_rock_s',
+  spires: ['void_gate', 'void_pillar', 'marsh_tree_isle', 'void_crystal_float', 'rock_spire', 'void_crystal_isle'], ground: ['grass_a', 'grass_c', 'void_shard', 'mush_glow_small'],
+  patches: ['void_crystal', 'mush_glow_small', 'fl_purple', 'void_shard_b', 'mush_purple'], extras: ['mush_glow_big', 'log', 'void_shard_c', 'stump_moss'],
+  groundSway: true, farTint: 0xb0b0c8, back: [0.45, 0.55, 0.8], lowTrees: 0.55, treeScale: 0.8,
 };
 const VOIDY: PropSet = {
   trees: ['void_tree', 'void_crystal', 'void_crystal_rock', 'void_tree'], bushes: ['void_crystal_rock', 'void_crystal'], rocks: ['void_slab', 'void_rock_float'], rockSmall: 'void_pebble',
