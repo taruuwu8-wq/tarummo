@@ -128,5 +128,123 @@
     "height": 60,
     "role": "guild",
     "greet": "ถึง Lv10 แล้วมาเลือกอาชีพกับฉันนะ!"
+  },
+  "fashion": {
+    "name": "Lulu",
+    "title": "ร้านแฟชั่น",
+    "sprite": "npc_fashion",
+    "height": 60,
+    "role": "shop",
+    "greet": "แต่งตัวให้เด่นที่สุดในเมืองกันเถอะ! (แฟชั่นไม่มีสเตตัส ใส่เพื่อความสวย)",
+    "sells": [
+      {
+        "item": "fh_witch",
+        "price": 1500
+      },
+      {
+        "item": "fh_witch_b",
+        "price": 1500
+      },
+      {
+        "item": "fh_fedora",
+        "price": 900
+      },
+      {
+        "item": "fh_pirate",
+        "price": 1800
+      },
+      {
+        "item": "fh_beret",
+        "price": 700
+      },
+      {
+        "item": "fh_crown",
+        "price": 6000
+      },
+      {
+        "item": "fh_tiara",
+        "price": 2500
+      },
+      {
+        "item": "fh_headband",
+        "price": 600
+      },
+      {
+        "item": "fh_cat_ears",
+        "price": 1200
+      },
+      {
+        "item": "fh_bunny_ears",
+        "price": 1200
+      },
+      {
+        "item": "fh_flower_crown",
+        "price": 800
+      },
+      {
+        "item": "fh_ribbon",
+        "price": 600
+      },
+      {
+        "item": "fh_gothic",
+        "price": 1800
+      },
+      {
+        "item": "fh_halo",
+        "price": 8000
+      },
+      {
+        "item": "fw_angel",
+        "price": 12000
+      },
+      {
+        "item": "fw_raven",
+        "price": 9000
+      },
+      {
+        "item": "fw_bat",
+        "price": 7000
+      },
+      {
+        "item": "fw_violet_moth",
+        "price": 10000
+      },
+      {
+        "item": "fw_frost_fairy",
+        "price": 10000
+      },
+      {
+        "item": "fw_shade",
+        "price": 8000
+      },
+      {
+        "item": "fw_dusk",
+        "price": 9000
+      },
+      {
+        "item": "fw_azure_fairy",
+        "price": 10000
+      },
+      {
+        "item": "fw_rose_fairy",
+        "price": 12000
+      },
+      {
+        "item": "fa_laurel_blue",
+        "price": 5000
+      },
+      {
+        "item": "fa_laurel_pink",
+        "price": 5000
+      },
+      {
+        "item": "fa_ring_violet",
+        "price": 6000
+      },
+      {
+        "item": "fa_spring_blue",
+        "price": 7000
+      }
+    ]
   }
 }

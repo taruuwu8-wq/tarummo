@@ -125,7 +125,7 @@ export const SHARE_RANGE = 12;
 export type GearSet = Partial<Record<Slot, InvSlot>>;
 const SET_SLOTS: Slot[] = ['weapon', 'offhand', 'armor', 'hat', 'charm'];
 const setKey = (st: InvSlot) => `${st.item}|${st.up ?? 0}|${st.rare ?? 0}|${JSON.stringify(st.opts ?? [])}`;
-export const SLOTS: Slot[] = ['weapon', 'offhand', 'armor', 'hat', 'charm', 'card', 'mount'];
+export const SLOTS: Slot[] = ['weapon', 'offhand', 'armor', 'hat', 'charm', 'card', 'mount', 'fhead', 'fwing', 'faura'];
 export interface SaveData { quest?: QuestState; autoQuest?: boolean; rested?: number; lastSeen?: number; autoStats?: AutoStats & { elapsed?: number }; autoOn?: boolean; autoCfg?: AutoCfg; autoAnchor?: Tile | null; autoTrip?: AutoTrip | null; bars?: Record<string, BarRef[]>; barKnown?: Record<string, string[]>; transformed?: boolean; mounted?: boolean; map?: string; cls: string; level: number; xp: number; gold: number; inv: InvSlot[]; equip: Partial<Record<Slot, InvSlot | string>>; autoSell: boolean; gearSet?: GearSet | null; firstCard?: boolean; questV?: number }
 
 export interface Entity {
@@ -274,9 +274,11 @@ export class World {
   }
 
   private buy(p: Entity, index: number, qty: number) {
-    const n = this.map.npcs.find(n => this.defs.npcs[n.id].role === 'shop');
+    // the shop the player is standing at (town has more than one: Mira, Lulu)
+    const n = this.map.npcs.filter(n => this.defs.npcs[n.id].role === 'shop' && Math.hypot(n.x - p.x, n.y - p.y) <= 3)
+      .sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y))[0];
     const offer = n && this.defs.npcs[n.id].sells?.[index];
-    if (!n || !offer || !this.nearNpc(p, 'shop')) return;
+    if (!n || !offer) return;
     qty = Math.max(1, Math.min(99, Math.floor(qty)));
     if (p.gold < offer.price * qty) { this.events.push({ t: 'msg', id: p.id, text: 'ทองไม่พอ' }); return; }
     const d = this.defs.items[offer.item], stack = d.slot === 'use' || d.slot === 'mat';

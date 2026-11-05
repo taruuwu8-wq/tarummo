@@ -8,7 +8,7 @@ import { itemName, optLines, RARE_COLOR, ic } from './itemtext';
 import type { ItemDef, Slot } from '../core/stats';
 
 type Tab = 'gear' | 'card' | 'use' | 'enh' | 'mat' | 'drop';
-const SLOT_TH: Record<Slot, string> = { weapon: 'อาวุธ', armor: 'เกราะ', hat: 'หมวก', charm: 'ชาร์ม', card: 'การ์ด', mount: 'พาหนะ', offhand: 'อาวุธรอง' };
+const SLOT_TH: Record<Slot, string> = { weapon: 'อาวุธ', armor: 'เกราะ', hat: 'หมวก', charm: 'ชาร์ม', card: 'การ์ด', mount: 'พาหนะ', offhand: 'อาวุธรอง', fhead: 'แฟชั่นหัว', fwing: 'ปีก', faura: 'ออร่า' };
 const RARITY_TH: Record<string, string> = { common: 'ธรรมดา', uncommon: 'ดี', rare: 'หายาก', epic: 'ตำนาน' };
 
 export class Hud {

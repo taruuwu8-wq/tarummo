@@ -11,12 +11,14 @@ export interface ClassDef {
   /** frame animation sheet (rows: idle/walk/attack/hurt/die); fw/fh cell size, ax/ay feet inside a cell */
   anim?: { sheet: string; faceLeft?: boolean; fw: number; fh: number; ax: number; ay: number; cols: number; anims: Record<string, { row: number; n: number; fps: number }> };
 }
-export type Slot = 'weapon' | 'offhand' | 'armor' | 'hat' | 'charm' | 'card' | 'mount';
+export type Slot = 'weapon' | 'offhand' | 'armor' | 'hat' | 'charm' | 'card' | 'mount' | 'fhead' | 'fwing' | 'faura';
+/** costume look drawn on the character: image, width as a multiple of the head width (head) / body height (wing) / px (aura), y offset in head widths, ground squash */
+export interface CostumeLook { img: string; w: number; dy?: number; squash?: number }
 export interface Bonus { hp?: number; mp?: number; atk?: number; armor?: number; acc?: number; eva?: number; critRate?: number; elemRate?: number; dmgPct?: number }
 export interface ItemDef {
   name: string; slot: Slot | 'use' | 'mat' | 'shell'; element?: Element;
   /** bag tab for materials: mat (default) | drop | enh */
-  tab?: 'mat' | 'drop' | 'enh'; rarity: 'common' | 'uncommon' | 'rare' | 'epic'; icon: string; img?: string;
+  tab?: 'mat' | 'drop' | 'enh'; rarity: 'common' | 'uncommon' | 'rare' | 'epic'; icon: string; img?: string; look?: CostumeLook;
   level?: number; class?: string; price: number;
   weapon?: { min: number; max: number; critDmg: number }; bonus?: Bonus; heal?: { hp?: number; mp?: number };
   mount?: { speed: number; look: string; color: string; sprite: string | null };

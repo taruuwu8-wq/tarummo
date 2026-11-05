@@ -44,6 +44,8 @@ interface View {
   anim?: { sheet: string; faceLeft: boolean; has: { back: boolean; die: boolean } }; atkReq?: boolean; hurtReq?: boolean; up?: boolean; lastSum?: number;
   /** main weapon drawn in the hand (animated base forms only; their art is empty-handed) */
   weapon?: Phaser.GameObjects.Image; weaponKey?: string;
+  /** costume (fashion) pieces: head / wings / aura, keyed by the item worn */
+  cos?: Partial<Record<'fhead' | 'fwing' | 'faura', { key: string; img?: Phaser.GameObjects.Image }>>;
 }
 
 export class GameScene extends Phaser.Scene {
@@ -164,7 +166,7 @@ export class GameScene extends Phaser.Scene {
     for (const e of this.world.entities.values()) { if (!this.views.has(e.id)) this.makeView(e); this.syncView(e, alpha, now, dtMs); }
     this.animDecor(now, dtMs);
     for (const [id, v] of this.views) if (!this.world.entities.has(id)) {
-      v.body.destroy(); v.shadow.destroy(); v.bar.destroy(); v.weapon?.destroy(); v.stIcons?.destroy(); v.bubble?.destroy(); v.rareSparks?.destroy(); v.pillar?.destroy(); v.aura?.destroy(); v.sparks?.destroy(); v.ring?.destroy(); v.wings?.destroy(); v.mount?.destroy(); v.dust?.destroy();
+      v.body.destroy(); v.shadow.destroy(); v.bar.destroy(); v.weapon?.destroy(); for (const c of Object.values(v.cos ?? {})) c?.img?.destroy(); v.stIcons?.destroy(); v.bubble?.destroy(); v.rareSparks?.destroy(); v.pillar?.destroy(); v.aura?.destroy(); v.sparks?.destroy(); v.ring?.destroy(); v.wings?.destroy(); v.mount?.destroy(); v.dust?.destroy();
       this.views.delete(id); this.names.get(id)?.destroy(); this.names.delete(id);
     }
     this.drawTargetRing();
@@ -296,7 +298,7 @@ export class GameScene extends Phaser.Scene {
     sqx *= pop * (1 - v.flipT * 0.8); sqy *= pop;
     v.body.setPosition(x, y).setScale(v.scale * sqx * (v.anim?.faceLeft ? -e.facing : e.facing), v.scale * sqy);
     v.shadow.setPosition(sx, sy + 1).setScale((1 + bob / 30) * pop);
-    if (e.kind === 'player') this.syncWeapon(e, v, x, y, rot, sqy);
+    if (e.kind === 'player') { this.syncWeapon(e, v, x, y, rot, sqy); this.syncCostume(e, v, x, y, sx, sy, rot, now); }
     v.body.setDepth(10 + sy); v.shadow.setDepth(2);
     if (v.mount) v.mount.setPosition(sx, y + 4).setDepth(v.body.depth - 0.2).setScale(v.mountLook === 'cloud' ? 1 + Math.sin(now * 5) * 0.03 : 1).setVisible(!e.dead);
     if (v.dust) { v.dust.setPosition(sx, sy + 2).setDepth(v.body.depth - 0.3); v.dust.emitting = e.moving && !e.dead; }
@@ -363,6 +365,69 @@ export class GameScene extends Phaser.Scene {
     w.setOrigin(f > 0 ? 0.22 : 0.78, 0.8).setFlipX(f < 0).setScale(H * (ranged ? 0.0085 : 0.0078))
       .setPosition(x + f * v.height * (ranged ? 0.3 : 0.26), y - H * 0.24).setRotation(rot + f * (base + (ranged ? swing * 0.3 : swing)))
       .setDepth(v.body.depth + (v.lunge > 0 ? 0.05 : -0.05));   // at the side, behind the body; in front while swinging
+  }
+
+  /** Head of the current frame in frame pixels: top, centre x, width (rows in the top part of the figure). Cached per frame. */
+  private headCache = new Map<string, { top: number; cx: number; hw: number }>();
+  private headOf(body: Phaser.GameObjects.Sprite) {
+    const fr = body.frame, key = fr.texture.key + '#' + fr.name;
+    let hd = this.headCache.get(key);
+    if (hd) return hd;
+    const src = fr.source.image as HTMLImageElement, cv = document.createElement('canvas'); cv.width = fr.cutWidth; cv.height = fr.cutHeight;
+    const ctx = cv.getContext('2d')!; ctx.drawImage(src, fr.cutX, fr.cutY, fr.cutWidth, fr.cutHeight, 0, 0, fr.cutWidth, fr.cutHeight);
+    const d = ctx.getImageData(0, 0, fr.cutWidth, fr.cutHeight).data, W = fr.cutWidth, H = fr.cutHeight;
+    let top = -1, bot = 0;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 40) { if (top < 0) top = y; bot = y; break; }
+    if (top < 0) top = 0;
+    const fig = bot - top + 1, y0 = top + Math.round(fig * 0.12), y1 = top + Math.round(fig * 0.34);
+    let mn = W, mx = 0, sum = 0, n = 0;
+    for (let y = y0; y <= y1; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 40) { mn = Math.min(mn, x); mx = Math.max(mx, x); sum += x; n++; }
+    const hw = Math.max(8, Math.min(mx - mn + 1, fig * 0.55));
+    // skull line: first row at least 60% of the head width (spiky hair / ear tips / hat points don't count)
+    let skull = top;
+    for (let y = top; y < y1; y++) { let a0 = W, a1 = 0; for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 40) { a0 = Math.min(a0, x); a1 = x; } if (a1 - a0 + 1 >= hw * 0.6) { skull = y; break; } }
+    hd = { top: skull, cx: n ? sum / n : W / 2, hw };
+    this.headCache.set(key, hd);
+    return hd;
+  }
+
+  /** Fashion pieces from the fhead / fwing / faura slots, placed from the current frame's head (so they follow the animation). */
+  private syncCostume(e: Entity, v: View, x: number, y: number, sx: number, sy: number, rot: number, now: number) {
+    const cos = (v.cos ??= {});
+    for (const sl of ['fhead', 'fwing', 'faura'] as const) {
+      const it = e.equip[sl] ? defs.items[e.equip[sl]!.item] : undefined, lk = it?.look, key = lk ? 'cos_' + lk.img : '';
+      const c = cos[sl];
+      if ((c?.key ?? '') !== key) {
+        c?.img?.destroy(); cos[sl] = key ? { key } : undefined;
+        if (key) {
+          if (this.textures.exists(key)) cos[sl]!.img = this.add.image(0, 0, key);
+          else { this.load.image(key, lk!.img); this.load.once('complete', () => { if (cos[sl]?.key === key) cos[sl] = undefined; }); this.load.start(); }
+        }
+      }
+    }
+    const body = v.body, hd = this.headOf(body), fr = body.frame, sxs = body.scaleX, sys = body.scaleY;
+    // frame pixel -> world (body origin, scale incl. flip, rotation)
+    const toW = (px: number, py: number) => {
+      const ox = (px - body.originX * fr.cutWidth) * sxs, oy = (py - body.originY * fr.cutHeight) * sys, c = Math.cos(rot), s = Math.sin(rot);
+      return { wx: x + ox * c - oy * s, wy: y + ox * s + oy * c };
+    };
+    const hw = hd.hw * Math.abs(sxs), show = !e.dead || body.alpha > 0.3, back = !!v.up;
+    const head = cos.fhead?.img, hl = e.equip.fhead && defs.items[e.equip.fhead.item].look;
+    if (head && hl) {
+      const p = toW(hd.cx, hd.top + hd.hw * (hl.dy ?? 0.3));
+      head.setOrigin(0.5, 1).setPosition(p.wx, p.wy).setRotation(rot).setScale(hw * hl.w / head.width).setFlipX(e.facing < 0).setDepth(body.depth + 0.12).setVisible(show);
+    }
+    const wing = cos.fwing?.img, wl = e.equip.fwing && defs.items[e.equip.fwing.item].look;
+    if (wing && wl) {
+      const p = toW(hd.cx, hd.top + hd.hw * 1.25), k = v.height * wl.w / wing.width, flap = 1 + Math.sin(now * 3.2 + v.phase) * 0.06;
+      wing.setOrigin(0.5, 0.55).setPosition(p.wx, p.wy).setRotation(rot).setScale(k * flap, k).setDepth(body.depth + (back ? 0.11 : -0.11)).setVisible(show && !e.mounted);
+      v.wings?.setVisible(false);   // costume wings replace the upgrade wings
+    }
+    const aura = cos.faura?.img, al = e.equip.faura && defs.items[e.equip.faura.item].look;
+    if (aura && al) {
+      const k = al.w / aura.width, pulse = 1 + Math.sin(now * 2.4 + v.phase) * 0.05;
+      aura.setPosition(sx, sy + 2).setScale(k * pulse, k * pulse * (al.squash ?? 1)).setDepth(2.5).setAlpha(0.85 + Math.sin(now * 3.1) * 0.15).setVisible(!e.dead);
+    }
   }
 
   private syncForm(e: Entity, v: View) {
@@ -467,7 +532,7 @@ export class GameScene extends Phaser.Scene {
     if (v.sparks) v.sparks.setPosition(x, y).setDepth(v.body.depth + 1).emitting = !e.dead;
     if (v.ring) v.ring.setPosition(sx, sy + 1).setVisible(!e.dead).setAlpha(0.75 + Math.sin(now * 3) * 0.25);
     if (v.wings) {
-      v.wings.setPosition(x, y - v.height * 0.45).setDepth(v.body.depth - 0.5).setVisible(!e.dead && v.body.alpha > 0.5);
+      v.wings.setPosition(x, y - v.height * 0.45).setDepth(v.body.depth - 0.5).setVisible(!e.dead && v.body.alpha > 0.5 && !e.equip.fwing);
       const f = Math.sin(now * 3.2) * 0.1;
       (v.wings.list[0] as unknown as Phaser.GameObjects.Components.Transform).scaleX = 1 + f;
       (v.wings.list[1] as unknown as Phaser.GameObjects.Components.Transform).scaleX = -(1 + f);
